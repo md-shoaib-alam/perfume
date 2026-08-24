@@ -46,11 +46,11 @@ export const CelebritySection: React.FC = () => {
               key={idx} 
               className="w-[76vw] max-w-[290px] flex-shrink-0 snap-center sm:w-auto sm:max-w-none"
             >
-              <div className="relative aspect-[3/4] rounded-lg overflow-hidden group shadow-md bg-slate-100">
+              <div className="relative aspect-[3/4] rounded-lg overflow-hidden group shadow-md bg-slate-100 cursor-pointer">
                 <img
                   src={celeb.image}
                   alt={celeb.name}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  className="w-full h-full object-cover"
                 />
                 
                 {/* Bottom Overlay Gradient with White Thumbnail Badge */}
