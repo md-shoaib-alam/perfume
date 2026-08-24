@@ -7,6 +7,8 @@ import { MasterPerfumersSection } from './components/MasterPerfumersSection';
 import { ReelShortsSection } from './components/ReelShortsSection';
 import { GoldTrustBanner } from './components/GoldTrustBanner';
 import { CelebritySection } from './components/CelebritySection';
+import { CollectionsCirclesSection } from './components/CollectionsCirclesSection';
+import { GenderCampaignBanners } from './components/GenderCampaignBanners';
 import { Footer } from './components/Footer';
 import { CartDrawer } from './components/CartDrawer';
 import { MenuDrawer } from './components/MenuDrawer';
@@ -148,6 +150,12 @@ function App() {
 
       {/* 8. Worn by 100k+ fragheads, including (Celebrities: Allu Arjun, Raashii Khanna, etc.) */}
       <CelebritySection />
+
+      {/* 8.5 Collections Category Circles (Bureau, Luxe, Haute, Miss NEESH) */}
+      <CollectionsCirclesSection />
+
+      {/* 8.6 Gender Campaign Banners (For Him & For Her) */}
+      <GenderCampaignBanners />
 
       {/* 9. Footer */}
       <Footer />

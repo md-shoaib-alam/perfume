@@ -64,18 +64,27 @@ export const ReelShortsSection: React.FC = () => {
 
   return (
     <section className="py-14 bg-white text-slate-900 font-serif">
-      {/* Featured In Logos Header */}
-      <div className="max-w-7xl mx-auto px-4 text-center mb-10">
+      {/* Featured In Logos Header with Infinite Right-to-Left Marquee Slider */}
+      <div className="w-full text-center mb-10 overflow-hidden">
         <h3 className="text-xl font-serif tracking-wider text-slate-800 mb-6">
           Featured In
         </h3>
-        <div className="flex flex-wrap items-center justify-center gap-8 sm:gap-12 text-slate-900 font-serif font-bold text-xl sm:text-2xl tracking-widest opacity-90">
-          <span className="hover:text-[#d6a750] transition-colors cursor-pointer">Forbes</span>
-          <span className="hover:text-[#d6a750] transition-colors cursor-pointer">VOGUE</span>
-          <span className="hover:text-[#d6a750] transition-colors cursor-pointer">COSMOPOLITAN</span>
-          <span className="hover:text-[#d6a750] transition-colors cursor-pointer">GQ</span>
-          <span className="hover:text-[#d6a750] transition-colors cursor-pointer">ELLE</span>
-          <span className="hover:text-[#d6a750] transition-colors cursor-pointer">GRAZIA</span>
+        <div className="w-full overflow-hidden py-2 bg-white relative">
+          {/* Edge gradient fades for luxury transition */}
+          <div className="absolute left-0 top-0 bottom-0 w-12 sm:w-20 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none" />
+          <div className="absolute right-0 top-0 bottom-0 w-12 sm:w-20 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none" />
+
+          {/* Marquee Track */}
+          <div className="flex animate-marquee space-x-10 sm:space-x-16 items-center text-slate-900 font-serif font-bold text-xl sm:text-2xl tracking-widest">
+            {['VOGUE', 'COSMOPOLITAN', 'GQ', 'ELLE', 'GRAZIA', 'Forbes', 'VOGUE', 'COSMOPOLITAN', 'GQ', 'ELLE', 'GRAZIA', 'Forbes'].map((logo, idx) => (
+              <span 
+                key={idx} 
+                className="hover:text-[#d6a750] transition-colors cursor-pointer whitespace-nowrap uppercase"
+              >
+                {logo}
+              </span>
+            ))}
+          </div>
         </div>
       </div>
 
