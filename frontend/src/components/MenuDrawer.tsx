@@ -132,7 +132,7 @@ export const MenuDrawer: React.FC<MenuDrawerProps> = ({
                 </nav>
 
                 {/* My Account section at the bottom (Mobile Only) */}
-                <div className="mt-8 pt-2 sm:hidden">
+                <div className="mt-8 pt-2 sm:hidden space-y-2.5">
                   <h4 className="font-serif text-lg font-bold text-slate-900 mb-3">My Account</h4>
                   <button
                     onClick={() => {
@@ -142,6 +142,15 @@ export const MenuDrawer: React.FC<MenuDrawerProps> = ({
                     className="w-full py-3 bg-[#353534] hover:bg-black text-white font-sans font-bold text-xs uppercase tracking-widest transition-colors shadow-sm cursor-pointer"
                   >
                     Log in
+                  </button>
+                  <button
+                    onClick={() => {
+                      alert('Redirecting to register page...');
+                      onClose();
+                    }}
+                    className="w-full py-3 bg-white hover:bg-slate-50 text-slate-900 border border-slate-900 font-sans font-bold text-xs uppercase tracking-widest transition-colors shadow-sm cursor-pointer"
+                  >
+                    Register
                   </button>
                 </div>
               </div>

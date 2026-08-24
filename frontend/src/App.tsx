@@ -123,15 +123,16 @@ function App() {
           </div>
         </div>
 
-        {/* Product Cards Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {/* Product Cards Container (Horizontal Slider on Mobile, Grid on Desktop) */}
+        <div className="flex flex-nowrap overflow-x-auto snap-x snap-mandatory gap-3 sm:gap-6 pb-4 no-scrollbar sm:grid sm:grid-cols-2 lg:grid-cols-4 sm:overflow-x-visible sm:pb-0">
           {filteredProducts.map((product) => (
-            <ProductCard
-              key={product.id}
-              product={product}
-              onAddToCart={handleAddToCart}
-              onSelectProduct={(p) => setSelectedProductModal(p)}
-            />
+            <div key={product.id} className="w-[72vw] max-w-[260px] flex-shrink-0 snap-center sm:w-auto sm:max-w-none">
+              <ProductCard
+                product={product}
+                onAddToCart={handleAddToCart}
+                onSelectProduct={(p) => setSelectedProductModal(p)}
+              />
+            </div>
           ))}
         </div>
       </section>
@@ -168,28 +169,7 @@ function App() {
         onOpenCart={() => setIsCartOpen(true)}
       />
 
-      {/* 11. Floating Controls */}
-      {!isMenuOpen && !isCartOpen && (
-        <>
-          {/* Need Help Button (Bottom Left) */}
-          <button 
-            onClick={() => alert('How can Neesh Perfume Concierge help you today?')}
-            className="fixed bottom-6 left-6 z-40 bg-white text-slate-850 text-xs font-sans font-bold px-4 py-2.5 rounded-full shadow-xl flex items-center gap-2 border border-slate-200 hover:bg-slate-50 hover:text-[#d6a13d] transition-all cursor-pointer"
-          >
-            <span className="text-sm">💬</span>
-            <span>Need Help?</span>
-          </button>
 
-          {/* Back to Top Button (Bottom Right) */}
-          <button
-            onClick={scrollToTop}
-            className="fixed bottom-6 right-6 z-40 w-10 h-10 bg-white text-slate-800 rounded-full flex items-center justify-center shadow-lg hover:bg-slate-50 hover:text-[#d6a13d] transition-all border border-slate-200 cursor-pointer"
-            title="Back to top"
-          >
-            ↑
-          </button>
-        </>
-      )}
 
       {/* Quick View Product Modal */}
       {selectedProductModal && (

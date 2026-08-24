@@ -18,6 +18,9 @@ export interface Product {
   hoverImage: string;
   isBestseller?: boolean;
   isNew?: boolean;
+  isPreOrder?: boolean;
+  shippingNote?: string;
+  buttonText?: string;
   tagline?: string;
   badgeText?: string;
   badgeSubtext?: string;
