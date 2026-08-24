@@ -17,7 +17,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onShopNow }) => {
       <div className="absolute inset-0 bg-gradient-to-r from-black via-black/80 to-black/50" />
 
       {/* Hero Content */}
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 grid grid-cols-1 md:grid-cols-12 gap-8 items-center">
+      <div className="relative z-10 max-w-[1680px] mx-auto px-4 sm:px-6 lg:px-8 py-16 grid grid-cols-1 md:grid-cols-12 gap-8 items-center">
         
         {/* Left Big Luxury Bottle */}
         <div className="md:col-span-6 flex justify-center">

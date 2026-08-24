@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import type { CartItem } from '../types';
 
 interface CartDrawerProps {
@@ -18,6 +18,17 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
   onUpdateQuantity,
   onRemoveItem
 }) => {
+  // Prevent background page scrolling when cart drawer is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isOpen]);
   const subtotal = cartItems.reduce(
     (sum, item) => sum + item.product.price * item.quantity,
     0

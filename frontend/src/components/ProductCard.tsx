@@ -15,7 +15,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   const [selectedSize, setSelectedSize] = useState<'100ml' | '50ml' | '15ml'>('100ml');
 
   return (
-    <div className="flex flex-col justify-between items-center text-center font-serif bg-white h-full transition-all duration-500 ease-out transform-gpu hover:-translate-y-1.5 hover:shadow-xl p-2 rounded-xl border border-transparent hover:border-slate-100">
+    <div className="flex flex-col justify-between items-center text-center font-serif bg-white h-full p-2 rounded-xl border border-transparent">
       {/* Top Section */}
       <div className="w-full flex flex-col items-center">
         {/* Product Image */}
@@ -26,7 +26,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           <img
             src={product.image}
             alt={product.name}
-            className="w-full h-full object-cover group-hover:scale-108 transition-transform duration-700 ease-out"
+            className="w-full h-full object-cover"
           />
         </div>
 
@@ -74,7 +74,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       {/* Gold ADD TO CART Button */}
       <button
         onClick={() => onAddToCart(product, selectedSize)}
-        className="w-full py-3.5 bg-[#d6a750] hover:bg-[#c59843] text-white font-sans font-bold text-xs uppercase tracking-widest transition-colors shadow-sm"
+        className="w-full py-3.5 bg-[#d6a750] hover:bg-[#353534] text-white font-sans font-bold text-xs uppercase tracking-widest transition-colors shadow-sm cursor-pointer"
       >
         ADD TO CART
       </button>

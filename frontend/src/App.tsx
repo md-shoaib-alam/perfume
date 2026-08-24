@@ -85,7 +85,8 @@ function App() {
       <Navbar
         cartCount={totalCartCount}
         onOpenCart={() => setIsCartOpen(true)}
-        onOpenMenu={() => setIsMenuOpen(true)}
+        onOpenMenu={() => setIsMenuOpen(!isMenuOpen)}
+        isMenuOpen={isMenuOpen}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
       />
@@ -98,7 +99,7 @@ function App() {
       />
 
       {/* 4. Our Bestsellers Section */}
-      <section id="bestsellers" className="py-16 max-w-[1440px] mx-auto px-4 sm:px-8 bg-white">
+      <section id="bestsellers" className="py-16 max-w-[1680px] mx-auto px-4 sm:px-6 lg:px-8 bg-white">
         <div className="text-center mb-10 font-serif">
           <h2 className="text-3xl sm:text-4xl font-normal text-slate-800 tracking-wide mb-6">
             Our Bestsellers
@@ -163,26 +164,32 @@ function App() {
       <MenuDrawer
         isOpen={isMenuOpen}
         onClose={() => setIsMenuOpen(false)}
+        cartCount={totalCartCount}
+        onOpenCart={() => setIsCartOpen(true)}
       />
 
       {/* 11. Floating Controls */}
-      {/* Need Help Button (Bottom Left) */}
-      <button 
-        onClick={() => alert('How can Neesh Perfume Concierge help you today?')}
-        className="fixed bottom-6 left-6 z-40 bg-white text-slate-850 text-xs font-sans font-bold px-4 py-2.5 rounded-full shadow-xl flex items-center gap-2 border border-slate-200 hover:bg-slate-50 hover:text-[#d6a13d] transition-all cursor-pointer"
-      >
-        <span className="text-sm">💬</span>
-        <span>Need Help?</span>
-      </button>
+      {!isMenuOpen && !isCartOpen && (
+        <>
+          {/* Need Help Button (Bottom Left) */}
+          <button 
+            onClick={() => alert('How can Neesh Perfume Concierge help you today?')}
+            className="fixed bottom-6 left-6 z-40 bg-white text-slate-850 text-xs font-sans font-bold px-4 py-2.5 rounded-full shadow-xl flex items-center gap-2 border border-slate-200 hover:bg-slate-50 hover:text-[#d6a13d] transition-all cursor-pointer"
+          >
+            <span className="text-sm">💬</span>
+            <span>Need Help?</span>
+          </button>
 
-      {/* Back to Top Button (Bottom Right) */}
-      <button
-        onClick={scrollToTop}
-        className="fixed bottom-6 right-6 z-40 w-10 h-10 bg-white text-slate-800 rounded-full flex items-center justify-center shadow-lg hover:bg-slate-50 hover:text-[#d6a13d] transition-all border border-slate-200 cursor-pointer"
-        title="Back to top"
-      >
-        ↑
-      </button>
+          {/* Back to Top Button (Bottom Right) */}
+          <button
+            onClick={scrollToTop}
+            className="fixed bottom-6 right-6 z-40 w-10 h-10 bg-white text-slate-800 rounded-full flex items-center justify-center shadow-lg hover:bg-slate-50 hover:text-[#d6a13d] transition-all border border-slate-200 cursor-pointer"
+            title="Back to top"
+          >
+            ↑
+          </button>
+        </>
+      )}
 
       {/* Quick View Product Modal */}
       {selectedProductModal && (
