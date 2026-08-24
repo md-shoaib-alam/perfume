@@ -61,7 +61,7 @@ export const MenuDrawer: React.FC<MenuDrawerProps> = ({ isOpen, onClose }) => {
         <div className="w-screen max-w-sm bg-white text-slate-900 shadow-2xl flex flex-col overflow-hidden">
           
           {/* Close Button - Stays fixed at the top */}
-          <div className="flex justify-start px-6 pt-6 pb-2">
+          <div className="flex justify-end px-6 pt-6 pb-2">
             <button
               onClick={onClose}
               className="text-slate-600 hover:text-black p-2 rounded-lg hover:bg-slate-100 transition-colors"

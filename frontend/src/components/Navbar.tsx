@@ -62,10 +62,10 @@ export const Navbar: React.FC<NavbarProps> = ({
           : 'bg-black text-white border-b border-[#b69254]/20 py-1.5'
       }`}
     >
-      <div className="w-full px-4 sm:px-8 lg:px-12 flex items-center justify-between h-11 sm:h-13">
+      <div className="w-full px-4 sm:px-8 lg:px-12 flex items-center justify-between h-11 sm:h-13 relative">
         
-        {/* Left: Hamburger Menu / Logo */}
-        <div className="flex items-center space-x-4">
+        {/* Left: Hamburger Menu */}
+        <div className="flex items-center z-10">
           {!searchOpen && (
             <button 
               onClick={onOpenMenu}
@@ -79,21 +79,11 @@ export const Navbar: React.FC<NavbarProps> = ({
               </svg>
             </button>
           )}
-
-          <a href="#" className="flex items-center group cursor-pointer">
-            <img 
-              src={neeshLogo} 
-              alt="NEESH PERFUMES" 
-              className={`h-6 sm:h-8 w-auto object-contain transition-all duration-300 ease-out transform group-hover:scale-105 ${
-                isScrolled || searchOpen ? 'brightness-0' : 'brightness-100'
-              }`} 
-            />
-          </a>
         </div>
 
         {/* Center: Search input box (Visible when searchOpen is true) */}
         {searchOpen ? (
-          <div ref={searchRef} className="flex-1 max-w-xl mx-4 sm:mx-8 relative animate-fade-in-up">
+          <div ref={searchRef} className="flex-1 max-w-xl mx-4 sm:mx-8 z-20 animate-fade-in-up">
             <div className="relative w-full flex items-center">
               <input
                 type="text"
@@ -108,13 +98,28 @@ export const Navbar: React.FC<NavbarProps> = ({
                 className="absolute right-3 text-slate-400 hover:text-[#d6a750] cursor-pointer"
               >
                 <svg className="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
             </div>
           </div>
         ) : (
           <div className="flex-1" />
+        )}
+
+        {/* Center: Absolute Centered Logo */}
+        {!searchOpen && (
+          <div className="absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 z-10 flex justify-center items-center">
+            <a href="#" className="flex items-center group cursor-pointer">
+              <img 
+                src={neeshLogo} 
+                alt="NEESH PERFUMES" 
+                className={`h-6 sm:h-8 w-auto object-contain transition-all duration-300 ease-out ${
+                  isScrolled || searchOpen ? 'brightness-0' : 'brightness-100'
+                }`} 
+              />
+            </a>
+          </div>
         )}
 
         {/* Right: Icons (Search, User, Heart, Cart) */}
