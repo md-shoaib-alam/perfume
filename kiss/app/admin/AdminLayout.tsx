@@ -176,8 +176,10 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onBackToStore }) => {
         <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 sm:px-8 shrink-0 z-10">
           <div className="flex items-center gap-3">
             <button 
+              type="button"
               onClick={() => setIsMobileNavOpen(!isMobileNavOpen)}
-              className="md:hidden p-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700"
+              className="md:hidden p-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 cursor-pointer transition-colors"
+              aria-label="Open Admin Menu"
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
@@ -189,12 +191,13 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onBackToStore }) => {
           </div>
 
           {/* User & Auth Pill */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             <button
               onClick={onBackToStore}
-              className="hidden sm:inline-flex px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded text-xs font-semibold transition-all cursor-pointer"
+              className="px-2.5 sm:px-3 py-1 sm:py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded text-xs font-semibold transition-all cursor-pointer"
             >
-              Storefront Preview
+              <span className="hidden sm:inline">Storefront Preview</span>
+              <span className="sm:hidden">Store ↗</span>
             </button>
 
             {/* Custom Authentication Integration */}
@@ -208,33 +211,33 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onBackToStore }) => {
                   onClick={() => setIsAuthOpen(true)}
                   className="text-xs font-bold text-[#c59b48] hover:underline cursor-pointer"
                 >
-                  Admin Sign In
+                  Sign In
                 </button>
               </Show>
             </div>
           </div>
         </header>
 
-        {/* Mobile Navigation Dropdown */}
-        {isMobileNavOpen && (
-          <div className="md:hidden bg-[#111827] text-white p-4 border-b border-white/10 space-y-2">
-            {TABS.map((tab) => (
+        {/* Mobile Horizontal Fast Tab Swiper */}
+        <div className="md:hidden bg-slate-900 border-b border-slate-800 px-3 py-2 overflow-x-auto flex gap-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden shrink-0">
+          {TABS.map((tab) => {
+            const isActive = activeTab === tab.id;
+            return (
               <button
                 key={tab.id}
-                onClick={() => {
-                  setActiveTab(tab.id as TabType);
-                  setIsMobileNavOpen(false);
-                }}
-                className={`w-full flex items-center gap-3 px-3 py-2 rounded text-xs font-semibold ${
-                  activeTab === tab.id ? 'bg-[#c59b48] text-black font-bold' : 'text-slate-300'
+                onClick={() => setActiveTab(tab.id as TabType)}
+                className={`px-3 py-1.5 rounded-lg text-[11px] font-semibold whitespace-nowrap flex items-center gap-1.5 transition-colors shrink-0 cursor-pointer ${
+                  isActive
+                    ? 'bg-[#c59b48] text-black font-bold shadow-xs'
+                    : 'bg-slate-800 text-slate-300 hover:text-white'
                 }`}
               >
                 <span>{tab.icon}</span>
                 <span>{tab.name}</span>
               </button>
-            ))}
-          </div>
-        )}
+            );
+          })}
+        </div>
 
         {/* Dynamic Tab Content Body */}
         <main className="flex-1 p-4 sm:p-8 overflow-y-auto">
@@ -251,6 +254,74 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onBackToStore }) => {
         </main>
 
       </div>
+
+      {/* Mobile Slide-Over Navigation Drawer */}
+      {isMobileNavOpen && (
+        <div className="fixed inset-0 z-50 md:hidden flex">
+          {/* Backdrop */}
+          <div 
+            className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity"
+            onClick={() => setIsMobileNavOpen(false)}
+          />
+          
+          {/* Slide-in Drawer */}
+          <div className="relative w-72 max-w-[85vw] bg-[#111827] text-slate-300 shadow-2xl flex flex-col justify-between z-10 animate-slide-in-left border-r border-slate-800 h-full">
+            <div>
+              {/* Brand & Close Header */}
+              <div className="p-5 border-b border-slate-800 flex items-center justify-between">
+                <div>
+                  <span className="font-serif text-xl font-bold tracking-widest text-[#c59b48]">NEESH™</span>
+                  <p className="text-[10px] uppercase font-bold tracking-wider text-slate-500 mt-0.5">Admin Management</p>
+                </div>
+                <button
+                  onClick={() => setIsMobileNavOpen(false)}
+                  className="w-8 h-8 rounded-lg bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center text-sm cursor-pointer"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Navigation Tabs */}
+              <nav className="p-4 space-y-1.5 max-h-[calc(100vh-160px)] overflow-y-auto">
+                {TABS.map((tab) => {
+                  const isActive = activeTab === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => {
+                        setActiveTab(tab.id as TabType);
+                        setIsMobileNavOpen(false);
+                      }}
+                      className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold tracking-wide transition-all cursor-pointer ${
+                        isActive 
+                          ? 'bg-[#c59b48] text-black font-bold shadow-md shadow-[#c59b48]/20' 
+                          : 'hover:bg-slate-800 text-slate-300 hover:text-white'
+                      }`}
+                    >
+                      <span className="text-base">{tab.icon}</span>
+                      <span>{tab.name}</span>
+                    </button>
+                  );
+                })}
+              </nav>
+            </div>
+
+            {/* Mobile Drawer Footer */}
+            <div className="p-4 border-t border-slate-800 space-y-2">
+              <button
+                onClick={() => {
+                  setIsMobileNavOpen(false);
+                  onBackToStore();
+                }}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-semibold transition-all border border-slate-700 cursor-pointer"
+              >
+                <span>←</span>
+                <span>Back to Storefront</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Unified Custom Auth Modal */}
       <AuthModal 
