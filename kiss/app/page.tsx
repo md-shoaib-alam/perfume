@@ -17,6 +17,7 @@ import { CartDrawer } from './components/CartDrawer';
 import { MenuDrawer } from './components/MenuDrawer';
 import { AdminLayout } from './admin/AdminLayout';
 import { AuthModal } from './auth/AuthModal';
+import { AccountDashboard } from './components/AccountDashboard';
 import { api } from './services/api';
 import { PRODUCTS as FALLBACK_PRODUCTS } from './data/products';
 import type { Product, CartItem } from './types';
@@ -30,6 +31,7 @@ export default function Page() {
   const [isCartOpen, setIsCartOpen] = useState<boolean>(false);
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
+  const [isAccountOpen, setIsAccountOpen] = useState<boolean>(false);
   const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin');
   const [selectedProductModal, setSelectedProductModal] = useState<Product | null>(null);
 
@@ -129,6 +131,7 @@ export default function Page() {
           setAuthMode('signin');
           setIsAuthModalOpen(true);
         }}
+        onOpenAccount={() => setIsAccountOpen(true)}
         isMenuOpen={isMenuOpen}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
@@ -221,6 +224,7 @@ export default function Page() {
           setAuthMode(selectedMode || 'signin');
           setIsAuthModalOpen(true);
         }}
+        onOpenAccount={() => setIsAccountOpen(true)}
       />
 
       {/* 11. Screenshot-matched Auth Modal */}
@@ -228,6 +232,13 @@ export default function Page() {
         isOpen={isAuthModalOpen}
         onClose={() => setIsAuthModalOpen(false)}
         initialMode={authMode}
+      />
+
+      {/* 12. Full My Account Dashboard (Screenshot-matched) */}
+      <AccountDashboard
+        isOpen={isAccountOpen}
+        onClose={() => setIsAccountOpen(false)}
+        onAddToCart={handleAddToCart}
       />
 
       {/* Quick View Product Modal */}

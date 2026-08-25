@@ -1,6 +1,7 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useUser, useClerk } from '@clerk/nextjs';
 
 interface MenuDrawerProps {
   isOpen: boolean;
@@ -9,6 +10,7 @@ interface MenuDrawerProps {
   onOpenCart?: () => void;
   onOpenAdmin?: () => void;
   onOpenAuth?: (mode?: 'signin' | 'signup') => void;
+  onOpenAccount?: () => void;
 }
 
 export const MenuDrawer: React.FC<MenuDrawerProps> = ({
@@ -17,10 +19,13 @@ export const MenuDrawer: React.FC<MenuDrawerProps> = ({
   cartCount: _cartCount = 0,
   onOpenCart: _onOpenCart,
   onOpenAdmin,
-  onOpenAuth
+  onOpenAuth,
+  onOpenAccount
 }) => {
   const [activeSubMenu, setActiveSubMenu] = useState<string | null>(null);
   const [isScrolled, setIsScrolled] = useState(false);
+  const { isSignedIn, isLoaded, user } = useUser();
+  const { signOut } = useClerk();
 
   // Prevent background page scrolling when menu drawer is open
   useEffect(() => {
@@ -138,24 +143,77 @@ export const MenuDrawer: React.FC<MenuDrawerProps> = ({
                 {/* My Account section at the bottom (Mobile) */}
                 <div className="mt-8 pt-4 border-t border-slate-100 space-y-2.5">
                   <h4 className="font-serif text-lg font-bold text-slate-900 mb-3">My Account</h4>
-                  <button
-                    onClick={() => {
-                      onClose();
-                      onOpenAuth?.('signin');
-                    }}
-                    className="w-full py-3.5 bg-[#d09e44] hover:bg-[#bd8c37] active:bg-[#a97b2d] text-white font-sans font-bold text-xs uppercase tracking-wider rounded-2xl transition-colors shadow-sm cursor-pointer"
-                  >
-                    LOG IN
-                  </button>
-                  <button
-                    onClick={() => {
-                      onClose();
-                      onOpenAuth?.('signup');
-                    }}
-                    className="w-full py-3.5 bg-white hover:bg-slate-50 text-slate-900 border border-slate-300 font-sans font-bold text-xs uppercase tracking-wider rounded-2xl transition-colors shadow-2xs cursor-pointer"
-                  >
-                    CREATE ACCOUNT
-                  </button>
+                  
+                  {isLoaded && isSignedIn ? (
+                    <div className="space-y-2">
+                      <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full border border-[#d6a750] bg-white flex items-center justify-center text-sm font-serif overflow-hidden">
+                          {user?.imageUrl ? (
+                            <img src={user.imageUrl} alt="" className="w-full h-full object-cover" />
+                          ) : (
+                            <span className="text-xs font-bold text-[#b69254]">
+                              {user?.firstName ? user.firstName[0] : (
+                                <svg className="w-4 h-4 fill-none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                </svg>
+                              )}
+                            </span>
+                          )}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs font-bold text-slate-900 truncate">
+                            {user?.firstName ? `${user.firstName} ${user.lastName || ''}` : user?.primaryEmailAddress?.emailAddress}
+                          </p>
+                          <p className="text-[10px] text-slate-400 truncate">Silver Member • 50 Pts</p>
+                        </div>
+                      </div>
+
+                      <Link
+                        href="/account"
+                        onClick={onClose}
+                        className="w-full py-3 bg-[#d09e44] hover:bg-[#bd8c37] text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-colors shadow-xs cursor-pointer flex items-center justify-center gap-2"
+                      >
+                        <svg className="w-4 h-4 fill-none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                        </svg>
+                        <span>Account Dashboard</span>
+                      </Link>
+
+                      <button
+                        onClick={async () => {
+                          onClose();
+                          await signOut();
+                        }}
+                        className="w-full py-2.5 bg-white hover:bg-red-50 text-red-500 border border-red-200 font-bold text-xs uppercase tracking-wider rounded-xl transition-colors cursor-pointer flex items-center justify-center gap-2"
+                      >
+                        <svg className="w-4 h-4 fill-none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                        </svg>
+                        <span>Log Out</span>
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      <button
+                        onClick={() => {
+                          onClose();
+                          onOpenAuth?.('signin');
+                        }}
+                        className="w-full py-3.5 bg-[#d09e44] hover:bg-[#bd8c37] active:bg-[#a97b2d] text-white font-sans font-bold text-xs uppercase tracking-wider rounded-2xl transition-colors shadow-sm cursor-pointer"
+                      >
+                        LOG IN
+                      </button>
+                      <button
+                        onClick={() => {
+                          onClose();
+                          onOpenAuth?.('signup');
+                        }}
+                        className="w-full py-3.5 bg-white hover:bg-slate-50 text-slate-900 border border-slate-300 font-sans font-bold text-xs uppercase tracking-wider rounded-2xl transition-colors shadow-2xs cursor-pointer"
+                      >
+                        CREATE ACCOUNT
+                      </button>
+                    </>
+                  )}
 
                   {onOpenAdmin && (
                     <Link
@@ -163,7 +221,10 @@ export const MenuDrawer: React.FC<MenuDrawerProps> = ({
                       onClick={onClose}
                       className="w-full py-2.5 bg-[#1a1a1a] hover:bg-black text-[#d6a750] border border-[#d6a750]/30 font-sans font-bold text-xs uppercase tracking-widest rounded-xl transition-colors shadow-xs cursor-pointer flex items-center justify-center gap-2 mt-3"
                     >
-                      <span>⚙️</span>
+                      <svg className="w-4 h-4 fill-none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
                       <span>Admin Console</span>
                     </Link>
                   )}

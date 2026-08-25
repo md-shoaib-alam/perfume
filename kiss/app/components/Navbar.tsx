@@ -8,6 +8,7 @@ interface NavbarProps {
   onOpenCart: () => void;
   onOpenMenu: () => void;
   onOpenAuth?: () => void;
+  onOpenAccount?: () => void;
   isMenuOpen?: boolean;
   searchQuery: string;
   onSearchChange: (query: string) => void;
@@ -18,6 +19,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenCart,
   onOpenMenu,
   onOpenAuth,
+  onOpenAccount,
   isMenuOpen = false,
   searchQuery,
   onSearchChange
@@ -25,7 +27,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   const [isScrolled, setIsScrolled] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
-  const { isSignedIn, isLoaded } = useUser();
+  const { isSignedIn, isLoaded, user } = useUser();
 
   useEffect(() => {
     let ticking = false;
@@ -145,14 +147,30 @@ export const Navbar: React.FC<NavbarProps> = ({
           {/* 2. User Profile Account Icon (Desktop Only - Hidden on Mobile) */}
           <div className="hidden sm:flex items-center justify-center">
             {isLoaded && isSignedIn ? (
-              <UserButton
-                afterSignOutUrl="/"
-                appearance={{
-                  elements: {
-                    avatarBox: 'w-6 h-6 sm:w-7 sm:h-7 border border-[#d6a750]'
-                  }
-                }}
-              />
+              <Link
+                href="/account"
+                className="p-1 transition-all duration-200 cursor-pointer flex items-center justify-center group"
+                title="My Account Dashboard"
+                aria-label="My Account Dashboard"
+              >
+                {user?.imageUrl ? (
+                  <img
+                    src={user.imageUrl}
+                    alt={user.firstName || 'Profile'}
+                    className="w-7 h-7 rounded-full border border-[#d6a750] object-cover group-hover:ring-2 group-hover:ring-[#d6a750]/40 transition-all"
+                  />
+                ) : (
+                  <div className="w-7 h-7 rounded-full bg-[#d6a750]/10 border border-[#d6a750] flex items-center justify-center text-[11px] font-bold text-[#b69254]">
+                    {user?.firstName ? (
+                      user.firstName[0].toUpperCase()
+                    ) : (
+                      <svg className="w-4 h-4 fill-none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                      </svg>
+                    )}
+                  </div>
+                )}
+              </Link>
             ) : (
               <button 
                 type="button"
