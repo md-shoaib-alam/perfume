@@ -3,8 +3,8 @@ import React from 'react';
 
 export const GoldTrustBanner: React.FC = () => {
   return (
-    <section className="bg-[#c59b48] text-white py-6 sm:py-8 px-5 sm:px-8 border-y border-[#b58b38]">
-      <div className="max-w-7xl mx-auto">
+    <section className="bg-[#c59b48] text-white py-6 sm:py-8 border-y border-[#b58b38]">
+      <div className="max-w-[1680px] mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 max-w-sm sm:max-w-md md:max-w-none mx-auto font-sans">
           
           {/* Item 1: 7 Days Returns */}

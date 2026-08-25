@@ -13,7 +13,7 @@
     transform: translateX(0%);
   }
   100% {
-    transform: translateX(-50%);
+    transform: translateX(-100%);
   }
 }
 
@@ -50,14 +50,16 @@
 
 .animate-marquee {
   display: flex;
-  width: max-content;
-  animation: marquee 25s linear infinite;
+  flex-shrink: 0;
+  animation: marquee 22s linear infinite;
+  will-change: transform;
 }
 
 .animate-marquee-slow {
   display: flex;
-  width: max-content;
-  animation: marquee 60s linear infinite;
+  flex-shrink: 0;
+  animation: marquee 35s linear infinite;
+  will-change: transform;
 }
 
 .animate-marquee:hover,

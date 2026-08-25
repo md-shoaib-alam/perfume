@@ -15,7 +15,6 @@ import { GenderCampaignBanners } from './components/GenderCampaignBanners';
 import { Footer } from './components/Footer';
 import { CartDrawer } from './components/CartDrawer';
 import { MenuDrawer } from './components/MenuDrawer';
-import { AdminLayout } from './admin/AdminLayout';
 import { AuthModal } from './auth/AuthModal';
 import { AccountDashboard } from './components/AccountDashboard';
 import { api } from './services/api';
@@ -24,7 +23,6 @@ import type { Product, CartItem } from './types';
 
 export default function Page() {
   const [productsList, setProductsList] = useState<Product[]>(FALLBACK_PRODUCTS);
-  const [isAdminMode, setIsAdminMode] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<'For Him' | 'For Her' | 'Gift Sets'>('For Him');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
@@ -44,7 +42,7 @@ export default function Page() {
       }
     };
     load();
-  }, [isAdminMode]);
+  }, []);
 
   // Filter products by activeTab gender & search query
   const filteredProducts = useMemo(() => {
@@ -111,10 +109,6 @@ export default function Page() {
   };
 
   const totalCartCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
-
-  if (isAdminMode) {
-    return <AdminLayout onBackToStore={() => setIsAdminMode(false)} />;
-  }
 
   return (
     <div className="min-h-screen bg-white text-slate-900 font-sans selection:bg-[#d6a13d] selection:text-black relative">
@@ -219,7 +213,6 @@ export default function Page() {
         onClose={() => setIsMenuOpen(false)}
         cartCount={totalCartCount}
         onOpenCart={() => setIsCartOpen(true)}
-        onOpenAdmin={() => setIsAdminMode(true)}
         onOpenAuth={(selectedMode) => {
           setAuthMode(selectedMode || 'signin');
           setIsAuthModalOpen(true);
@@ -282,17 +275,6 @@ export default function Page() {
           </div>
         </div>
       )}
-
-      {/* Admin Portal Direct Route Link */}
-      <div className="fixed bottom-5 left-5 z-40 flex items-center gap-2">
-        <Link
-          href="/admin"
-          className="flex items-center gap-2 px-3.5 py-2 bg-[#1a1a1a] hover:bg-black text-[#d6a750] border border-[#d6a750]/40 rounded-full shadow-lg text-xs font-bold transition-all hover:scale-105"
-        >
-          <span>⚙️</span>
-          <span>Admin Portal (/admin)</span>
-        </Link>
-      </div>
 
     </div>
   );

@@ -34,6 +34,8 @@ const REELS = [
   }
 ];
 
+const LOGOS = ['VOGUE', 'COSMOPOLITAN', 'GQ', 'ELLE', 'GRAZIA', 'FORBES', "HARPER'S BAZAAR", "L'OFFICIEL"];
+
 export const ReelShortsSection: React.FC = () => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [isMouseDown, setIsMouseDown] = useState(false);
@@ -72,31 +74,46 @@ export const ReelShortsSection: React.FC = () => {
         </h3>
         <div className="w-full overflow-hidden py-2 bg-white relative">
           {/* Edge gradient fades for luxury transition */}
-          <div className="absolute left-0 top-0 bottom-0 w-12 sm:w-20 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none" />
-          <div className="absolute right-0 top-0 bottom-0 w-12 sm:w-20 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none" />
+          <div className="absolute left-0 top-0 bottom-0 w-12 sm:w-24 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none" />
+          <div className="absolute right-0 top-0 bottom-0 w-12 sm:w-24 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none" />
 
-          {/* Marquee Track */}
-          <div className="flex animate-marquee space-x-10 sm:space-x-16 items-center text-slate-900 font-serif font-bold text-xl sm:text-2xl tracking-widest">
-            {['VOGUE', 'COSMOPOLITAN', 'GQ', 'ELLE', 'GRAZIA', 'Forbes', 'VOGUE', 'COSMOPOLITAN', 'GQ', 'ELLE', 'GRAZIA', 'Forbes'].map((logo, idx) => (
-              <span 
-                key={idx} 
-                className="hover:text-[#d6a750] transition-colors cursor-pointer whitespace-nowrap uppercase"
-              >
-                {logo}
-              </span>
-            ))}
+          {/* Marquee Track 1 + Track 2 (100% gapless infinite loop) */}
+          <div className="flex w-max overflow-hidden">
+            {/* Track 1 */}
+            <div className="flex shrink-0 animate-marquee space-x-12 sm:space-x-16 items-center text-slate-900 font-serif font-bold text-xl sm:text-2xl tracking-widest pr-12 sm:pr-16">
+              {LOGOS.map((logo, idx) => (
+                <span 
+                  key={`l1-${idx}`} 
+                  className="hover:text-[#d6a750] transition-colors cursor-pointer whitespace-nowrap uppercase"
+                >
+                  {logo}
+                </span>
+              ))}
+            </div>
+
+            {/* Track 2 */}
+            <div className="flex shrink-0 animate-marquee space-x-12 sm:space-x-16 items-center text-slate-900 font-serif font-bold text-xl sm:text-2xl tracking-widest pr-12 sm:pr-16" aria-hidden="true">
+              {LOGOS.map((logo, idx) => (
+                <span 
+                  key={`l2-${idx}`} 
+                  className="hover:text-[#d6a750] transition-colors cursor-pointer whitespace-nowrap uppercase"
+                >
+                  {logo}
+                </span>
+              ))}
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Vertical Reel Shorts Cards with Mouse Grab Scroll & Hidden Scrollbar */}
+      {/* Vertical Reel Shorts Cards with Mouse Grab Scroll & Matching Navbar Max Width */}
       <div
         ref={scrollRef}
         onMouseDown={handleMouseDown}
         onMouseLeave={handleMouseLeave}
         onMouseUp={handleMouseUp}
         onMouseMove={handleMouseMove}
-        className={`max-w-[1440px] mx-auto px-4 sm:px-8 overflow-x-auto select-none py-2 cursor-grab active:cursor-grabbing [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden`}
+        className="max-w-[1680px] mx-auto px-4 sm:px-6 lg:px-8 overflow-x-auto select-none py-2 cursor-grab active:cursor-grabbing [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
       >
         <div className="flex gap-5 min-w-max">
           {REELS.map((reel, idx) => (
