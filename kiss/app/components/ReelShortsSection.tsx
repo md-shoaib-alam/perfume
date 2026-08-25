@@ -34,7 +34,24 @@ const REELS = [
   }
 ];
 
-const LOGOS = ['VOGUE', 'COSMOPOLITAN', 'GQ', 'ELLE', 'GRAZIA', 'FORBES', "HARPER'S BAZAAR", "L'OFFICIEL"];
+const LOGOS = [
+  'VOGUE',
+  'COSMOPOLITAN',
+  'GQ',
+  'ELLE',
+  'GRAZIA',
+  'FORBES',
+  "HARPER'S BAZAAR",
+  "L'OFFICIEL",
+  'VOGUE',
+  'COSMOPOLITAN',
+  'GQ',
+  'ELLE',
+  'GRAZIA',
+  'FORBES',
+  "HARPER'S BAZAAR",
+  "L'OFFICIEL"
+];
 
 export const ReelShortsSection: React.FC = () => {
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -67,15 +84,17 @@ export const ReelShortsSection: React.FC = () => {
 
   return (
     <section className="py-14 bg-white text-slate-900 font-serif">
-      {/* Featured In Logos Header with Infinite Right-to-Left Marquee Slider */}
-      <div className="w-full text-center mb-10 overflow-hidden">
-        <h3 className="text-xl font-serif tracking-wider text-slate-800 mb-6">
+      {/* Featured In Logos Header with Infinite Right-to-Left Marquee Slider Constrained to Navbar Width */}
+      <div className="max-w-[1680px] mx-auto px-4 sm:px-6 lg:px-8 mb-10">
+        <h3 className="text-xl font-serif tracking-wider text-slate-800 text-center mb-6">
           Featured In
         </h3>
+        
+        {/* Marquee Container with matching container boundaries & luxury edge gradient masks */}
         <div className="w-full overflow-hidden py-2 bg-white relative">
-          {/* Edge gradient fades for luxury transition */}
-          <div className="absolute left-0 top-0 bottom-0 w-12 sm:w-24 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none" />
-          <div className="absolute right-0 top-0 bottom-0 w-12 sm:w-24 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none" />
+          {/* Edge gradient fades on the navbar container bounds */}
+          <div className="absolute left-0 top-0 bottom-0 w-8 sm:w-16 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none" />
+          <div className="absolute right-0 top-0 bottom-0 w-8 sm:w-16 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none" />
 
           {/* Marquee Track 1 + Track 2 (100% gapless infinite loop) */}
           <div className="flex w-max overflow-hidden">
