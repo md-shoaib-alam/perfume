@@ -1,18 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import neeshLogo from '../assets/neesh_logo_130x40.avif';
 
 interface MenuDrawerProps {
   isOpen: boolean;
   onClose: () => void;
   cartCount?: number;
   onOpenCart?: () => void;
+  onOpenAdmin?: () => void;
 }
 
 export const MenuDrawer: React.FC<MenuDrawerProps> = ({
   isOpen,
   onClose,
-  cartCount = 0,
-  onOpenCart
+  cartCount: _cartCount = 0,
+  onOpenCart: _onOpenCart,
+  onOpenAdmin
 }) => {
   const [activeSubMenu, setActiveSubMenu] = useState<string | null>(null);
   const [isScrolled, setIsScrolled] = useState(false);
@@ -152,6 +153,19 @@ export const MenuDrawer: React.FC<MenuDrawerProps> = ({
                   >
                     Register
                   </button>
+
+                  {onOpenAdmin && (
+                    <button
+                      onClick={() => {
+                        onClose();
+                        onOpenAdmin();
+                      }}
+                      className="w-full py-2.5 bg-[#d6a750]/20 hover:bg-[#d6a750]/30 text-amber-900 border border-[#d6a750] font-sans font-bold text-xs uppercase tracking-widest transition-colors shadow-xs cursor-pointer flex items-center justify-center gap-2 mt-2"
+                    >
+                      <span>⚙️</span>
+                      <span>Admin Console</span>
+                    </button>
+                  )}
                 </div>
               </div>
 

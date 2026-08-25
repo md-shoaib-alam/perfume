@@ -12,19 +12,43 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   onAddToCart,
   onSelectProduct
 }) => {
-  const [selectedSize, setSelectedSize] = useState<'100ml' | '50ml' | '15ml'>('100ml');
+  const sizes = product.sizeOptions && product.sizeOptions.length > 0
+    ? product.sizeOptions.map((opt) => opt.size)
+    : ['100ml', '50ml', '15ml'];
 
-  const getPriceForSize = (basePrice: number, size: '100ml' | '50ml' | '15ml') => {
-    if (size === '15ml') {
-      return product.id === 'haute-vetiver' ? 1900 : Math.round(basePrice * 0.224);
+  const [selectedSize, setSelectedSize] = useState<string>(sizes[0] || '100ml');
+
+  // Compute price for selected size
+  const getCurrentSizeOption = () => {
+    if (product.sizeOptions && product.sizeOptions.length > 0) {
+      const match = product.sizeOptions.find((opt) => opt.size === selectedSize);
+      if (match) return match;
     }
-    if (size === '50ml') {
-      return Math.round(basePrice * 0.58);
+    // Fallback calculations
+    if (selectedSize === '15ml') {
+      return {
+        size: '15ml',
+        price: product.id === 'haute-vetiver' ? 1900 : Math.round(product.price * 0.224),
+        isSoldOut: product.id === 'haute-vetiver'
+      };
     }
-    return basePrice;
+    if (selectedSize === '50ml') {
+      return {
+        size: '50ml',
+        price: Math.round(product.price * 0.58),
+        isSoldOut: false
+      };
+    }
+    return {
+      size: '100ml',
+      price: product.price,
+      isSoldOut: false
+    };
   };
 
-  const currentPrice = getPriceForSize(product.price, selectedSize);
+  const currentOption = getCurrentSizeOption();
+  const currentPrice = currentOption.price;
+  const isCurrentlySoldOut = !!currentOption.isSoldOut;
 
   return (
     <div className="flex flex-col justify-between items-center text-center font-serif bg-white h-full p-1 sm:p-2 rounded-xl border border-transparent">
@@ -41,9 +65,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             className="w-full h-full object-cover"
           />
 
-          {/* Sold Out Badge when 15ml is selected on Haute Vetiver */}
-          {selectedSize === '15ml' && product.id === 'haute-vetiver' && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/5">
+          {/* Sold Out Badge when selected size is sold out */}
+          {isCurrentlySoldOut && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/10 backdrop-blur-2xs">
               <div className="w-15 h-15 rounded-full bg-white/95 backdrop-blur-xs flex flex-col items-center justify-center text-center shadow-md border border-slate-100">
                 <span className="text-[10px] font-extrabold tracking-wider leading-tight text-slate-900">SOLD</span>
                 <span className="text-[10px] font-extrabold tracking-wider leading-tight text-slate-900">OUT</span>
@@ -75,9 +99,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           Rs.{currentPrice.toLocaleString('en-IN')}.00
         </p>
 
-        {/* Size Selector Pills */}
-        <div className="flex items-center justify-center gap-1.5 sm:gap-2 mb-3 sm:mb-4">
-          {(['100ml', '50ml', '15ml'] as const).map((size) => (
+        {/* Dynamic Size Selector Pills */}
+        <div className="flex items-center justify-center gap-1.5 sm:gap-2 mb-3 sm:mb-4 flex-wrap">
+          {sizes.map((size) => (
             <button
               key={size}
               onClick={() => setSelectedSize(size)}
@@ -92,7 +116,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           ))}
         </div>
 
-        {/* Shipping Note (e.g. Shipping Starts From 31st August) */}
+        {/* Shipping Note */}
         {product.shippingNote && (
           <p className="text-[10px] sm:text-[11px] font-sans font-bold text-[#42b535] mb-2 sm:mb-3 tracking-tight text-center">
             {product.shippingNote}
@@ -100,12 +124,17 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         )}
       </div>
 
-      {/* Gold Action Button */}
+      {/* Action Button */}
       <button
+        disabled={isCurrentlySoldOut}
         onClick={() => onAddToCart(product, selectedSize)}
-        className="w-full py-2.5 sm:py-3.5 bg-[#d6a750] hover:bg-[#353534] text-white font-sans font-bold text-[11px] sm:text-xs uppercase tracking-widest transition-colors shadow-sm cursor-pointer"
+        className={`w-full py-2.5 sm:py-3.5 font-sans font-bold text-[11px] sm:text-xs uppercase tracking-widest transition-colors shadow-sm ${
+          isCurrentlySoldOut
+            ? 'bg-slate-300 text-slate-500 cursor-not-allowed'
+            : 'bg-[#d6a750] hover:bg-[#353534] text-white cursor-pointer'
+        }`}
       >
-        {product.buttonText || 'ADD TO CART'}
+        {isCurrentlySoldOut ? 'OUT OF STOCK' : (product.buttonText || 'ADD TO CART')}
       </button>
     </div>
   );

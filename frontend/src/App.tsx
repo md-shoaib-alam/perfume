@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { AnnouncementBar } from './components/AnnouncementBar';
 import { Navbar } from './components/Navbar';
 import { HeroSection } from './components/HeroSection';
@@ -12,10 +12,14 @@ import { GenderCampaignBanners } from './components/GenderCampaignBanners';
 import { Footer } from './components/Footer';
 import { CartDrawer } from './components/CartDrawer';
 import { MenuDrawer } from './components/MenuDrawer';
-import { PRODUCTS } from './data/products';
+import { AdminLayout } from './admin/AdminLayout';
+import { api } from './services/api';
+import { PRODUCTS as FALLBACK_PRODUCTS } from './data/products';
 import type { Product, CartItem } from './types';
 
 function App() {
+  const [productsList, setProductsList] = useState<Product[]>(FALLBACK_PRODUCTS);
+  const [isAdminMode, setIsAdminMode] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<'For Him' | 'For Her' | 'Gift Sets'>('For Him');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
@@ -23,17 +27,44 @@ function App() {
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
   const [selectedProductModal, setSelectedProductModal] = useState<Product | null>(null);
 
-  // Filter products
+  // Load products from backend / localStorage
+  useEffect(() => {
+    const load = async () => {
+      const data = await api.getProducts();
+      if (data && data.length > 0) {
+        setProductsList(data);
+      }
+    };
+    load();
+  }, [isAdminMode]);
+
+  // Filter products by activeTab gender & search query
   const filteredProducts = useMemo(() => {
-    return PRODUCTS.filter((product) => {
+    return productsList.filter((product) => {
+      // 1. Filter by Active Tab (For Him / For Her / Gift Sets)
+      if (activeTab === 'For Him') {
+        if (product.gender && product.gender !== 'For Him' && product.gender !== 'Unisex') {
+          return false;
+        }
+      } else if (activeTab === 'For Her') {
+        if (product.gender && product.gender !== 'For Her' && product.gender !== 'Unisex') {
+          return false;
+        }
+      } else if (activeTab === 'Gift Sets') {
+        if (product.gender !== 'Gift Sets' && product.category !== 'gift-set' && product.category !== 'discovery-set') {
+          return false;
+        }
+      }
+
+      // 2. Filter by search query
       const query = searchQuery.toLowerCase();
       if (!query) return true;
       return (
         product.name.toLowerCase().includes(query) ||
-        product.subtitle.toLowerCase().includes(query)
+        product.subtitle?.toLowerCase().includes(query)
       );
     });
-  }, [searchQuery]);
+  }, [searchQuery, productsList, activeTab]);
 
   // Cart operations
   const handleAddToCart = (product: Product, size: string) => {
@@ -73,9 +104,9 @@ function App() {
 
   const totalCartCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
 
-  const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
+  if (isAdminMode) {
+    return <AdminLayout onBackToStore={() => setIsAdminMode(false)} />;
+  }
 
   return (
     <div className="min-h-screen bg-white text-slate-900 font-sans selection:bg-[#d6a13d] selection:text-black relative">
@@ -155,7 +186,7 @@ function App() {
       <CollectionsCirclesSection />
 
       {/* 8.6 Gender Campaign Banners (For Him & For Her) */}
-      <GenderCampaignBanners />
+      <GenderCampaignBanners onSelectGender={setActiveTab} />
 
       {/* 9. Footer */}
       <Footer />
@@ -175,6 +206,7 @@ function App() {
         onClose={() => setIsMenuOpen(false)}
         cartCount={totalCartCount}
         onOpenCart={() => setIsCartOpen(true)}
+        onOpenAdmin={() => setIsAdminMode(true)}
       />
 
 
@@ -220,6 +252,16 @@ function App() {
           </div>
         </div>
       )}
+      {/* Admin Panel Quick Launcher Button */}
+      <div className="fixed bottom-5 left-5 z-40">
+        <button
+          onClick={() => setIsAdminMode(true)}
+          className="flex items-center gap-2 px-3.5 py-2 bg-[#1a1a1a] hover:bg-black text-[#d6a750] border border-[#d6a750]/40 rounded-full shadow-lg text-xs font-bold transition-all hover:scale-105"
+        >
+          <span>⚙️</span>
+          <span>Admin Panel</span>
+        </button>
+      </div>
 
     </div>
   );

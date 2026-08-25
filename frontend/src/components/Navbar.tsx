@@ -57,13 +57,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   }, [searchOpen]);
 
   return (
-    <header 
-      className={`sticky top-0 z-50 w-full transition-colors duration-300 ease-in-out transform-gpu ${
-        isScrolled || searchOpen || isMenuOpen
-          ? 'bg-white text-slate-900 py-1' 
-          : 'bg-black text-white border-b border-[#b69254]/20 py-1.5'
-      }`}
-    >
+    <header className="sticky top-0 z-50 w-full bg-white text-slate-900 py-1 transition-all duration-300 ease-in-out transform-gpu">
       <div className="max-w-[1680px] mx-auto w-full px-4 sm:px-6 lg:px-8 flex items-center justify-between h-14 sm:h-16 relative">
         
         {/* Left: Hamburger Menu */}
@@ -71,9 +65,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           {!searchOpen && (
             <button 
               onClick={onOpenMenu}
-              className={`p-1.5 transition-all duration-300 ease-out hover:scale-110 cursor-pointer ${
-                isScrolled || isMenuOpen ? 'text-slate-900 hover:text-[#d6a13d]' : 'text-white hover:text-[#d6a13d]'
-              }`}
+              className="p-1.5 transition-all duration-300 ease-out hover:scale-110 cursor-pointer text-slate-900 hover:text-[#d6a750]"
               aria-label="Toggle Menu"
             >
               {isMenuOpen ? (
@@ -115,30 +107,26 @@ export const Navbar: React.FC<NavbarProps> = ({
           <div className="flex-1" />
         )}
 
-        {/* Center: Absolute Centered Logo */}
+        {/* Center: Absolute Centered Golden Logo */}
         {!searchOpen && (
           <div className="absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 z-10 flex justify-center items-center">
             <a href="#" className="flex items-center group cursor-pointer">
               <img 
                 src={neeshLogo} 
                 alt="NEESH PERFUMES" 
-                className={`h-8.5 sm:h-10.5 w-auto object-contain transition-all duration-300 ease-out ${
-                  isScrolled || searchOpen ? 'brightness-0' : 'brightness-100'
-                }`} 
+                className="h-8.5 sm:h-10.5 w-auto object-contain transition-all duration-300 ease-out" 
               />
             </a>
           </div>
         )}
 
-        {/* Right: Icons (Search, User, Heart, Cart) */}
+        {/* Right: Icons (Search, User, Cart) */}
         <div className="flex items-center space-x-3 sm:space-x-6">
-          {/* Search Toggle Icon (Only visible when search bar is closed) */}
+          {/* Search Toggle Icon */}
           {!searchOpen && (
             <button
               onClick={() => setSearchOpen(true)}
-              className={`p-1.5 transition-all duration-300 ease-out hover:scale-110 cursor-pointer ${
-                isScrolled || searchOpen || isMenuOpen ? 'text-slate-900 hover:text-[#d6a13d]' : 'text-white hover:text-[#d6a13d]'
-              }`}
+              className="p-1.5 transition-all duration-300 ease-out hover:scale-110 cursor-pointer text-slate-900 hover:text-[#d6a750]"
               title="Search"
             >
               <svg className="w-5.5 h-5.5 sm:w-6.5 sm:h-6.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -149,9 +137,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           {/* User Account */}
           <button 
-            className={`hidden sm:block p-1.5 transition-all duration-300 ease-out hover:scale-110 cursor-pointer ${
-              isScrolled || searchOpen || isMenuOpen ? 'text-slate-900 hover:text-[#d6a13d]' : 'text-white hover:text-[#d6a13d]'
-            }`} 
+            className="hidden sm:block p-1.5 transition-all duration-300 ease-out hover:scale-110 cursor-pointer text-slate-900 hover:text-[#d6a750]" 
             title="Account"
           >
             <svg className="w-5.5 h-5.5 sm:w-6.5 sm:h-6.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -162,9 +148,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           {/* Shopping Bag with Gold Badge */}
           <button
             onClick={onOpenCart}
-            className={`relative p-1.5 transition-all duration-300 ease-out hover:scale-110 cursor-pointer ${
-              isScrolled || searchOpen || isMenuOpen ? 'text-slate-900 hover:text-[#d6a13d]' : 'text-white hover:text-[#d6a13d]'
-            }`}
+            className="relative p-1.5 transition-all duration-300 ease-out hover:scale-110 cursor-pointer text-slate-900 hover:text-[#d6a750]"
             title="Bag"
           >
             <svg className="w-6 h-6 sm:w-7 sm:h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
