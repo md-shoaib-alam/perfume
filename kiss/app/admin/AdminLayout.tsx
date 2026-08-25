@@ -1,6 +1,7 @@
 'use client';
 import React, { useState } from 'react';
-import { SignedIn, SignedOut, SignInButton, UserButton } from '@clerk/clerk-react';
+import { Show, UserButton } from '@clerk/nextjs';
+import { AuthModal } from '../auth/AuthModal';
 import { DashboardOverview } from './DashboardOverview';
 import { ProductsManager } from './ProductsManager';
 import { OrdersManager } from './OrdersManager';
@@ -15,67 +16,72 @@ interface AdminLayoutProps {
   onBackToStore: () => void;
 }
 
+type TabType = 'overview' | 'products' | 'orders' | 'hero' | 'collections' | 'perfumers' | 'coupons' | 'reviews' | 'settings';
+
 export const AdminLayout: React.FC<AdminLayoutProps> = ({ onBackToStore }) => {
-  const [activeTab, setActiveTab] = useState<
-    'overview' | 'products' | 'orders' | 'hero' | 'collections' | 'perfumers' | 'coupons' | 'reviews' | 'settings'
-  >('overview');
+  const [activeTab, setActiveTab] = useState<TabType>('overview');
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
+  const [isAuthOpen, setIsAuthOpen] = useState(false);
 
   const TABS = [
-    { id: 'overview', label: 'Dashboard', icon: '📊' },
-    { id: 'products', label: 'Products', icon: '🧴' },
-    { id: 'orders', label: 'Orders', icon: '📦' },
-    { id: 'hero', label: 'Hero Banner', icon: '🖼️' },
-    { id: 'collections', label: 'Collections', icon: '✨' },
-    { id: 'perfumers', label: 'Perfumers & Stars', icon: '👑' },
-    { id: 'coupons', label: 'Coupons & Offers', icon: '🏷️' },
-    { id: 'reviews', label: 'Reviews', icon: '⭐' },
-    { id: 'settings', label: 'Settings', icon: '⚙️' }
+    { id: 'overview', name: 'Dashboard', icon: '📊' },
+    { id: 'products', name: 'Products & Stock', icon: '💎' },
+    { id: 'orders', name: 'Orders & Sales', icon: '📦' },
+    { id: 'hero', name: 'Hero Carousel', icon: '🎬' },
+    { id: 'collections', name: 'Collections & Circles', icon: '🔘' },
+    { id: 'perfumers', name: 'Perfumers & Celebs', icon: '👑' },
+    { id: 'coupons', name: 'Discount Coupons', icon: '🏷️' },
+    { id: 'reviews', name: 'Customer Reviews', icon: '⭐' },
+    { id: 'settings', name: 'Store Settings', icon: '⚙️' }
   ];
 
   return (
-    <div className="min-h-screen bg-slate-100 flex flex-col md:flex-row font-sans text-slate-800">
+    <div className="flex min-h-screen bg-[#f8fafc] text-slate-900 font-sans">
       
-      {/* Sidebar (Desktop) */}
-      <aside className="hidden md:flex md:w-64 bg-[#1a1a1a] text-white flex-col justify-between p-6 border-r border-white/10 shrink-0">
-        <div className="space-y-8">
-          {/* Admin Logo */}
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="font-serif text-xl font-bold tracking-widest text-[#d6a750]">NEESH</span>
-              <span className="text-[10px] bg-[#d6a750]/20 text-[#d6a750] px-2 py-0.5 rounded font-mono font-bold uppercase">
-                Admin
-              </span>
+      {/* Sidebar - Desktop */}
+      <aside className="w-64 bg-[#111827] text-slate-300 flex flex-col justify-between hidden md:flex shrink-0 shadow-xl border-r border-slate-800">
+        <div>
+          {/* Brand Header */}
+          <div className="p-6 border-b border-slate-800 flex items-center justify-between">
+            <div>
+              <span className="font-serif text-xl font-bold tracking-widest text-[#c59b48]">NEESH™</span>
+              <p className="text-[10px] uppercase font-bold tracking-wider text-slate-500 mt-0.5">Admin Management</p>
             </div>
-            <p className="text-[10px] text-slate-400 mt-1 uppercase tracking-wider">Management Console</p>
+            <span className="bg-[#c59b48]/10 text-[#c59b48] border border-[#c59b48]/20 px-2 py-0.5 rounded text-[10px] font-bold">
+              PRO
+            </span>
           </div>
 
           {/* Navigation Links */}
-          <nav className="space-y-1.5">
-            {TABS.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id as any)}
-                className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-xs font-semibold transition-all ${
-                  activeTab === tab.id
-                    ? 'bg-[#c59b48] text-black shadow-md font-bold'
-                    : 'text-slate-300 hover:bg-white/5 hover:text-white'
-                }`}
-              >
-                <span className="text-sm">{tab.icon}</span>
-                <span>{tab.label}</span>
-              </button>
-            ))}
+          <nav className="p-4 space-y-1">
+            {TABS.map((tab) => {
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id as TabType)}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-semibold tracking-wide transition-all ${
+                    isActive 
+                      ? 'bg-[#c59b48] text-black font-bold shadow-md shadow-[#c59b48]/20' 
+                      : 'hover:bg-slate-800 text-slate-400 hover:text-white'
+                  }`}
+                >
+                  <span className="text-base">{tab.icon}</span>
+                  <span>{tab.name}</span>
+                </button>
+              );
+            })}
           </nav>
         </div>
 
-        {/* Bottom Sidebar Action */}
-        <div className="space-y-3 pt-6 border-t border-white/10">
+        {/* Footer Actions */}
+        <div className="p-4 border-t border-slate-800 space-y-2">
           <button
             onClick={onBackToStore}
-            className="w-full py-2.5 px-3 bg-white/10 hover:bg-white/20 text-white rounded-lg text-xs font-semibold flex items-center justify-center gap-2 transition-all"
+            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-semibold transition-all border border-slate-700 cursor-pointer"
           >
-            <span>←</span> Back to Storefront
+            <span>←</span>
+            <span>Back to Storefront</span>
           </button>
         </div>
       </aside>
@@ -84,17 +90,18 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onBackToStore }) => {
       <div className="flex-1 flex flex-col min-w-0">
         
         {/* Top Navbar */}
-        <header className="bg-white border-b border-slate-200 px-4 sm:px-8 py-3.5 flex items-center justify-between shadow-2xs">
+        <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 sm:px-8 shrink-0 z-10">
           <div className="flex items-center gap-3">
-            {/* Mobile Hamburger */}
-            <button
+            <button 
               onClick={() => setIsMobileNavOpen(!isMobileNavOpen)}
-              className="md:hidden p-2 text-slate-700 hover:bg-slate-100 rounded-lg text-lg"
+              className="md:hidden p-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700"
             >
-              ☰
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
             </button>
-            <h1 className="font-serif text-lg sm:text-xl font-bold text-slate-900 capitalize">
-              {activeTab} Management
+            <h1 className="font-serif text-lg sm:text-xl font-bold text-slate-800">
+              {TABS.find(t => t.id === activeTab)?.name}
             </h1>
           </div>
 
@@ -102,36 +109,37 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onBackToStore }) => {
           <div className="flex items-center gap-3">
             <button
               onClick={onBackToStore}
-              className="hidden sm:inline-flex px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded text-xs font-semibold transition-all"
+              className="hidden sm:inline-flex px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded text-xs font-semibold transition-all cursor-pointer"
             >
               Storefront Preview
             </button>
 
-            {/* Clerk Authentication Integration */}
+            {/* Custom Authentication Integration */}
             <div className="flex items-center gap-2 bg-slate-50 px-2.5 py-1 rounded-full border border-slate-200">
-              <SignedIn>
+              <Show when="signed-in">
                 <UserButton afterSignOutUrl="/" />
                 <span className="text-[11px] font-semibold text-slate-700 hidden sm:inline">Admin User</span>
-              </SignedIn>
-              <SignedOut>
-                <SignInButton mode="modal">
-                  <button className="text-xs font-bold text-[#c59b48] hover:underline">
-                    Admin Sign In
-                  </button>
-                </SignInButton>
-              </SignedOut>
+              </Show>
+              <Show when="signed-out">
+                <button 
+                  onClick={() => setIsAuthOpen(true)}
+                  className="text-xs font-bold text-[#c59b48] hover:underline cursor-pointer"
+                >
+                  Admin Sign In
+                </button>
+              </Show>
             </div>
           </div>
         </header>
 
         {/* Mobile Navigation Dropdown */}
         {isMobileNavOpen && (
-          <div className="md:hidden bg-[#1a1a1a] text-white p-4 border-b border-white/10 space-y-2">
+          <div className="md:hidden bg-[#111827] text-white p-4 border-b border-white/10 space-y-2">
             {TABS.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => {
-                  setActiveTab(tab.id as any);
+                  setActiveTab(tab.id as TabType);
                   setIsMobileNavOpen(false);
                 }}
                 className={`w-full flex items-center gap-3 px-3 py-2 rounded text-xs font-semibold ${
@@ -139,21 +147,15 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onBackToStore }) => {
                 }`}
               >
                 <span>{tab.icon}</span>
-                <span>{tab.label}</span>
+                <span>{tab.name}</span>
               </button>
             ))}
-            <button
-              onClick={onBackToStore}
-              className="w-full py-2 bg-white/10 text-white rounded text-xs font-semibold mt-2"
-            >
-              ← Back to Storefront
-            </button>
           </div>
         )}
 
-        {/* Body View */}
-        <main className="flex-1 p-4 sm:p-8 max-w-7xl w-full mx-auto">
-          {activeTab === 'overview' && <DashboardOverview onNavigateTo={(tab) => setActiveTab(tab as any)} />}
+        {/* Dynamic Tab Content Body */}
+        <main className="flex-1 p-4 sm:p-8 overflow-y-auto">
+          {activeTab === 'overview' && <DashboardOverview />}
           {activeTab === 'products' && <ProductsManager />}
           {activeTab === 'orders' && <OrdersManager />}
           {activeTab === 'hero' && <HeroManager />}
@@ -163,7 +165,14 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onBackToStore }) => {
           {activeTab === 'reviews' && <ReviewsManager />}
           {activeTab === 'settings' && <SettingsManager />}
         </main>
+
       </div>
+
+      {/* Unified Custom Auth Modal */}
+      <AuthModal 
+        isOpen={isAuthOpen} 
+        onClose={() => setIsAuthOpen(false)} 
+      />
 
     </div>
   );

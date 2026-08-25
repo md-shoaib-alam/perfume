@@ -1,7 +1,7 @@
 'use client';
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { UserButton, useUser } from '@clerk/clerk-react';
+import { UserButton, useUser } from '@clerk/nextjs';
 
 interface NavbarProps {
   cartCount: number;
