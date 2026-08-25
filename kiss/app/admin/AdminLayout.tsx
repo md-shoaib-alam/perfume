@@ -310,7 +310,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onBackToStore }) => {
 
         {/* Dynamic Tab Content Body */}
         <main className="flex-1 p-4 sm:p-8 overflow-y-auto">
-          {activeTab === 'overview' && <DashboardOverview />}
+          {activeTab === 'overview' && <DashboardOverview onNavigateTo={setActiveTab} />}
           {activeTab === 'products' && <ProductsManager />}
           {activeTab === 'orders' && <OrdersManager />}
           {activeTab === 'hero' && <HeroManager />}

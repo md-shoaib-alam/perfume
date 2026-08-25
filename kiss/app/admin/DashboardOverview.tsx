@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { api } from '../services/api';
 
-export const DashboardOverview: React.FC<{ onNavigateTo: (tab: string) => void }> = ({ onNavigateTo }) => {
+export const DashboardOverview: React.FC<{ onNavigateTo?: (tab: string) => void }> = ({ onNavigateTo }) => {
   const [stats, setStats] = useState<any>({
     totalRevenue: 182400,
     totalOrders: 38,
@@ -36,13 +36,13 @@ export const DashboardOverview: React.FC<{ onNavigateTo: (tab: string) => void }
         </div>
         <div className="flex flex-wrap gap-2.5">
           <button
-            onClick={() => onNavigateTo('products')}
+            onClick={() => onNavigateTo?.('products')}
             className="px-4 py-2 bg-[#c59b48] hover:bg-[#b58b38] text-black font-bold text-xs uppercase tracking-wider rounded shadow-md transition-all cursor-pointer"
           >
             + Add Product
           </button>
           <button
-            onClick={() => onNavigateTo('orders')}
+            onClick={() => onNavigateTo?.('orders')}
             className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white font-medium text-xs uppercase tracking-wider rounded border border-white/20 transition-all cursor-pointer"
           >
             View Orders

@@ -423,39 +423,48 @@ export const ProductsManager: React.FC = () => {
       {/* Add / Edit Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-2xl max-w-3xl w-full p-6 sm:p-8 shadow-2xl my-8 max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-2xl max-w-3xl w-full p-6 sm:p-8 shadow-2xl my-8 max-h-[90vh] overflow-y-auto border border-slate-100">
             <div className="flex justify-between items-center pb-4 border-b border-slate-100 mb-6">
-              <h3 className="font-serif text-xl font-bold text-slate-900">
-                {editingProduct ? `Edit Fragrance: ${editingProduct.name}` : 'Add New Fragrance'}
-              </h3>
+              <div>
+                <h3 className="font-serif text-2xl font-bold text-slate-900">
+                  {editingProduct ? `Edit Fragrance` : 'Add New Fragrance'}
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  {editingProduct ? editingProduct.name : 'Create a new artisanal perfume listing in the store catalog'}
+                </p>
+              </div>
               <button
+                type="button"
                 onClick={() => setIsModalOpen(false)}
-                className="text-slate-400 hover:text-slate-700 text-xl font-bold cursor-pointer"
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-colors cursor-pointer"
               >
-                ✕
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
               </button>
             </div>
 
-            <form onSubmit={handleSave} className="space-y-5">
+            <form onSubmit={handleSave} className="space-y-6">
               {/* Basic Details */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Fragrance Name *</label>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">Fragrance Name *</label>
                   <input
                     type="text"
                     value={formData.name || ''}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     required
-                    className="w-full bg-slate-50 border border-slate-200 rounded px-3 py-2 text-xs focus:outline-none focus:border-[#d6a750]"
+                    placeholder="e.g. Haute Vetiver"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-[#d6a750] focus:bg-white transition-all font-medium"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Target Category / Gender *</label>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">Target Category / Gender *</label>
                   <select
                     value={formData.gender || 'For Him'}
                     onChange={(e) => setFormData({ ...formData, gender: e.target.value as any })}
-                    className="w-full bg-slate-50 border border-slate-200 rounded px-3 py-2 text-xs font-bold text-slate-900 focus:outline-none focus:border-[#d6a750]"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-900 focus:outline-none focus:border-[#d6a750] focus:bg-white transition-all cursor-pointer"
                   >
                     <option value="For Him">For Him (Men)</option>
                     <option value="For Her">For Her (Women)</option>
@@ -465,87 +474,94 @@ export const ProductsManager: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Concentration / Subtitle</label>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">Concentration / Subtitle</label>
                   <input
                     type="text"
                     value={formData.subtitle || ''}
                     onChange={(e) => setFormData({ ...formData, subtitle: e.target.value })}
                     placeholder="e.g. Extrait De Parfum"
-                    className="w-full bg-slate-50 border border-slate-200 rounded px-3 py-2 text-xs focus:outline-none focus:border-[#d6a750]"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-[#d6a750] focus:bg-white transition-all"
                   />
                 </div>
               </div>
 
               {/* Volume Sizes & Pricing Matrix */}
-              <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-3">
-                <div className="flex justify-between items-center">
+              <div className="p-5 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-3.5">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                   <div>
                     <h4 className="font-serif font-bold text-slate-900 text-xs uppercase tracking-wider">
                       Volume Sizes & Pricing Matrix
                     </h4>
-                    <p className="text-[11px] text-slate-500">Configure different bottle volumes (15ml, 50ml, 100ml), individual prices, and stock availability.</p>
+                    <p className="text-[11px] text-slate-500 mt-0.5">Configure bottle volumes (15ml, 50ml, 100ml), individual prices, and stock availability.</p>
                   </div>
                   <button
                     type="button"
                     onClick={handleAddSizeOption}
-                    className="px-3 py-1.5 bg-[#d6a750] hover:bg-[#b58b38] text-black font-bold text-[10px] uppercase tracking-wider rounded shadow-xs cursor-pointer"
+                    className="px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs tracking-wider rounded-lg shadow-2xs cursor-pointer flex items-center gap-1.5 self-start sm:self-auto transition-all"
                   >
-                    + Add Size Variant
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                    <span>Add Size Variant</span>
                   </button>
                 </div>
 
-                <div className="space-y-2.5 pt-2">
+                <div className="space-y-2.5 pt-1">
                   {formData.sizeOptions?.map((opt, idx) => (
-                    <div key={idx} className="grid grid-cols-2 sm:flex sm:items-center gap-2.5 bg-white p-3 rounded-xl border border-slate-200">
+                    <div key={idx} className="grid grid-cols-2 sm:flex sm:items-center gap-3 bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs hover:border-slate-300 transition-all">
                       <div className="col-span-1 sm:w-28">
-                        <label className="block text-[10px] font-semibold text-slate-500 mb-0.5">Volume Size</label>
+                        <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Volume Size</label>
                         <input
                           type="text"
                           value={opt.size}
                           onChange={(e) => handleUpdateSizeOption(idx, 'size', e.target.value)}
                           placeholder="e.g. 100ml"
-                          className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs font-semibold focus:outline-none focus:border-[#d6a750]"
+                          className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-xs font-bold text-slate-900 focus:outline-none focus:border-[#d6a750] focus:bg-white"
                         />
                       </div>
 
                       <div className="col-span-1 sm:w-32">
-                        <label className="block text-[10px] font-semibold text-slate-500 mb-0.5">Price (₹)</label>
+                        <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Price (₹)</label>
                         <input
                           type="number"
                           value={opt.price}
                           onChange={(e) => handleUpdateSizeOption(idx, 'price', Number(e.target.value))}
-                          className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs font-bold text-slate-900 focus:outline-none focus:border-[#d6a750]"
+                          className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-xs font-bold text-slate-900 focus:outline-none focus:border-[#d6a750] focus:bg-white"
                         />
                       </div>
 
                       <div className="col-span-1 sm:w-32">
-                        <label className="block text-[10px] font-semibold text-slate-500 mb-0.5">Original MRP (₹)</label>
+                        <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Original MRP (₹)</label>
                         <input
                           type="number"
                           value={opt.originalPrice || 0}
                           onChange={(e) => handleUpdateSizeOption(idx, 'originalPrice', Number(e.target.value))}
-                          className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-500 focus:outline-none focus:border-[#d6a750]"
+                          className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-xs text-slate-600 focus:outline-none focus:border-[#d6a750] focus:bg-white"
                         />
                       </div>
 
-                      <div className="col-span-1 flex items-center justify-between sm:pt-4 sm:ml-auto gap-2">
-                        <label className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-700 cursor-pointer">
+                      <div className="col-span-1 flex items-center justify-between sm:pt-4 sm:ml-auto gap-3">
+                        <label className="flex items-center gap-2 text-xs font-semibold text-slate-700 cursor-pointer select-none">
                           <input
                             type="checkbox"
                             checked={opt.isSoldOut || false}
                             onChange={(e) => handleUpdateSizeOption(idx, 'isSoldOut', e.target.checked)}
-                            className="accent-red-600"
+                            className="w-4 h-4 accent-rose-600 rounded"
                           />
-                          <span className={opt.isSoldOut ? 'text-red-600 font-bold' : ''}>Sold Out</span>
+                          <span className={opt.isSoldOut ? 'text-rose-600 font-bold' : 'text-slate-600'}>
+                            {opt.isSoldOut ? 'Sold Out' : 'In Stock'}
+                          </span>
                         </label>
 
                         <button
                           type="button"
                           onClick={() => handleRemoveSizeOption(idx)}
-                          className="text-red-500 hover:text-red-700 text-sm font-bold p-1 cursor-pointer"
+                          className="w-7 h-7 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 flex items-center justify-center transition-colors cursor-pointer"
                           title="Remove size"
                         >
-                          ✕
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
                         </button>
                       </div>
                     </div>
@@ -571,44 +587,44 @@ export const ProductsManager: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Accords / Tagline Preview</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">Accords / Tagline Preview</label>
                 <input
                   type="text"
                   value={formData.tagline || ''}
                   onChange={(e) => setFormData({ ...formData, tagline: e.target.value })}
                   placeholder="e.g. Fresh Aquatic • Ambroxan • Bergamot"
-                  className="w-full bg-slate-50 border border-slate-200 rounded px-3 py-2 text-xs focus:outline-none focus:border-[#d6a750]"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-[#d6a750] focus:bg-white transition-all"
                 />
               </div>
 
               {/* Badges and Pre-order Settings */}
-              <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-slate-800">
+              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200/80 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <label className="flex items-center gap-2.5 cursor-pointer text-xs font-semibold text-slate-800 p-2 rounded-xl bg-white border border-slate-200/60 shadow-2xs hover:border-[#d6a750]/50 transition-colors">
                   <input
                     type="checkbox"
                     checked={formData.isBestseller || false}
                     onChange={(e) => setFormData({ ...formData, isBestseller: e.target.checked })}
-                    className="accent-[#d6a750]"
+                    className="w-4 h-4 accent-[#d6a750] rounded"
                   />
                   <span>Bestseller Tag</span>
                 </label>
 
-                <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-slate-800">
+                <label className="flex items-center gap-2.5 cursor-pointer text-xs font-semibold text-slate-800 p-2 rounded-xl bg-white border border-slate-200/60 shadow-2xs hover:border-[#d6a750]/50 transition-colors">
                   <input
                     type="checkbox"
                     checked={formData.isPreOrder || false}
                     onChange={(e) => setFormData({ ...formData, isPreOrder: e.target.checked })}
-                    className="accent-[#d6a750]"
+                    className="w-4 h-4 accent-[#d6a750] rounded"
                   />
                   <span>Pre-Order Active</span>
                 </label>
 
-                <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-slate-800">
+                <label className="flex items-center gap-2.5 cursor-pointer text-xs font-semibold text-slate-800 p-2 rounded-xl bg-white border border-slate-200/60 shadow-2xs hover:border-[#d6a750]/50 transition-colors">
                   <input
                     type="checkbox"
                     checked={formData.isNew || false}
                     onChange={(e) => setFormData({ ...formData, isNew: e.target.checked })}
-                    className="accent-[#d6a750]"
+                    className="w-4 h-4 accent-[#d6a750] rounded"
                   />
                   <span>New Release</span>
                 </label>
@@ -617,38 +633,38 @@ export const ProductsManager: React.FC = () => {
               {formData.isPreOrder && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">Shipping Note Text</label>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">Shipping Note Text</label>
                     <input
                       type="text"
                       value={formData.shippingNote || ''}
                       onChange={(e) => setFormData({ ...formData, shippingNote: e.target.value })}
                       placeholder="e.g. Shipping Starts From 31st August"
-                      className="w-full bg-slate-50 border border-slate-200 rounded px-3 py-2 text-xs focus:outline-none focus:border-[#d6a750]"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs focus:outline-none focus:border-[#d6a750] focus:bg-white"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">Button Text</label>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">Button Text</label>
                     <input
                       type="text"
                       value={formData.buttonText || 'PRE-ORDER'}
                       onChange={(e) => setFormData({ ...formData, buttonText: e.target.value })}
-                      className="w-full bg-slate-50 border border-slate-200 rounded px-3 py-2 text-xs focus:outline-none focus:border-[#d6a750]"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs focus:outline-none focus:border-[#d6a750] focus:bg-white"
                     />
                   </div>
                 </div>
               )}
 
-              <div className="flex justify-end gap-3 pt-4 border-t border-slate-100 mt-6">
+              <div className="flex items-center justify-end gap-3 pt-5 border-t border-slate-100 mt-6">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded cursor-pointer"
+                  className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl cursor-pointer transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2 bg-[#c59b48] hover:bg-[#b58b38] text-black font-bold text-xs uppercase tracking-wider rounded shadow-md cursor-pointer"
+                  className="px-6 py-2.5 bg-[#c59b48] hover:bg-[#b58b38] text-black font-bold text-xs uppercase tracking-wider rounded-xl shadow-md hover:shadow-lg transition-all cursor-pointer"
                 >
                   {editingProduct ? 'Save Fragrance Changes' : 'Create Fragrance'}
                 </button>
