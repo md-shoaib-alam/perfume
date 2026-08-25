@@ -1,8 +1,12 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+
 import { useUser, useClerk } from '@clerk/nextjs';
-import { Product } from '../data/products';
+import type { Product } from '../types';
+import { api } from '../services/api';
+
+
 
 interface AccountDashboardProps {
   isOpen: boolean;
@@ -51,27 +55,26 @@ export const AccountDashboard: React.FC<AccountDashboardProps> = ({
       setFirstName(user.firstName || '');
       setLastName(user.lastName || '');
       
-      const storedPhone = typeof window !== 'undefined' ? localStorage.getItem('neesh_user_phone') || '' : '';
-      setPhone(user.phoneNumbers?.[0]?.phoneNumber || storedPhone || '');
-      
-      const savedProfile = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('neesh_profile_details') || '{}') : {};
-      if (savedProfile.address) setAddress(savedProfile.address);
-      if (savedProfile.city) setCity(savedProfile.city);
-      if (savedProfile.pincode) setPincode(savedProfile.pincode);
+      // Load live profile details from shared backend API
+      api.getUserProfile(user.id).then(profile => {
+        if (profile) {
+          if (profile.phone) setPhone(profile.phone);
+          else if (user.phoneNumbers?.[0]?.phoneNumber) setPhone(user.phoneNumbers[0].phoneNumber);
+          if (profile.address) setAddress(profile.address);
+          if (profile.city) setCity(profile.city);
+          if (profile.pincode) setPincode(profile.pincode);
+          if (profile.wishlist) setWishlist(profile.wishlist);
+          if (profile.recentViews) setRecentProducts(profile.recentViews);
+        }
+      }).catch(e => console.warn('Could not load user profile:', e));
+
+      // Load orders from Appwrite
+      api.getOrders(user.id).then(orders => {
+        if (orders && orders.length > 0) {
+          setUserOrders(orders);
+        }
+      }).catch(e => console.warn('Could not load user orders:', e));
     }
-
-    try {
-      if (typeof window !== 'undefined') {
-        const savedWishlist = JSON.parse(localStorage.getItem('neesh_wishlist') || '[]');
-        setWishlist(savedWishlist);
-
-        const savedRecent = JSON.parse(localStorage.getItem('neesh_recent_views') || '[]');
-        setRecentProducts(savedRecent);
-
-        const savedOrders = JSON.parse(localStorage.getItem('neesh_orders') || '[]');
-        setUserOrders(savedOrders);
-      }
-    } catch (e) {}
   }, [user, isOpen]);
 
   if (!isOpen) return null;
@@ -85,8 +88,9 @@ export const AccountDashboard: React.FC<AccountDashboardProps> = ({
       if (user && (firstName !== user.firstName || lastName !== user.lastName)) {
         await user.update({ firstName, lastName });
       }
-      localStorage.setItem('neesh_user_phone', phone);
-      localStorage.setItem('neesh_profile_details', JSON.stringify({ address, city, pincode, phone }));
+      if (user) {
+        await api.saveUserProfile(user.id, { address, city, pincode, phone, wishlist, recentViews: recentProducts });
+      }
       setSaveSuccess(true);
       setIsEditingProfile(false);
       setTimeout(() => setSaveSuccess(false), 3000);

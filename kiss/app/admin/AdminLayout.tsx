@@ -39,8 +39,9 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onBackToStore }) => {
         setPingMessage(`OK (${duration}ms)`);
         console.log('Appwrite ping response:', res);
       } else {
-        const endpoint = process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT || 'https://sgp.cloud.appwrite.io/v1';
-        const projectId = process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID || '6a8d5a010000ea833fb9';
+        const endpoint = process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT || '';
+        const projectId = process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID || '';
+        if (!endpoint || !projectId) throw new Error('Appwrite environment variables missing');
         const res = await fetch(`${endpoint}/health`, {
           headers: { 'X-Appwrite-Project': projectId }
         });

@@ -1,66 +1,53 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { api } from '../services/api';
+import { useConfirm } from '../components/CustomConfirmModal';
 
 export const PerfumersCelebritiesManager: React.FC = () => {
+  const { showAlert } = useConfirm();
   const [activeSection, setActiveSection] = useState<'perfumers' | 'celebrities'>('perfumers');
   const [saved, setSaved] = useState(false);
+  const [perfumers, setPerfumers] = useState<any[]>([]);
+  const [celebrities, setCelebrities] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const [perfumers, setPerfumers] = useState([
-    {
-      id: 'julien',
-      name: 'Julien Rasquinet',
-      quote: 'Fragrance is architecture in liquid form. Every accord must be balanced with absolute precision.',
-      award: 'Best Italian Perfumer Award - 2025',
-      bio: 'Trained under legendary Master Perfumer Pierre Bourdon. Created iconic vintage formulations for world-renowned haute perfumery houses.',
-      image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=800&q=80',
-      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80'
-    },
-    {
-      id: 'christian',
-      name: 'Christian Provenzano',
-      quote: 'The secret to unmatched longevity is the age and purity of the natural resins and raw agarwood.',
-      award: 'Global Master Perfumer of the Year',
-      bio: 'Over 40 years of mastery blending exotic Middle Eastern ouds with classical French fine perfumery.',
-      image: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=800&q=80',
-      avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&q=80'
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      const [perfData, celebData] = await Promise.all([
+        api.getPerfumers(),
+        api.getCelebrities()
+      ]);
+      setPerfumers(perfData || []);
+      setCelebrities(celebData || []);
+    } catch (e) {
+      console.error('Failed to load data:', e);
+    } finally {
+      setLoading(false);
     }
-  ]);
+  };
 
-  const [celebrities, setCelebrities] = useState([
-    {
-      id: 'allu',
-      name: 'Allu Arjun',
-      perfume: 'SIGNATURE SCENT',
-      image: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=600&q=80',
-      bottleThumb: 'https://images.unsplash.com/photo-1583445013765-46c20c4a6772?auto=format&fit=crop&w=200&q=80'
-    },
-    {
-      id: 'raashii',
-      name: 'Raashii Khanna',
-      perfume: 'MEHR',
-      image: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80',
-      bottleThumb: 'https://images.unsplash.com/photo-1594035910387-fea47794261f?auto=format&fit=crop&w=200&q=80'
-    },
-    {
-      id: 'jim',
-      name: 'Jim Sarbh',
-      perfume: 'GLAZED WATER',
-      image: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=600&q=80',
-      bottleThumb: 'https://images.unsplash.com/photo-1523293182086-7651a899d37f?auto=format&fit=crop&w=200&q=80'
-    },
-    {
-      id: 'gauahar',
-      name: 'Gauahar Khan',
-      perfume: 'HAUTE TOBACCO',
-      image: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=600&q=80',
-      bottleThumb: 'https://images.unsplash.com/photo-1616949755610-8c9bbc08f138?auto=format&fit=crop&w=200&q=80'
-    }
-  ]);
+  useEffect(() => {
+    loadData();
+  }, []);
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
+    try {
+      if (activeSection === 'perfumers') {
+        await api.savePerfumers(perfumers);
+      } else {
+        await api.saveCelebrities(celebrities);
+      }
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch (err: any) {
+      await showAlert({
+        title: 'Save Failed',
+        message: err.message || 'Failed to save changes.',
+        variant: 'danger'
+      });
+    }
   };
 
   return (
@@ -74,16 +61,16 @@ export const PerfumersCelebritiesManager: React.FC = () => {
         <div className="flex items-center gap-2">
           <button
             onClick={() => setActiveSection('perfumers')}
-            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${
-              activeSection === 'perfumers' ? 'bg-[#c59b48] text-black' : 'bg-slate-100 text-slate-700'
+            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              activeSection === 'perfumers' ? 'bg-[#c59b48] text-black' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
             }`}
           >
             Master Perfumers
           </button>
           <button
             onClick={() => setActiveSection('celebrities')}
-            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${
-              activeSection === 'celebrities' ? 'bg-[#c59b48] text-black' : 'bg-slate-100 text-slate-700'
+            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              activeSection === 'celebrities' ? 'bg-[#c59b48] text-black' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
             }`}
           >
             Celebrity Spotlights
@@ -92,15 +79,15 @@ export const PerfumersCelebritiesManager: React.FC = () => {
       </div>
 
       {saved && (
-        <div className="p-3 bg-emerald-100 border border-emerald-200 text-emerald-800 text-xs font-semibold rounded-lg">
-          ✓ Profile changes updated successfully!
+        <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold rounded-lg">
+          Changes updated and synchronized successfully!
         </div>
       )}
 
       {activeSection === 'perfumers' ? (
         <form onSubmit={handleSave} className="space-y-4">
           {perfumers.map((p, idx) => (
-            <div key={p.id} className="bg-white p-5 sm:p-6 rounded-2xl border border-slate-200 shadow-xs grid grid-cols-1 md:grid-cols-12 gap-5 sm:gap-6 items-center">
+            <div key={p.id || idx} className="bg-white p-5 sm:p-6 rounded-2xl border border-slate-200 shadow-xs grid grid-cols-1 md:grid-cols-12 gap-5 sm:gap-6 items-center">
               <div className="md:col-span-3 flex flex-col items-center text-center">
                 <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full border-2 border-[#d6a750] p-1 overflow-hidden bg-slate-100 shadow-md">
                   <img src={p.image} alt={p.name} className="w-full h-full object-cover rounded-full" />
@@ -116,7 +103,7 @@ export const PerfumersCelebritiesManager: React.FC = () => {
                   <label className="block font-semibold text-slate-700 mb-1">Award / Honor Title</label>
                   <input
                     type="text"
-                    value={p.award}
+                    value={p.award || ''}
                     onChange={(e) => {
                       const upd = [...perfumers];
                       upd[idx].award = e.target.value;
@@ -130,7 +117,7 @@ export const PerfumersCelebritiesManager: React.FC = () => {
                   <label className="block font-semibold text-slate-700 mb-1">Signature Quote</label>
                   <input
                     type="text"
-                    value={p.quote}
+                    value={p.quote || ''}
                     onChange={(e) => {
                       const upd = [...perfumers];
                       upd[idx].quote = e.target.value;
@@ -144,7 +131,7 @@ export const PerfumersCelebritiesManager: React.FC = () => {
                   <label className="block font-semibold text-slate-700 mb-1">Biography</label>
                   <textarea
                     rows={2}
-                    value={p.bio}
+                    value={p.bio || ''}
                     onChange={(e) => {
                       const upd = [...perfumers];
                       upd[idx].bio = e.target.value;
@@ -169,7 +156,7 @@ export const PerfumersCelebritiesManager: React.FC = () => {
       ) : (
         <form onSubmit={handleSave} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {celebrities.map((c, idx) => (
-            <div key={c.id} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-3.5 text-xs">
+            <div key={c.id || idx} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-3.5 text-xs">
               <div className="flex items-center gap-3">
                 <img src={c.image} alt={c.name} className="w-14 h-16 object-cover rounded-xl shadow-xs bg-slate-100 border border-slate-200" />
                 <div className="flex-1 min-w-0">
@@ -182,7 +169,7 @@ export const PerfumersCelebritiesManager: React.FC = () => {
                 <label className="block font-semibold text-slate-700 mb-1">Celebrity Name</label>
                 <input
                   type="text"
-                  value={c.name}
+                  value={c.name || ''}
                   onChange={(e) => {
                     const upd = [...celebrities];
                     upd[idx].name = e.target.value;
@@ -196,7 +183,7 @@ export const PerfumersCelebritiesManager: React.FC = () => {
                 <label className="block font-semibold text-slate-700 mb-1">Endorsed Fragrance</label>
                 <input
                   type="text"
-                  value={c.perfume}
+                  value={c.perfume || ''}
                   onChange={(e) => {
                     const upd = [...celebrities];
                     upd[idx].perfume = e.target.value;

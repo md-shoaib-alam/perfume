@@ -12,7 +12,6 @@ export const DashboardOverview: React.FC<{ onNavigateTo: (tab: string) => void }
     lowStockProducts: 1,
     recentOrders: []
   });
-
   useEffect(() => {
     const load = async () => {
       try {
@@ -32,19 +31,19 @@ export const DashboardOverview: React.FC<{ onNavigateTo: (tab: string) => void }
         <div>
           <h2 className="text-2xl font-serif font-bold text-[#d6a750]">Store Performance Hub</h2>
           <p className="text-xs text-slate-300 mt-1">
-            Real-time analytics and inventory status from MongoDB & Storefront.
+            Real-time analytics and inventory status from Appwrite & Storefront.
           </p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-2.5">
           <button
             onClick={() => onNavigateTo('products')}
-            className="px-4 py-2 bg-[#c59b48] hover:bg-[#b58b38] text-black font-bold text-xs uppercase tracking-wider rounded shadow-md transition-all"
+            className="px-4 py-2 bg-[#c59b48] hover:bg-[#b58b38] text-black font-bold text-xs uppercase tracking-wider rounded shadow-md transition-all cursor-pointer"
           >
             + Add Product
           </button>
           <button
             onClick={() => onNavigateTo('orders')}
-            className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white font-medium text-xs uppercase tracking-wider rounded border border-white/20 transition-all"
+            className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white font-medium text-xs uppercase tracking-wider rounded border border-white/20 transition-all cursor-pointer"
           >
             View Orders
           </button>

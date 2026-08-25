@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import { api } from '../services/api';
 
 export interface HeroSlide {
   id: string;
@@ -10,65 +11,32 @@ export interface HeroSlide {
   linkUrl: string;
 }
 
-const DEFAULT_SLIDES: HeroSlide[] = [
-  {
-    id: 'slide-1',
-    name: 'Haute Vetiver Launch',
-    desktopImage: '/assets/hv-launch-banner-desktop_jpg.webp',
-    mobileImage: '/assets/hv-launch-banner-mobile_jpg.webp',
-    linkUrl: '#bestsellers'
-  },
-  {
-    id: 'slide-2',
-    name: 'Royal Oud Edition',
-    desktopImage: '/assets/hv-launch-banner-desktop_jpg.webp',
-    mobileImage: '/assets/hv-launch-banner-mobile_jpg.webp',
-    linkUrl: '#catalog'
-  }
-];
-
 interface HeroSectionProps {
   onShopNow: () => void;
 }
 
 export const HeroSection: React.FC<HeroSectionProps> = ({ onShopNow }) => {
-  const [slides, setSlides] = useState<HeroSlide[]>(DEFAULT_SLIDES);
+  const [slides, setSlides] = useState<HeroSlide[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
   const touchStartX = useRef<number>(0);
 
-  // Load slides dynamically from storage & sync
+  // Load slides dynamically from Appwrite
   useEffect(() => {
-    const loadSlides = () => {
+    const loadSlides = async () => {
       try {
-        if (typeof window !== 'undefined') {
-          const stored = localStorage.getItem('neesh_hero_slides');
-          if (stored) {
-            const parsed = JSON.parse(stored);
-            if (Array.isArray(parsed) && parsed.length > 0) {
-              // Ensure fields exist for image-only banner
-              const formatted: HeroSlide[] = parsed.map((s: any, idx: number) => ({
-                id: s.id || `slide-${idx + 1}`,
-                name: s.name || s.title || `Banner ${idx + 1}`,
-                desktopImage: s.desktopImage || s.image || '/assets/hv-launch-banner-desktop_jpg.webp',
-                mobileImage: s.mobileImage || s.image || '/assets/hv-launch-banner-mobile_jpg.webp',
-                linkUrl: s.linkUrl || s.buttonLink || '#bestsellers'
-              }));
-              setSlides(formatted);
-              return;
-            }
-          }
+        const data = await api.getHeroSlides();
+        if (data) {
+          setSlides(data);
         }
       } catch (e) {}
-      setSlides(DEFAULT_SLIDES);
     };
-
     loadSlides();
     window.addEventListener('neesh_hero_updated', loadSlides);
-    window.addEventListener('storage', loadSlides);
+    window.addEventListener('focus', loadSlides);
     return () => {
       window.removeEventListener('neesh_hero_updated', loadSlides);
-      window.removeEventListener('storage', loadSlides);
+      window.removeEventListener('focus', loadSlides);
     };
   }, []);
 
@@ -82,6 +50,8 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onShopNow }) => {
 
     return () => clearInterval(timer);
   }, [slides.length, isHovered]);
+
+  if (slides.length === 0) return null;
 
   const handleNext = () => {
     setCurrentIndex((prev) => (prev + 1) % slides.length);
@@ -145,6 +115,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onShopNow }) => {
               <img
                 src={slide.desktopImage}
                 alt={slide.name || 'Hero Banner'}
+                decoding="async"
                 className="hidden md:block w-full h-auto object-contain select-none"
               />
 
@@ -152,6 +123,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onShopNow }) => {
               <img
                 src={slide.mobileImage || slide.desktopImage}
                 alt={slide.name || 'Hero Banner Mobile'}
+                decoding="async"
                 className="block md:hidden w-full h-auto object-contain select-none"
               />
             </a>

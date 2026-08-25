@@ -46,7 +46,9 @@ export const GenderCampaignBanners: React.FC<GenderCampaignBannersProps> = ({ on
               <img
                 src={item.image}
                 alt={item.title}
-                className="w-full h-full object-cover"
+                loading="lazy"
+                decoding="async"
+                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
               />
 
               {/* Gradient Overlay for Text Readability */}

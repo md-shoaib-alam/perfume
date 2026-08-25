@@ -10,8 +10,10 @@ import { Footer } from '../components/Footer';
 import { CartDrawer } from '../components/CartDrawer';
 import { MenuDrawer } from '../components/MenuDrawer';
 import { AuthModal } from '../auth/AuthModal';
-import { Product } from '../data/products';
-import type { CartItem } from '../types';
+import { api } from '../services/api';
+import type { Product, CartItem } from '../types';
+
+
 
 type TabKey = 
   | 'dashboard' 
@@ -29,60 +31,76 @@ export default function AccountPage() {
   const { signOut } = useClerk();
 
   const [activeTab, setActiveTab] = useState<TabKey>('dashboard');
-  const [isEditingProfile, setIsEditingProfile] = useState(false);
-  const [saveSuccess, setSaveSuccess] = useState(false);
-
-  // Cart & Menu state for navbar
-  const [cartItems, setCartItems] = useState<CartItem[]>([]);
-  const [isCartOpen, setIsCartOpen] = useState(false);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-
-  // Profile Form States
+  
+  // Profile form state
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
   const [city, setCity] = useState('');
   const [pincode, setPincode] = useState('');
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
 
-  // Storage data
+  // Password change state
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordSuccess, setPasswordSuccess] = useState(false);
+  const [passwordError, setPasswordError] = useState('');
+
+  // Lists state
   const [wishlist, setWishlist] = useState<Product[]>([]);
   const [recentProducts, setRecentProducts] = useState<Product[]>([]);
   const [userOrders, setUserOrders] = useState<any[]>([]);
-  const [pwdMsg, setPwdMsg] = useState('');
+
+  // Cart & Menu state for layout
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const [isCartOpen, setIsCartOpen] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     if (isLoaded && !isSignedIn) {
-      setIsAuthModalOpen(true);
+      router.push('/auth/sign-in');
+      return;
     }
 
     if (user) {
       setFirstName(user.firstName || '');
       setLastName(user.lastName || '');
       
-      const storedPhone = typeof window !== 'undefined' ? localStorage.getItem('neesh_user_phone') || '' : '';
-      setPhone(user.phoneNumbers?.[0]?.phoneNumber || storedPhone || '');
-      
-      const savedProfile = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('neesh_profile_details') || '{}') : {};
-      if (savedProfile.address) setAddress(savedProfile.address);
-      if (savedProfile.city) setCity(savedProfile.city);
-      if (savedProfile.pincode) setPincode(savedProfile.pincode);
+      // Load live profile details from shared backend API
+      api.getUserProfile(user.id).then(profile => {
+        if (profile) {
+          if (profile.phone) setPhone(profile.phone);
+          else if (user.phoneNumbers?.[0]?.phoneNumber) setPhone(user.phoneNumbers[0].phoneNumber);
+          if (profile.address) setAddress(profile.address);
+          if (profile.city) setCity(profile.city);
+          if (profile.pincode) setPincode(profile.pincode);
+          if (profile.wishlist) setWishlist(profile.wishlist);
+          if (profile.recentViews) setRecentProducts(profile.recentViews);
+        }
+      }).catch(e => console.warn('Could not load user profile:', e));
+
+      // Sync Clerk user with Appwrite backend
+      api.syncUserWithAppwrite({
+        userId: user.id,
+        email: user.primaryEmailAddress?.emailAddress || user.emailAddresses?.[0]?.emailAddress || '',
+        firstName: user.firstName || '',
+        lastName: user.lastName || '',
+        phone: user.phoneNumbers?.[0]?.phoneNumber || ''
+      });
+
+      // Load live orders from Appwrite
+      api.getOrders(user.id).then(orders => {
+        if (orders && orders.length > 0) {
+          setUserOrders(orders);
+        }
+      }).catch(e => console.warn('Could not load user orders:', e));
     }
-
-    try {
-      if (typeof window !== 'undefined') {
-        const savedWishlist = JSON.parse(localStorage.getItem('neesh_wishlist') || '[]');
-        setWishlist(savedWishlist);
-
-        const savedRecent = JSON.parse(localStorage.getItem('neesh_recent_views') || '[]');
-        setRecentProducts(savedRecent);
-
-        const savedOrders = JSON.parse(localStorage.getItem('neesh_orders') || '[]');
-        setUserOrders(savedOrders);
-      }
-    } catch (e) {}
   }, [user, isLoaded, isSignedIn]);
 
   const email = user?.primaryEmailAddress?.emailAddress || user?.emailAddresses?.[0]?.emailAddress || 'User';
@@ -94,8 +112,19 @@ export default function AccountPage() {
       if (user && (firstName !== user.firstName || lastName !== user.lastName)) {
         await user.update({ firstName, lastName });
       }
-      localStorage.setItem('neesh_user_phone', phone);
-      localStorage.setItem('neesh_profile_details', JSON.stringify({ address, city, pincode, phone }));
+      if (user) {
+        await api.saveUserProfile(user.id, { address, city, pincode, phone, wishlist, recentViews: recentProducts });
+        await api.syncUserWithAppwrite({
+          userId: user.id,
+          email: user.primaryEmailAddress?.emailAddress || user.emailAddresses?.[0]?.emailAddress || '',
+          firstName,
+          lastName,
+          phone,
+          address,
+          city,
+          pincode
+        });
+      }
       setSaveSuccess(true);
       setIsEditingProfile(false);
       setTimeout(() => setSaveSuccess(false), 3000);

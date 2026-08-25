@@ -45,7 +45,10 @@ export const HouseOfNeeshCrest: React.FC<{ className?: string }> = ({ className 
   </svg>
 );
 
+import { useConfirm } from './CustomConfirmModal';
+
 export const Footer: React.FC = () => {
+  const { showAlert } = useConfirm();
   const [openSections, setOpenSections] = useState({
     getInTouch: false,
     policies: false,
@@ -60,10 +63,14 @@ export const Footer: React.FC = () => {
     }));
   };
 
-  const handleSubscribe = (e: React.FormEvent) => {
+  const handleSubscribe = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) return;
-    alert(`Thank you for subscribing with ${email}!`);
+    await showAlert({
+      title: 'Welcome to House of NEESH',
+      message: `Thank you for subscribing with ${email}! You will now receive private concierge notifications and exclusive fragrance drops.`,
+      variant: 'success'
+    });
     setEmail('');
   };
 

@@ -1,35 +1,27 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { api } from '../services/api';
+import { MediaUploader } from '../components/MediaUploader';
+
+
+import { useConfirm } from '../components/CustomConfirmModal';
 
 export const CollectionsManager: React.FC = () => {
-  const [circles, setCircles] = useState([
-    {
-      id: 'bureau',
-      name: 'Bureau',
-      subname: 'Collection',
-      image: 'https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?auto=format&fit=crop&w=400&q=80'
-    },
-    {
-      id: 'luxe',
-      name: 'Luxe',
-      subname: 'Collection',
-      image: 'https://images.unsplash.com/photo-1523293182086-7651a899d37f?auto=format&fit=crop&w=400&q=80'
-    },
-    {
-      id: 'haute',
-      name: 'Haute',
-      subname: 'Collection',
-      image: 'https://images.unsplash.com/photo-1594035910387-fea47794261f?auto=format&fit=crop&w=400&q=80'
-    },
-    {
-      id: 'miss-neesh',
-      name: 'Miss NEESH',
-      subname: 'Collection',
-      image: 'https://images.unsplash.com/photo-1547887537-6158d64c35b3?auto=format&fit=crop&w=400&q=80'
-    }
-  ]);
-
+  const { showAlert } = useConfirm();
+  const [circles, setCircles] = useState<any[]>([]);
   const [savedMessage, setSavedMessage] = useState(false);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const data = await api.getCollections();
+        if (data && data.length > 0) {
+          setCircles(data);
+        }
+      } catch (e) {}
+    };
+    load();
+  }, []);
 
   const handleUpdate = (idx: number, field: string, val: string) => {
     const updated = [...circles];
@@ -37,10 +29,23 @@ export const CollectionsManager: React.FC = () => {
     setCircles(updated);
   };
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSavedMessage(true);
-    setTimeout(() => setSavedMessage(false), 3000);
+    try {
+      for (const circle of circles) {
+        if (circle.id && !['bureau', 'luxe', 'haute', 'miss-neesh'].includes(circle.id)) {
+          await api.updateCollection(circle.id, circle);
+        }
+      }
+      setSavedMessage(true);
+      setTimeout(() => setSavedMessage(false), 3000);
+    } catch (err: any) {
+      await showAlert({
+        title: 'Error Saving Collections',
+        message: `Failed to save collections: ${err.message}`,
+        variant: 'danger'
+      });
+    }
   };
 
   return (
@@ -91,15 +96,12 @@ export const CollectionsManager: React.FC = () => {
                 />
               </div>
 
-              <div>
-                <label className="block font-semibold text-slate-700 mb-1">Image URL</label>
-                <input
-                  type="text"
-                  value={item.image}
-                  onChange={(e) => handleUpdate(idx, 'image', e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs focus:outline-none focus:border-[#d6a750]"
-                />
-              </div>
+              <MediaUploader
+                label="Story Circle Thumbnail Image *"
+                value={item.image}
+                onChange={(url) => handleUpdate(idx, 'image', url)}
+                helperText="Upload square/round image thumbnail."
+              />
             </div>
           </div>
         ))}

@@ -1,6 +1,9 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { api } from '../services/api';
+import { MediaUploader } from '../components/MediaUploader';
+import { useConfirm } from '../components/CustomConfirmModal';
 
 export interface ReelShort {
   id: string;
@@ -10,58 +13,11 @@ export interface ReelShort {
   image: string;
 }
 
-const DEFAULT_REELS: ReelShort[] = [
-  {
-    id: 'reel-1',
-    title: 'Dark Cacao',
-    price: 'Rs. 8,500',
-    subtitle: 'By Midnight',
-    image: 'https://images.unsplash.com/photo-1594035910387-fea47794261f?auto=format&fit=crop&w=600&q=80'
-  },
-  {
-    id: 'reel-2',
-    title: 'Haute Vetiver',
-    price: 'Rs. 8,500',
-    subtitle: 'Master Perfumer Gloves',
-    image: 'https://images.unsplash.com/photo-1547887537-6158d64c35b3?auto=format&fit=crop&w=600&q=80'
-  },
-  {
-    id: 'reel-3',
-    title: 'Indian Wild Vetiver',
-    price: 'Rs. 8,500',
-    subtitle: 'Wild Roots',
-    image: 'https://images.unsplash.com/photo-1523293182086-7651a899d37f?auto=format&fit=crop&w=600&q=80'
-  },
-  {
-    id: 'reel-4',
-    title: 'Anything Like This Before',
-    price: 'Rs. 8,500',
-    subtitle: 'Dew Drops',
-    image: 'https://images.unsplash.com/photo-1616949755610-8c9bbc08f138?auto=format&fit=crop&w=600&q=80'
-  },
-  {
-    id: 'reel-5',
-    title: 'Tsunara Fresh',
-    price: 'Rs. 7,990',
-    subtitle: 'Oceanic Rain',
-    image: 'https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?auto=format&fit=crop&w=600&q=80'
-  }
-];
-
-const DEFAULT_LOGOS = [
-  'VOGUE',
-  'COSMOPOLITAN',
-  'GQ',
-  'ELLE',
-  'GRAZIA',
-  'FORBES',
-  "HARPER'S BAZAAR",
-  "L'OFFICIEL"
-];
-
 export const ReelsPressManager: React.FC = () => {
+  const { showConfirm, showAlert } = useConfirm();
   const [reels, setReels] = useState<ReelShort[]>([]);
   const [logos, setLogos] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
   
   // Edit / Modal State
   const [editingReel, setEditingReel] = useState<ReelShort | null>(null);
@@ -75,25 +31,24 @@ export const ReelsPressManager: React.FC = () => {
   const [price, setPrice] = useState('');
   const [image, setImage] = useState('');
 
-  useEffect(() => {
+  const loadData = async () => {
+    setLoading(true);
     try {
-      const storedReels = localStorage.getItem('neesh_reels_data');
-      if (storedReels) {
-        setReels(JSON.parse(storedReels));
-      } else {
-        setReels(DEFAULT_REELS);
-      }
-
-      const storedLogos = localStorage.getItem('neesh_press_logos');
-      if (storedLogos) {
-        setLogos(JSON.parse(storedLogos));
-      } else {
-        setLogos(DEFAULT_LOGOS);
-      }
+      const [reelsData, logosData] = await Promise.all([
+        api.getReels(),
+        api.getPressLogos()
+      ]);
+      setReels(reelsData || []);
+      setLogos(logosData || []);
     } catch (e) {
-      setReels(DEFAULT_REELS);
-      setLogos(DEFAULT_LOGOS);
+      console.error('Failed to load reels/press:', e);
+    } finally {
+      setLoading(false);
     }
+  };
+
+  useEffect(() => {
+    loadData();
   }, []);
 
   const showToast = (msg: string) => {
@@ -101,16 +56,16 @@ export const ReelsPressManager: React.FC = () => {
     setTimeout(() => setSaveToast(''), 3000);
   };
 
-  const saveReelsToStorage = (updated: ReelShort[]) => {
+  const saveReelsToStorage = async (updated: ReelShort[]) => {
     setReels(updated);
-    localStorage.setItem('neesh_reels_data', JSON.stringify(updated));
+    await api.saveReels(updated);
     window.dispatchEvent(new Event('neesh_reels_updated'));
     showToast('Reels updated successfully!');
   };
 
-  const saveLogosToStorage = (updated: string[]) => {
+  const saveLogosToStorage = async (updated: string[]) => {
     setLogos(updated);
-    localStorage.setItem('neesh_press_logos', JSON.stringify(updated));
+    await api.savePressLogos(updated);
     window.dispatchEvent(new Event('neesh_reels_updated'));
     showToast('Press logos updated successfully!');
   };
@@ -133,7 +88,7 @@ export const ReelsPressManager: React.FC = () => {
     setIsModalOpen(true);
   };
 
-  const handleSaveReel = (e: React.FormEvent) => {
+  const handleSaveReel = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title || !image) return;
 
@@ -141,7 +96,7 @@ export const ReelsPressManager: React.FC = () => {
       const updated = reels.map((r) =>
         r.id === editingReel.id ? { ...r, title, subtitle, price, image } : r
       );
-      saveReelsToStorage(updated);
+      await saveReelsToStorage(updated);
     } else {
       const newReel: ReelShort = {
         id: `reel-${Date.now()}`,
@@ -150,40 +105,56 @@ export const ReelsPressManager: React.FC = () => {
         price,
         image
       };
-      saveReelsToStorage([...reels, newReel]);
+      await saveReelsToStorage([...reels, newReel]);
     }
     setIsModalOpen(false);
   };
 
-  const handleDeleteReel = (id: string) => {
-    if (confirm('Are you sure you want to delete this Reel short?')) {
+  const handleDeleteReel = async (id: string) => {
+    const confirmed = await showConfirm({
+      title: 'Delete Reel Short',
+      message: 'Are you sure you want to delete this Reel short from the homepage?',
+      confirmText: 'Delete',
+      variant: 'danger'
+    });
+    if (confirmed) {
       const updated = reels.filter((r) => r.id !== id);
-      saveReelsToStorage(updated);
+      await saveReelsToStorage(updated);
     }
   };
 
-  const handleAddLogo = (e: React.FormEvent) => {
+  const handleAddLogo = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newLogoName.trim()) return;
     const upper = newLogoName.trim().toUpperCase();
     if (logos.includes(upper)) {
-      alert('This publication is already in the list.');
+      await showAlert({
+        title: 'Duplicate Logo',
+        message: 'This publication is already in the list.',
+        variant: 'warning'
+      });
       return;
     }
     const updated = [...logos, upper];
-    saveLogosToStorage(updated);
+    await saveLogosToStorage(updated);
     setNewLogoName('');
   };
 
-  const handleRemoveLogo = (index: number) => {
+  const handleRemoveLogo = async (index: number) => {
     const updated = logos.filter((_, i) => i !== index);
-    saveLogosToStorage(updated);
+    await saveLogosToStorage(updated);
   };
 
-  const handleResetDefaults = () => {
-    if (confirm('Reset all Reels and Featured In logos to default?')) {
-      saveReelsToStorage(DEFAULT_REELS);
-      saveLogosToStorage(DEFAULT_LOGOS);
+  const handleResetDefaults = async () => {
+    const confirmed = await showConfirm({
+      title: 'Reset to Clean State',
+      message: 'Remove all custom reels and press logos?',
+      confirmText: 'Reset',
+      variant: 'warning'
+    });
+    if (confirmed) {
+      await saveReelsToStorage([]);
+      await saveLogosToStorage([]);
     }
   };
 
@@ -444,27 +415,12 @@ export const ReelsPressManager: React.FC = () => {
                 </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Vertical Cover Image URL</label>
-                <input
-                  type="url"
-                  required
-                  value={image}
-                  onChange={(e) => setImage(e.target.value)}
-                  placeholder="https://images.unsplash.com/..."
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:border-[#c59b48]"
-                />
-              </div>
-
-              {/* Quick Image Preview */}
-              {image && (
-                <div className="pt-2 flex items-center gap-4">
-                  <div className="w-16 h-28 rounded-lg overflow-hidden bg-slate-100 border border-slate-200 shrink-0">
-                    <img src={image} alt="Preview" className="w-full h-full object-cover" />
-                  </div>
-                  <p className="text-[11px] text-slate-400">Vertical cover preview (9:16 aspect ratio)</p>
-                </div>
-              )}
+              <MediaUploader
+                label="Vertical Cover Media (Image or Video) *"
+                value={image}
+                onChange={(url) => setImage(url)}
+                helperText="Upload vertical video or 9:16 cover photo."
+              />
 
               <div className="flex justify-end gap-3 pt-4 border-t border-slate-100 mt-6">
                 <button

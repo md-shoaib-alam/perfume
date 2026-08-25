@@ -1,247 +1,837 @@
-import type { Product } from '../types';
-import { PRODUCTS as INITIAL_PRODUCTS } from '../data/products';
+import { databases, APPWRITE_DATABASE_ID } from '@/lib/appwrite';
+import { ID, Query } from 'appwrite';
+import type { Product, Review } from '../types';
 
-const API_BASE_URL = typeof process !== 'undefined' && process.env.NEXT_PUBLIC_API_URL 
-  ? process.env.NEXT_PUBLIC_API_URL 
-  : 'http://localhost:5000/api';
-const ADMIN_SECRET = 'admin123';
-
-// Helper to get stored auth token or secret
-const getAuthHeaders = () => ({
-  'Content-Type': 'application/json',
-  'x-admin-secret': ADMIN_SECRET
-});
-
-// Local storage keys for offline / fallback
-const STORAGE_KEYS = {
-  PRODUCTS: 'neesh_products_v1',
-  ORDERS: 'neesh_orders_v1',
-  SETTINGS: 'neesh_settings_v1',
-  COLLECTIONS: 'neesh_collections_v1'
-};
-
-// Initialize localStorage fallback safely (client-only)
-const getLocalProducts = (): Product[] => {
-  if (typeof window === 'undefined') return INITIAL_PRODUCTS;
-  const saved = localStorage.getItem(STORAGE_KEYS.PRODUCTS);
-  if (saved) {
+// Helper to format Appwrite Product document to Product interface
+const formatProductDoc = (doc: any): Product => {
+  let parsedNotes = { top: [], heart: [], base: [] };
+  if (doc.notes) {
     try {
-      return JSON.parse(saved);
+      parsedNotes = typeof doc.notes === 'string' ? JSON.parse(doc.notes) : doc.notes;
     } catch (e) {
-      return INITIAL_PRODUCTS;
+      parsedNotes = { top: [doc.notes], heart: [], base: [] };
     }
   }
-  try {
-    localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(INITIAL_PRODUCTS));
-  } catch (e) {}
-  return INITIAL_PRODUCTS;
+
+  return {
+    id: doc.$id || doc.id,
+    name: doc.name || 'Untitled Perfume',
+    subtitle: doc.subtitle || '',
+    category: doc.category || 'extrait-de-parfum',
+    gender: doc.gender || 'Unisex',
+    price: Number(doc.price) || 0,
+    originalPrice: Number(doc.originalPrice || doc.price) || 0,
+    rating: Number(doc.rating) || 4.8,
+    reviewsCount: Number(doc.reviewsCount) || 0,
+    volume: doc.volume || '100ml',
+    image: doc.image || '',
+    hoverImage: doc.hoverImage || doc.image || '',
+    isBestseller: Boolean(doc.isBestseller),
+    isNew: Boolean(doc.isNew),
+    isPreOrder: Boolean(doc.isPreOrder),
+    shippingNote: doc.shippingNote || '',
+    buttonText: doc.buttonText || '',
+    tagline: doc.tagline || '',
+    badgeText: doc.badgeText || '',
+    badgeSubtext: doc.badgeSubtext || '',
+    notes: parsedNotes,
+    description: doc.description || '',
+    sizeOptions: [
+      { size: '15ml', price: Math.round(Number(doc.price) * 0.25), originalPrice: Math.round(Number(doc.originalPrice || doc.price) * 0.25), isSoldOut: false },
+      { size: '50ml', price: Math.round(Number(doc.price) * 0.65), originalPrice: Math.round(Number(doc.originalPrice || doc.price) * 0.65), isSoldOut: false },
+      { size: '100ml', price: Number(doc.price), originalPrice: Number(doc.originalPrice || doc.price), isSoldOut: false }
+    ]
+  };
 };
 
-// API Services
 export const api = {
-  // PRODUCTS
-  async getProducts(): Promise<Product[]> {
+  // =========================================================================
+  // 1. PRODUCTS
+  // =========================================================================
+  async getProducts(category?: string, gender?: string): Promise<Product[]> {
     try {
-      const res = await fetch(`${API_BASE_URL}/products`);
-      if (!res.ok) throw new Error('Network response failed');
-      const data = await res.json();
-      if (data.success && data.data) {
-        if (typeof window !== 'undefined') {
-          localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(data.data));
-        }
-        return data.data;
+      const params = new URLSearchParams();
+      if (category) params.set('category', category);
+      if (gender && gender !== 'All') params.set('gender', gender);
+      
+      const res = await fetch(`/api/products?${params.toString()}`, { cache: 'no-store' });
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data) && data.length > 0) return data;
       }
-      return getLocalProducts();
     } catch (err) {
-      console.warn('Backend offline, using client storage products:', err);
-      return getLocalProducts();
+      console.warn('API /api/products proxy error, trying direct SDK:', err);
+    }
+
+    try {
+      const queries: string[] = [Query.limit(100)];
+      if (category) queries.push(Query.equal('category', category));
+      if (gender && gender !== 'All') queries.push(Query.equal('gender', gender));
+
+      const res = await databases.listDocuments(APPWRITE_DATABASE_ID, 'products', queries);
+      if (res && res.documents) {
+        return res.documents.map(formatProductDoc);
+      }
+    } catch (err) {
+      console.warn('Appwrite getProducts query error:', err);
+    }
+    return [];
+  },
+
+  async getProductById(id: string): Promise<Product | null> {
+    try {
+      const res = await fetch(`/api/products?id=${encodeURIComponent(id)}`, { cache: 'no-store' });
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.id) return data;
+      }
+    } catch (err) {
+      console.warn('API /api/products/[id] error, trying direct SDK:', err);
+    }
+
+    try {
+      const doc = await databases.getDocument(APPWRITE_DATABASE_ID, 'products', id);
+      return formatProductDoc(doc);
+    } catch (err) {
+      console.warn('Appwrite getProductById query error:', err);
+      return null;
     }
   },
 
   async createProduct(product: Partial<Product>): Promise<Product> {
     try {
-      const res = await fetch(`${API_BASE_URL}/products`, {
+      const res = await fetch('/api/products', {
         method: 'POST',
-        headers: getAuthHeaders(),
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(product)
       });
-      const data = await res.json();
-      if (data.success && data.data) {
-        const current = getLocalProducts();
-        if (typeof window !== 'undefined') {
-          localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify([data.data, ...current]));
-        }
-        return data.data;
+      if (res.ok) {
+        return await res.json();
       }
-      throw new Error(data.message || 'Failed to create');
     } catch (err) {
-      const current = getLocalProducts();
-      const newProd = {
-        ...product,
-        id: product.name?.toLowerCase().replace(/\s+/g, '-') || `prod-${Date.now()}`
-      } as Product;
-      if (typeof window !== 'undefined') {
-        localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify([newProd, ...current]));
-      }
-      return newProd;
+      console.warn('API createProduct failed, fallback to SDK:', err);
+    }
+
+    try {
+      const docData: any = {
+        name: product.name || 'Untitled Perfume',
+        subtitle: product.subtitle || '',
+        category: product.category || 'extrait-de-parfum',
+        gender: product.gender || 'Unisex',
+        price: Number(product.price || 0),
+        originalPrice: Number(product.originalPrice || product.price || 0),
+        rating: Number(product.rating || 4.8),
+        reviewsCount: Number(product.reviewsCount || 0),
+        volume: product.volume || '100ml',
+        image: product.image || '',
+        hoverImage: product.hoverImage || product.image || '',
+        description: product.description || '',
+        notes: JSON.stringify(product.notes || {}),
+        isBestseller: Boolean(product.isBestseller),
+        isNew: Boolean(product.isNew),
+        stock: 100
+      };
+
+      const doc = await databases.createDocument(
+        APPWRITE_DATABASE_ID,
+        'products',
+        ID.unique(),
+        docData
+      );
+      return formatProductDoc(doc);
+    } catch (err: any) {
+      console.error('Appwrite createProduct error:', err);
+      throw new Error(err.message || 'Failed to create product in Appwrite');
     }
   },
 
   async updateProduct(id: string, updates: Partial<Product>): Promise<Product> {
     try {
-      const res = await fetch(`${API_BASE_URL}/products/${id}`, {
+      const res = await fetch('/api/products', {
         method: 'PUT',
-        headers: getAuthHeaders(),
-        body: JSON.stringify(updates)
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, updates })
       });
-      const data = await res.json();
-      if (data.success && data.data) {
-        const current = getLocalProducts().map((p) => (p.id === id ? { ...p, ...updates } : p));
-        if (typeof window !== 'undefined') {
-          localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(current));
-        }
-        return data.data;
+      if (res.ok) {
+        return await res.json();
       }
-      throw new Error('Failed to update');
     } catch (err) {
-      const current = getLocalProducts().map((p) => (p.id === id ? { ...p, ...updates } : p));
-      if (typeof window !== 'undefined') {
-        localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(current));
-      }
-      return current.find((p) => p.id === id) as Product;
+      console.warn('API updateProduct failed, fallback to SDK:', err);
+    }
+
+    try {
+      const cleanData: any = {};
+      if (updates.name !== undefined) cleanData.name = updates.name;
+      if (updates.subtitle !== undefined) cleanData.subtitle = updates.subtitle;
+      if (updates.category !== undefined) cleanData.category = updates.category;
+      if (updates.gender !== undefined) cleanData.gender = updates.gender;
+      if (updates.price !== undefined) cleanData.price = Number(updates.price);
+      if (updates.originalPrice !== undefined) cleanData.originalPrice = Number(updates.originalPrice);
+      if (updates.rating !== undefined) cleanData.rating = Number(updates.rating);
+      if (updates.reviewsCount !== undefined) cleanData.reviewsCount = Number(updates.reviewsCount);
+      if (updates.volume !== undefined) cleanData.volume = updates.volume;
+      if (updates.image !== undefined) cleanData.image = updates.image;
+      if (updates.hoverImage !== undefined) cleanData.hoverImage = updates.hoverImage;
+      if (updates.description !== undefined) cleanData.description = updates.description;
+      if (updates.notes !== undefined) cleanData.notes = JSON.stringify(updates.notes);
+      if (updates.isBestseller !== undefined) cleanData.isBestseller = Boolean(updates.isBestseller);
+      if (updates.isNew !== undefined) cleanData.isNew = Boolean(updates.isNew);
+
+      const doc = await databases.updateDocument(
+        APPWRITE_DATABASE_ID,
+        'products',
+        id,
+        cleanData
+      );
+      return formatProductDoc(doc);
+    } catch (err: any) {
+      console.error('Appwrite updateProduct error:', err);
+      throw new Error(err.message || 'Failed to update product in Appwrite');
     }
   },
 
   async deleteProduct(id: string): Promise<boolean> {
     try {
-      await fetch(`${API_BASE_URL}/products/${id}`, {
-        method: 'DELETE',
-        headers: getAuthHeaders()
-      });
+      const res = await fetch(`/api/products?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
+      if (res.ok) return true;
     } catch (err) {
-      console.warn('API error during delete:', err);
+      console.warn('API deleteProduct failed, fallback to SDK:', err);
     }
-    const current = getLocalProducts().filter((p) => p.id !== id);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(current));
+
+    try {
+      await databases.deleteDocument(APPWRITE_DATABASE_ID, 'products', id);
+      return true;
+    } catch (err: any) {
+      console.error('Appwrite deleteProduct error:', err);
+      return false;
     }
-    return true;
   },
 
-  // ORDERS
-  async getOrders(): Promise<any[]> {
+  // =========================================================================
+  // 2. ORDERS
+  // =========================================================================
+  // =========================================================================
+  // 2. ORDERS
+  // =========================================================================
+  async getOrders(userId?: string): Promise<any[]> {
     try {
-      const res = await fetch(`${API_BASE_URL}/orders`, { headers: getAuthHeaders() });
-      const data = await res.json();
-      if (data.success && data.data) {
-        if (typeof window !== 'undefined') {
-          localStorage.setItem(STORAGE_KEYS.ORDERS, JSON.stringify(data.data));
-        }
-        return data.data;
+      const url = userId ? `/api/orders?userId=${encodeURIComponent(userId)}` : '/api/orders';
+      const res = await fetch(url, { cache: 'no-store' });
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data)) return data;
       }
-    } catch (e) {
-      console.warn('Using local orders');
+    } catch (err) {
+      console.warn('API /api/orders error, trying direct SDK:', err);
     }
-    if (typeof window === 'undefined') return [];
-    const saved = localStorage.getItem(STORAGE_KEYS.ORDERS);
-    return saved ? JSON.parse(saved) : [];
+
+    try {
+      const queries: string[] = [Query.limit(100), Query.orderDesc('$createdAt')];
+      if (userId) {
+        queries.push(Query.equal('userId', userId));
+      }
+
+      const res = await databases.listDocuments(APPWRITE_DATABASE_ID, 'orders', queries);
+      if (res && res.documents) {
+        return res.documents.map((doc) => {
+          let parsedItems = [];
+          try {
+            parsedItems = typeof doc.items === 'string' ? JSON.parse(doc.items) : doc.items;
+          } catch (e) {
+            parsedItems = [];
+          }
+          return {
+            _id: doc.$id,
+            id: doc.$id,
+            orderNumber: `NSH-${doc.$id.slice(-5).toUpperCase()}`,
+            userId: doc.userId,
+            customerName: doc.customerName,
+            customerEmail: doc.customerEmail,
+            customerPhone: doc.customerPhone,
+            shippingAddress: doc.shippingAddress,
+            total: Number(doc.totalAmount),
+            totalAmount: Number(doc.totalAmount),
+            status: doc.status || 'pending',
+            orderStatus: doc.status || 'pending',
+            paymentStatus: doc.paymentStatus || 'pending',
+            items: parsedItems,
+            createdAt: doc.$createdAt
+          };
+        });
+      }
+    } catch (err) {
+      console.warn('Appwrite getOrders error:', err);
+    }
+    return [];
   },
 
   async createOrder(orderData: any): Promise<any> {
     try {
-      const res = await fetch(`${API_BASE_URL}/orders`, {
+      const res = await fetch('/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(orderData)
       });
-      const data = await res.json();
-      if (data.success && data.data) return data.data;
-    } catch (e) {
-      console.warn('Saving order to local store');
+      if (res.ok) {
+        return await res.json();
+      }
+    } catch (err) {
+      console.warn('API createOrder failed, fallback to direct SDK:', err);
     }
-    const currentOrders = await this.getOrders();
-    const newOrder = {
-      ...orderData,
-      _id: `ord-${Date.now()}`,
-      orderNumber: `NSH-${Math.floor(1000 + Math.random() * 9000)}`,
-      createdAt: new Date().toISOString()
-    };
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(STORAGE_KEYS.ORDERS, JSON.stringify([newOrder, ...currentOrders]));
+
+    try {
+      const doc = await databases.createDocument(
+        APPWRITE_DATABASE_ID,
+        'orders',
+        ID.unique(),
+        {
+          userId: orderData.userId || '',
+          customerName: orderData.customerName || orderData.name || 'Customer',
+          customerEmail: orderData.customerEmail || orderData.email || '',
+          customerPhone: orderData.customerPhone || orderData.phone || '',
+          shippingAddress: typeof orderData.shippingAddress === 'string' 
+            ? orderData.shippingAddress 
+            : JSON.stringify(orderData.shippingAddress || {}),
+          totalAmount: Number(orderData.total || orderData.totalAmount || 0),
+          status: orderData.status || 'pending',
+          paymentStatus: orderData.paymentStatus || 'pending',
+          items: JSON.stringify(orderData.items || [])
+        }
+      );
+      return {
+        _id: doc.$id,
+        id: doc.$id,
+        orderNumber: `NSH-${doc.$id.slice(-5).toUpperCase()}`,
+        ...orderData,
+        createdAt: doc.$createdAt
+      };
+    } catch (err: any) {
+      console.error('Appwrite createOrder error:', err);
+      throw new Error(err.message || 'Failed to place order in Appwrite');
     }
-    return newOrder;
   },
 
-  async updateOrderStatus(id: string, orderStatus: string): Promise<any> {
+  async updateOrderStatus(id: string, status: string, trackingNumber?: string): Promise<any> {
     try {
-      const res = await fetch(`${API_BASE_URL}/orders/${id}/status`, {
-        method: 'PATCH',
-        headers: getAuthHeaders(),
-        body: JSON.stringify({ orderStatus })
+      const res = await fetch('/api/orders', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, status, trackingNumber })
       });
-      const data = await res.json();
-      if (data.success && data.data) return data.data;
-    } catch (e) {
-      console.warn('Updating order locally');
+      if (res.ok) {
+        return await res.json();
+      }
+    } catch (err) {
+      console.warn('API updateOrderStatus failed, fallback to direct SDK:', err);
     }
-    const currentOrders = await this.getOrders();
-    const updated = currentOrders.map((o) => (o._id === id || o.orderNumber === id ? { ...o, orderStatus } : o));
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(STORAGE_KEYS.ORDERS, JSON.stringify(updated));
-    }
-    return { orderStatus };
-  },
 
-  // STATS
-  async getStats(): Promise<any> {
     try {
-      const res = await fetch(`${API_BASE_URL}/admin/stats`, { headers: getAuthHeaders() });
-      const data = await res.json();
-      if (data.success && data.data) return data.data;
-    } catch (e) {
-      console.warn('Calculating local stats');
+      const doc = await databases.updateDocument(
+        APPWRITE_DATABASE_ID,
+        'orders',
+        id,
+        { status, trackingNumber }
+      );
+      return { id: doc.$id, status: doc.status, trackingNumber: (doc as any).trackingNumber };
+    } catch (err: any) {
+      console.error('Appwrite updateOrderStatus error:', err);
+      return { id, status };
     }
-    const prods = getLocalProducts();
-    const orders = await this.getOrders();
-    const totalRevenue = orders.reduce((sum: number, o: any) => sum + (o.total || 0), 125000);
-    return {
-      totalRevenue,
-      totalOrders: Math.max(orders.length, 28),
-      totalProducts: prods.length,
-      totalReviews: 480,
-      pendingOrders: orders.filter((o: any) => o.orderStatus === 'Pending' || o.orderStatus === 'Processing').length || 4,
-      lowStockProducts: prods.filter((p: any) => p.isPreOrder).length || 1,
-      recentOrders: orders.slice(0, 5)
-    };
   },
 
-  // SETTINGS
+  // =========================================================================
+  // 3. REVIEWS
+  // =========================================================================
+  async getReviews(productName?: string): Promise<Review[]> {
+    try {
+      const queries: string[] = [Query.limit(50), Query.orderDesc('$createdAt')];
+      if (productName) {
+        queries.push(Query.equal('productName', productName));
+      }
+      const res = await databases.listDocuments(APPWRITE_DATABASE_ID, 'reviews', queries);
+      if (res && res.documents) {
+        return res.documents.map((d: any) => ({
+          id: d.$id,
+          author: d.author,
+          rating: Number(d.rating) || 5,
+          date: d.date || 'Recent',
+          title: d.title || '',
+          comment: d.comment,
+          verified: Boolean(d.verified),
+          productName: d.productName
+        }));
+      }
+    } catch (err) {
+      console.warn('Appwrite getReviews error:', err);
+    }
+    return [];
+  },
+
+  async createReview(reviewData: Partial<Review>): Promise<Review> {
+    try {
+      const doc = await databases.createDocument(
+        APPWRITE_DATABASE_ID,
+        'reviews',
+        ID.unique(),
+        {
+          productName: reviewData.productName || 'General',
+          author: reviewData.author || 'Verified Customer',
+          rating: Number(reviewData.rating || 5),
+          title: reviewData.title || '',
+          comment: reviewData.comment || '',
+          verified: true,
+          date: new Date().toISOString().split('T')[0]
+        }
+      );
+      return {
+        id: doc.$id,
+        author: doc.author,
+        rating: Number(doc.rating),
+        date: doc.date,
+        title: doc.title,
+        comment: doc.comment,
+        verified: doc.verified,
+        productName: doc.productName
+      };
+    } catch (err: any) {
+      console.error('Appwrite createReview error:', err);
+      throw new Error(err.message || 'Failed to submit review');
+    }
+  },
+
+  // =========================================================================
+  // 4. COUPONS
+  // =========================================================================
+  async getCoupons(): Promise<any[]> {
+    try {
+      const res = await databases.listDocuments(APPWRITE_DATABASE_ID, 'coupons', [Query.limit(50)]);
+      if (res && res.documents) {
+        return res.documents.map(d => ({
+          id: d.$id,
+          code: d.code,
+          discountPercentage: d.discountPercentage,
+          discountAmount: d.discountAmount,
+          minOrderAmount: d.minOrderAmount,
+          isActive: d.isActive
+        }));
+      }
+    } catch (err) {
+      console.warn('Appwrite getCoupons error:', err);
+    }
+    return [];
+  },
+
+  async validateCoupon(code: string, orderTotal: number): Promise<{ valid: boolean; discount: number; message: string }> {
+    try {
+      const cleanCode = code.trim().toUpperCase();
+      const res = await databases.listDocuments(
+        APPWRITE_DATABASE_ID,
+        'coupons',
+        [Query.equal('code', cleanCode), Query.equal('isActive', true)]
+      );
+
+      if (res.documents && res.documents.length > 0) {
+        const coupon = res.documents[0];
+        if (orderTotal < Number(coupon.minOrderAmount || 0)) {
+          return {
+            valid: false,
+            discount: 0,
+            message: `Minimum order amount of Rs.${coupon.minOrderAmount} required.`
+          };
+        }
+
+        let discount = 0;
+        if (coupon.discountPercentage > 0) {
+          discount = Math.round((orderTotal * coupon.discountPercentage) / 100);
+        } else if (coupon.discountAmount > 0) {
+          discount = Number(coupon.discountAmount);
+        }
+
+        return {
+          valid: true,
+          discount,
+          message: `Coupon ${cleanCode} applied! Saved Rs.${discount}`
+        };
+      }
+    } catch (err) {
+      console.warn('Appwrite validateCoupon error:', err);
+    }
+    return { valid: false, discount: 0, message: 'Invalid or expired coupon code' };
+  },
+
+  // =========================================================================
+  // 5. HERO SLIDES
+  // =========================================================================
+  async getHeroSlides(): Promise<any[]> {
+    try {
+      const res = await fetch('/api/hero', { cache: 'no-store' });
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data) && data.length > 0) return data;
+      }
+    } catch (err) {
+      console.warn('API /api/hero error, trying direct SDK:', err);
+    }
+
+    try {
+      const res = await databases.listDocuments(APPWRITE_DATABASE_ID, 'hero_slides', [Query.limit(10)]);
+      if (res && res.documents) {
+        return res.documents.map(d => ({
+          id: d.$id,
+          name: d.name,
+          desktopImage: d.desktopImage,
+          mobileImage: d.mobileImage,
+          linkUrl: d.linkUrl
+        }));
+      }
+    } catch (err) {
+      console.warn('Appwrite getHeroSlides error:', err);
+    }
+    return [];
+  },
+
+  async saveHeroSlide(slide: any): Promise<any> {
+    try {
+      if (slide.id && !slide.id.startsWith('slide-')) {
+        return await databases.updateDocument(
+          APPWRITE_DATABASE_ID,
+          'hero_slides',
+          slide.id,
+          {
+            name: slide.name,
+            desktopImage: slide.desktopImage,
+            mobileImage: slide.mobileImage,
+            linkUrl: slide.linkUrl
+          }
+        );
+      } else {
+        return await databases.createDocument(
+          APPWRITE_DATABASE_ID,
+          'hero_slides',
+          ID.unique(),
+          {
+            name: slide.name,
+            desktopImage: slide.desktopImage,
+            mobileImage: slide.mobileImage,
+            linkUrl: slide.linkUrl
+          }
+        );
+      }
+    } catch (err: any) {
+      console.error('Appwrite saveHeroSlide error:', err);
+      throw err;
+    }
+  },
+
+  async deleteHeroSlide(id: string): Promise<boolean> {
+    try {
+      await databases.deleteDocument(APPWRITE_DATABASE_ID, 'hero_slides', id);
+      return true;
+    } catch (err) {
+      console.error('Appwrite deleteHeroSlide error:', err);
+      return false;
+    }
+  },
+
+  // =========================================================================
+  // 6. COLLECTIONS (Story Circles)
+  // =========================================================================
+  async getCollections(): Promise<any[]> {
+    try {
+      const res = await fetch('/api/collections', { cache: 'no-store' });
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data) && data.length > 0) return data;
+      }
+    } catch (err) {
+      console.warn('API /api/collections error, trying direct SDK:', err);
+    }
+
+    try {
+      const res = await databases.listDocuments(APPWRITE_DATABASE_ID, 'collections', [Query.limit(10)]);
+      if (res && res.documents) {
+        return res.documents.map(d => ({
+          id: d.$id,
+          name: d.name,
+          subname: d.subname,
+          image: d.image
+        }));
+      }
+    } catch (err) {
+      console.warn('Appwrite getCollections error:', err);
+    }
+    return [];
+  },
+
+  async updateCollection(id: string, data: any): Promise<any> {
+    try {
+      return await databases.updateDocument(
+        APPWRITE_DATABASE_ID,
+        'collections',
+        id,
+        {
+          name: data.name,
+          subname: data.subname,
+          image: data.image
+        }
+      );
+    } catch (err) {
+      console.error('Appwrite updateCollection error:', err);
+      throw err;
+    }
+  },
+
+  // =========================================================================
+  // 7. SETTINGS
+  // =========================================================================
   async getSettings(): Promise<any> {
     try {
-      const res = await fetch(`${API_BASE_URL}/settings`);
-      const data = await res.json();
-      if (data.success && data.data) return data.data;
-    } catch (e) {}
-    return {
-      announcementText: 'FLAT 15% OFF | USE CODE: LUXE15',
-      announcementCode: 'LUXE15',
-      freeGiftThreshold: 3500
-    };
+      const res = await databases.listDocuments(APPWRITE_DATABASE_ID, 'settings', [Query.limit(1)]);
+      if (res.documents && res.documents.length > 0) {
+        return res.documents[0];
+      }
+    } catch (err) {
+      console.warn('Appwrite getSettings error:', err);
+    }
+    return null;
   },
 
   async updateSettings(settings: any): Promise<any> {
     try {
-      const res = await fetch(`${API_BASE_URL}/settings`, {
-        method: 'PUT',
-        headers: getAuthHeaders(),
-        body: JSON.stringify(settings)
-      });
-      const data = await res.json();
-      if (data.success) return data.data;
-    } catch (e) {}
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(settings));
+      const existing = await databases.listDocuments(APPWRITE_DATABASE_ID, 'settings', [Query.limit(1)]);
+      if (existing.documents && existing.documents.length > 0) {
+        const docId = existing.documents[0].$id;
+        const doc = await databases.updateDocument(
+          APPWRITE_DATABASE_ID,
+          'settings',
+          docId,
+          settings
+        );
+        return doc;
+      } else {
+        const doc = await databases.createDocument(
+          APPWRITE_DATABASE_ID,
+          'settings',
+          ID.unique(),
+          settings
+        );
+        return doc;
+      }
+    } catch (err: any) {
+      console.error('Appwrite updateSettings error:', err);
+      return settings;
     }
-    return settings;
+  },
+
+  // =========================================================================
+  // 8. ADMIN STATS
+  // =========================================================================
+  async getStats(): Promise<any> {
+    try {
+      const [prodsRes, ordersRes, reviewsRes] = await Promise.all([
+        databases.listDocuments(APPWRITE_DATABASE_ID, 'products', [Query.limit(100)]),
+        databases.listDocuments(APPWRITE_DATABASE_ID, 'orders', [Query.limit(100), Query.orderDesc('$createdAt')]),
+        databases.listDocuments(APPWRITE_DATABASE_ID, 'reviews', [Query.limit(100)])
+      ]);
+
+      const orders = ordersRes.documents;
+      const totalRevenue = orders.reduce((sum, o: any) => sum + (Number(o.totalAmount) || 0), 0);
+      const pendingOrders = orders.filter((o: any) => o.status === 'pending' || o.status === 'processing').length;
+
+      return {
+        totalRevenue,
+        totalOrders: orders.length,
+        totalProducts: prodsRes.total,
+        totalReviews: reviewsRes.total,
+        pendingOrders,
+        lowStockProducts: prodsRes.documents.filter((p: any) => Number(p.stock) < 20).length,
+        recentOrders: orders.slice(0, 5).map(o => ({
+          _id: o.$id,
+          id: o.$id,
+          orderNumber: `NSH-${o.$id.slice(-5).toUpperCase()}`,
+          customerName: o.customerName,
+          total: Number(o.totalAmount),
+          status: o.status,
+          createdAt: o.$createdAt
+        }))
+      };
+    } catch (err) {
+      console.warn('Appwrite getStats error:', err);
+      return {
+        totalRevenue: 0,
+        totalOrders: 0,
+        totalProducts: 0,
+        totalReviews: 0,
+        pendingOrders: 0,
+        lowStockProducts: 0,
+        recentOrders: []
+      };
+    }
+  },
+
+  // =========================================================================
+  // 9. REELS & PRESS LOGOS
+  // =========================================================================
+  async getReels(): Promise<any[]> {
+    try {
+      const res = await fetch('/api/reels', { cache: 'no-store' });
+      if (res.ok) {
+        return await res.json();
+      }
+    } catch (err) {
+      console.warn('Failed to fetch reels:', err);
+    }
+    return [];
+  },
+
+  async saveReels(reels: any[]): Promise<boolean> {
+    try {
+      const res = await fetch('/api/reels', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(reels)
+      });
+      return res.ok;
+    } catch (err) {
+      console.error('Failed to save reels:', err);
+      return false;
+    }
+  },
+
+  async getPressLogos(): Promise<string[]> {
+    try {
+      const res = await fetch('/api/press', { cache: 'no-store' });
+      if (res.ok) {
+        return await res.json();
+      }
+    } catch (err) {
+      console.warn('Failed to fetch press logos:', err);
+    }
+    return [];
+  },
+
+  async savePressLogos(logos: string[]): Promise<boolean> {
+    try {
+      const res = await fetch('/api/press', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(logos)
+      });
+      return res.ok;
+    } catch (err) {
+      console.error('Failed to save press logos:', err);
+      return false;
+    }
+  },
+
+  // =========================================================================
+  // 10. CELEBRITIES & PERFUMERS
+  // =========================================================================
+  async getCelebrities(): Promise<any[]> {
+    try {
+      const res = await fetch('/api/celebrities', { cache: 'no-store' });
+      if (res.ok) {
+        return await res.json();
+      }
+    } catch (err) {
+      console.warn('Failed to fetch celebrities:', err);
+    }
+    return [];
+  },
+
+  async saveCelebrities(celebrities: any[]): Promise<boolean> {
+    try {
+      const res = await fetch('/api/celebrities', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(celebrities)
+      });
+      return res.ok;
+    } catch (err) {
+      console.error('Failed to save celebrities:', err);
+      return false;
+    }
+  },
+
+  async getPerfumers(): Promise<any[]> {
+    try {
+      const res = await fetch('/api/perfumers', { cache: 'no-store' });
+      if (res.ok) {
+        return await res.json();
+      }
+    } catch (err) {
+      console.warn('Failed to fetch perfumers:', err);
+    }
+    return [];
+  },
+
+  async savePerfumers(perfumers: any[]): Promise<boolean> {
+    try {
+      const res = await fetch('/api/perfumers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(perfumers)
+      });
+      return res.ok;
+    } catch (err) {
+      console.error('Failed to save perfumers:', err);
+      return false;
+    }
+  },
+
+  // =========================================================================
+  // 11. USER PROFILE & WISHLIST
+  // =========================================================================
+  async getUserProfile(userId: string): Promise<any> {
+    try {
+      const res = await fetch(`/api/profile?userId=${encodeURIComponent(userId)}`, { cache: 'no-store' });
+      if (res.ok) {
+        return await res.json();
+      }
+    } catch (err) {
+      console.warn('Failed to fetch user profile:', err);
+    }
+    return { phone: '', address: '', city: '', pincode: '', wishlist: [], recentViews: [] };
+  },
+
+  async saveUserProfile(userId: string, profileData: any): Promise<boolean> {
+    try {
+      const res = await fetch('/api/profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, ...profileData })
+      });
+      return res.ok;
+    } catch (err) {
+      console.error('Failed to save user profile:', err);
+      return false;
+    }
+  },
+
+  async syncUserWithAppwrite(userData: {
+    userId: string;
+    email?: string;
+    firstName?: string;
+    lastName?: string;
+    phone?: string;
+    address?: string;
+    city?: string;
+    pincode?: string;
+  }): Promise<boolean> {
+    try {
+      const res = await fetch('/api/users/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(userData)
+      });
+      return res.ok;
+    } catch (err) {
+      console.warn('Failed to sync user with Appwrite:', err);
+      return false;
+    }
   }
 };
+
+
+
+

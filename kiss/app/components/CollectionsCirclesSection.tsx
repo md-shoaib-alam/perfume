@@ -1,5 +1,6 @@
 'use client';
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { api } from '../services/api';
 
 interface CollectionCircle {
   id: string;
@@ -8,39 +9,32 @@ interface CollectionCircle {
   image: string;
 }
 
-const COLLECTIONS: CollectionCircle[] = [
-  {
-    id: 'bureau',
-    name: 'Bureau',
-    subname: 'Collection',
-    image: 'https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?auto=format&fit=crop&w=400&q=80'
-  },
-  {
-    id: 'luxe',
-    name: 'Luxe',
-    subname: 'Collection',
-    image: 'https://images.unsplash.com/photo-1523293182086-7651a899d37f?auto=format&fit=crop&w=400&q=80'
-  },
-  {
-    id: 'haute',
-    name: 'Haute',
-    subname: 'Collection',
-    image: 'https://images.unsplash.com/photo-1594035910387-fea47794261f?auto=format&fit=crop&w=400&q=80'
-  },
-  {
-    id: 'miss-neesh',
-    name: 'Miss NEESH',
-    subname: 'Collection',
-    image: 'https://images.unsplash.com/photo-1547887537-6158d64c35b3?auto=format&fit=crop&w=400&q=80'
-  }
-];
-
 export const CollectionsCirclesSection: React.FC = () => {
+  const [collections, setCollections] = useState<CollectionCircle[]>([]);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const data = await api.getCollections();
+        if (data) {
+          setCollections(data);
+        }
+      } catch (e) {}
+    };
+    load();
+    window.addEventListener('focus', load);
+    return () => {
+      window.removeEventListener('focus', load);
+    };
+  }, []);
+
+  if (collections.length === 0) return null;
+
   return (
     <section className="py-8 sm:py-12 bg-white border-t border-slate-100">
       <div className="max-w-4xl mx-auto px-4">
         <div className="flex items-center justify-center gap-4 sm:gap-10 md:gap-14">
-          {COLLECTIONS.map((item) => (
+          {collections.map((item) => (
             <a
               key={item.id}
               href={`#${item.id}`}
@@ -52,6 +46,8 @@ export const CollectionsCirclesSection: React.FC = () => {
                   <img
                     src={item.image}
                     alt={`${item.name} ${item.subname}`}
+                    loading="lazy"
+                    decoding="async"
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                   />
                 </div>

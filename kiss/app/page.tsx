@@ -18,12 +18,12 @@ import { MenuDrawer } from './components/MenuDrawer';
 import { AuthModal } from './auth/AuthModal';
 import { AccountDashboard } from './components/AccountDashboard';
 import { api } from './services/api';
-import { PRODUCTS as FALLBACK_PRODUCTS } from './data/products';
 import { client as appwriteClient } from '../lib/appwrite';
 import type { Product, CartItem } from './types';
 
 export default function Page() {
-  const [productsList, setProductsList] = useState<Product[]>(FALLBACK_PRODUCTS);
+  const [productsList, setProductsList] = useState<Product[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
   const [activeTab, setActiveTab] = useState<'For Him' | 'For Her' | 'Gift Sets'>('For Him');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
@@ -44,12 +44,29 @@ export default function Page() {
     }
 
     const load = async () => {
-      const data = await api.getProducts();
-      if (data && data.length > 0) {
-        setProductsList(data);
+      try {
+        const data = await api.getProducts();
+        if (data) {
+          setProductsList(data);
+        }
+      } catch (err) {
+        console.warn('Failed to fetch live products:', err);
+      } finally {
+        setLoading(false);
       }
     };
+
     load();
+
+    const handleFocus = () => load();
+    window.addEventListener('focus', handleFocus);
+    window.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') load();
+    });
+
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+    };
   }, []);
 
   // Filter products by activeTab gender & search query
@@ -172,17 +189,36 @@ export default function Page() {
         </div>
 
         {/* Product Cards Container */}
-        <div className="flex flex-nowrap overflow-x-auto snap-x snap-mandatory gap-3 sm:gap-6 pb-4 no-scrollbar sm:grid sm:grid-cols-2 lg:grid-cols-4 sm:overflow-x-visible sm:pb-0">
-          {filteredProducts.map((product) => (
-            <div key={product.id} className="w-[72vw] max-w-[260px] flex-shrink-0 snap-center sm:w-auto sm:max-w-none">
-              <ProductCard
-                product={product}
-                onAddToCart={handleAddToCart}
-                onSelectProduct={(p) => setSelectedProductModal(p)}
-              />
+        {loading ? (
+          <div className="py-16 text-center text-slate-400 font-sans text-xs">
+            <div className="inline-block w-6 h-6 border-2 border-[#d6a750] border-t-transparent rounded-full animate-spin mb-3" />
+            <p>Loading luxury collection from Appwrite...</p>
+          </div>
+        ) : filteredProducts.length === 0 ? (
+          <div className="py-16 text-center bg-slate-50/80 rounded-2xl border border-slate-200 p-8 space-y-3">
+            <div className="w-12 h-12 rounded-full bg-amber-50 border border-amber-200/60 mx-auto flex items-center justify-center text-[#caa04c]">
+              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+              </svg>
             </div>
-          ))}
-        </div>
+            <h4 className="font-serif font-bold text-slate-800 text-base">No Perfumes Found</h4>
+            <p className="text-xs text-slate-500 max-w-sm mx-auto">
+              No products are currently available in this category. Add new perfumes from the Admin Panel.
+            </p>
+          </div>
+        ) : (
+          <div className="flex flex-nowrap overflow-x-auto snap-x snap-mandatory gap-3 sm:gap-6 pb-4 no-scrollbar sm:grid sm:grid-cols-2 lg:grid-cols-4 sm:overflow-x-visible sm:pb-0">
+            {filteredProducts.map((product) => (
+              <div key={product.id} className="w-[72vw] max-w-[260px] flex-shrink-0 snap-center sm:w-auto sm:max-w-none">
+                <ProductCard
+                  product={product}
+                  onAddToCart={handleAddToCart}
+                  onSelectProduct={(p) => setSelectedProductModal(p)}
+                />
+              </div>
+            ))}
+          </div>
+        )}
       </section>
 
       {/* 5. Master Perfumers Section */}

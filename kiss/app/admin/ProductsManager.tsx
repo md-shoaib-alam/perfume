@@ -2,8 +2,12 @@
 import React, { useState, useEffect } from 'react';
 import type { Product, ProductSizeOption } from '../types';
 import { api } from '../services/api';
+import { MediaUploader } from '../components/MediaUploader';
+import { useConfirm } from '../components/CustomConfirmModal';
+
 
 export const ProductsManager: React.FC = () => {
+  const { showConfirm, showAlert } = useConfirm();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -98,7 +102,13 @@ export const ProductsManager: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm('Are you sure you want to remove this perfume from catalog?')) return;
+    const confirmed = await showConfirm({
+      title: 'Remove Perfume',
+      message: 'Are you sure you want to remove this perfume from catalog?',
+      confirmText: 'Delete',
+      variant: 'danger'
+    });
+    if (!confirmed) return;
     await api.deleteProduct(id);
     await loadProducts();
   };
@@ -135,7 +145,11 @@ export const ProductsManager: React.FC = () => {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name || !formData.price) {
-      alert('Please fill name and price');
+      await showAlert({
+        title: 'Missing Required Fields',
+        message: 'Please fill name and price',
+        variant: 'warning'
+      });
       return;
     }
 
@@ -539,30 +553,21 @@ export const ProductsManager: React.FC = () => {
                 </div>
               </div>
 
-              {/* Image URLs */}
+              {/* Image URLs & Media Uploads */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Main Image URL *</label>
-                  <input
-                    type="text"
-                    value={formData.image || ''}
-                    onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-                    required
-                    placeholder="https://images.unsplash.com/..."
-                    className="w-full bg-slate-50 border border-slate-200 rounded px-3 py-2 text-xs focus:outline-none focus:border-[#d6a750]"
-                  />
-                </div>
+                <MediaUploader
+                  label="Main Product Image *"
+                  value={formData.image || ''}
+                  onChange={(url) => setFormData({ ...formData, image: url })}
+                  helperText="Primary bottle photo displayed on store cards."
+                />
 
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Hover Image URL</label>
-                  <input
-                    type="text"
-                    value={formData.hoverImage || ''}
-                    onChange={(e) => setFormData({ ...formData, hoverImage: e.target.value })}
-                    placeholder="https://images.unsplash.com/..."
-                    className="w-full bg-slate-50 border border-slate-200 rounded px-3 py-2 text-xs focus:outline-none focus:border-[#d6a750]"
-                  />
-                </div>
+                <MediaUploader
+                  label="Hover Secondary Image"
+                  value={formData.hoverImage || ''}
+                  onChange={(url) => setFormData({ ...formData, hoverImage: url })}
+                  helperText="Packaging / alternative lifestyle photo shown on hover."
+                />
               </div>
 
               <div>

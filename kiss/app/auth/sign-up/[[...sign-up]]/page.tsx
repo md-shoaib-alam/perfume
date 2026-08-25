@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useSignIn, useSignUp, useClerk } from '@clerk/nextjs';
+import { api } from '@/app/services/api';
 
 type AuthStep = 'identifier' | 'link_email' | 'otp';
 
@@ -34,6 +35,9 @@ export default function CustomSignUpPage() {
         setResendTimer((prev) => prev - 1);
       }, 1000);
     }
+    return () => clearInterval(interval);
+  }, [step, resendTimer]);
+
   // Reset loading state when window regains focus or navigates back (e.g. OAuth cancelled)
   useEffect(() => {
     const handleReturnToTab = () => {
@@ -53,18 +57,10 @@ export default function CustomSignUpPage() {
 
   const savePhoneToDB = (phone: string, email?: string) => {
     try {
-      if (typeof window !== 'undefined') {
-        const savedUsers = JSON.parse(localStorage.getItem('neesh_registered_users') || '[]');
-        savedUsers.push({
-          mobile: phone,
-          email: email || '',
-          registeredAt: new Date().toISOString()
-        });
-        localStorage.setItem('neesh_registered_users', JSON.stringify(savedUsers));
-        localStorage.setItem('neesh_user_phone', phone);
-      }
+      const identifier = email || phone;
+      api.saveUserProfile(identifier, { phone, email: email || '' });
     } catch (e) {
-      console.warn('Failed to save to local storage:', e);
+      console.warn('Failed to save to profile API:', e);
     }
   };
 

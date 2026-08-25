@@ -1,6 +1,7 @@
 'use client';
 import React, { useEffect } from 'react';
 import type { CartItem } from '../types';
+import { useConfirm } from './CustomConfirmModal';
 
 interface CartDrawerProps {
   isOpen: boolean;
@@ -19,6 +20,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
   onUpdateQuantity,
   onRemoveItem
 }) => {
+  const { showAlert } = useConfirm();
   // Prevent background page scrolling when cart drawer is open
   useEffect(() => {
     if (isOpen) {
@@ -164,8 +166,12 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
               </div>
 
               <button
-                onClick={() => alert('Proceeding to Express Gokwik Luxury Checkout!')}
-                className="w-full py-3.5 bg-[#d6a750] hover:bg-[#c59843] text-white font-bold uppercase tracking-widest text-xs rounded-md shadow-md transition-colors"
+                onClick={() => showAlert({
+                  title: 'Express Checkout',
+                  message: 'Proceeding to Gokwik Luxury One-Click Checkout with Instant Discounts & Free Shipping.',
+                  variant: 'info'
+                })}
+                className="w-full py-3.5 bg-[#d6a750] hover:bg-[#c59843] text-white font-bold uppercase tracking-widest text-xs rounded-md shadow-md transition-colors cursor-pointer"
               >
                 PROCEED TO CHECKOUT &rarr;
               </button>

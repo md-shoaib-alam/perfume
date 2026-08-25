@@ -2,6 +2,8 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useClerk } from '@clerk/nextjs';
+import { api } from '../services/api';
+
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -76,21 +78,18 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
   if (!isOpen) return null;
 
-  // Save phone number to storage / API database
+  // Save phone number and user profile to storage / Appwrite database
   const savePhoneToDB = (phone: string, email?: string) => {
     try {
-      if (typeof window !== 'undefined') {
-        const savedUsers = JSON.parse(localStorage.getItem('neesh_registered_users') || '[]');
-        savedUsers.push({
-          mobile: phone,
-          email: email || '',
-          registeredAt: new Date().toISOString()
-        });
-        localStorage.setItem('neesh_registered_users', JSON.stringify(savedUsers));
-        localStorage.setItem('neesh_user_phone', phone);
-      }
+      const identifier = email || phone;
+      api.saveUserProfile(identifier, { phone, email: email || '' });
+      api.syncUserWithAppwrite({
+        userId: identifier,
+        email: email || '',
+        phone
+      });
     } catch (e) {
-      console.warn('Failed to save to local storage:', e);
+      console.warn('Failed to save to profile API:', e);
     }
   };
 

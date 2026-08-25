@@ -1,8 +1,29 @@
 'use client';
-import React from 'react';
-import { REVIEWS } from '../data/products';
+import React, { useState, useEffect } from 'react';
+import { api } from '../services/api';
+import type { Review } from '../types';
 
 export const ReviewsSection: React.FC = () => {
+  const [reviews, setReviews] = useState<Review[]>([]);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const data = await api.getReviews();
+        if (data) {
+          setReviews(data);
+        }
+      } catch (e) {}
+    };
+    load();
+    window.addEventListener('focus', load);
+    return () => {
+      window.removeEventListener('focus', load);
+    };
+  }, []);
+
+  if (reviews.length === 0) return null;
+
   return (
     <section className="py-20 bg-slate-950 border-t border-amber-900/30">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -19,7 +40,7 @@ export const ReviewsSection: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {REVIEWS.map((rev) => (
+          {reviews.map((rev) => (
             <div key={rev.id} className="bg-slate-900/60 border border-amber-900/30 rounded-2xl p-6 flex flex-col justify-between hover:border-amber-500/40 transition-colors">
               <div>
                 <div className="flex items-center justify-between mb-3">

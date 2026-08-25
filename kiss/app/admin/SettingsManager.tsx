@@ -1,8 +1,13 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
+import { seedAppwriteDatabase } from '@/lib/seedAppwrite';
+
+
+import { useConfirm } from '../components/CustomConfirmModal';
 
 export const SettingsManager: React.FC = () => {
+  const { showConfirm } = useConfirm();
   const [settings, setSettings] = useState({
     announcementText: 'FLAT 15% OFF | USE CODE: LUXE15',
     announcementCode: 'LUXE15',
@@ -11,6 +16,33 @@ export const SettingsManager: React.FC = () => {
     contactPhone: '+91 (800) 555-NEESH'
   });
   const [saved, setSaved] = useState(false);
+  const [seeding, setSeeding] = useState(false);
+  const [seedResult, setSeedResult] = useState<string | null>(null);
+
+  const handleSeedDatabase = async () => {
+    const confirmed = await showConfirm({
+      title: 'Seed Appwrite Database',
+      message: 'This will upload initial perfumes, reviews, coupons, hero slides, and settings into your Appwrite tables. Continue?',
+      confirmText: 'Seed Database',
+      variant: 'warning'
+    });
+    if (!confirmed) return;
+
+    setSeeding(true);
+    setSeedResult(null);
+    try {
+      const res = await seedAppwriteDatabase();
+      if (res.errors.length > 0) {
+        setSeedResult(`Seeded with warnings: ${res.errors.join(', ')}`);
+      } else {
+        setSeedResult(`Successfully populated Appwrite (${res.products} products, ${res.coupons} coupons, ${res.hero_slides} slides, ${res.collections} collections)`);
+      }
+    } catch (err: any) {
+      setSeedResult(`Seed failed: ${err.message}`);
+    } finally {
+      setSeeding(false);
+    }
+  };
 
   useEffect(() => {
     const load = async () => {
@@ -117,6 +149,44 @@ export const SettingsManager: React.FC = () => {
           </button>
         </div>
       </form>
+
+      {/* Appwrite Database Initialization / Seeder Card */}
+      <div className="bg-slate-900 text-white p-6 rounded-xl border border-slate-800 shadow-md space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="font-serif text-lg font-bold text-[#c59b48] flex items-center gap-2">
+              <span>⚡</span>
+              <span>Appwrite Database Initialization</span>
+            </h3>
+            <p className="text-xs text-slate-400 mt-1">
+              Click to seed your Appwrite database tables with initial perfumes, reviews, discount coupons, hero banners, and settings.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleSeedDatabase}
+            disabled={seeding}
+            className={`px-5 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all cursor-pointer shrink-0 ${
+              seeding
+                ? 'bg-amber-600 text-white animate-pulse'
+                : 'bg-[#c59b48] hover:bg-[#b58b38] text-black font-extrabold shadow-md'
+            }`}
+          >
+            {seeding ? 'Seeding Tables...' : 'Seed Appwrite Data'}
+          </button>
+        </div>
+
+        {seedResult && (
+          <div className={`p-3 rounded-lg text-xs font-semibold ${
+            seedResult.startsWith('✅') ? 'bg-emerald-950/70 text-emerald-300 border border-emerald-500/40' : 'bg-rose-950/70 text-rose-300 border border-rose-500/40'
+          }`}>
+            {seedResult}
+          </div>
+        )}
+      </div>
+
     </div>
   );
 };
+

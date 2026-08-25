@@ -26,6 +26,9 @@ export const metadata: Metadata = {
   },
 };
 
+import { ConfirmProvider } from "./components/CustomConfirmModal";
+import { UserSyncGlobal } from "./components/UserSyncGlobal";
+
 export default function RootLayout({
   children,
 }: {
@@ -39,7 +42,10 @@ export default function RootLayout({
     >
       <body suppressHydrationWarning className="min-h-full flex flex-col bg-white text-slate-900">
         <ClerkProvider>
-          {children}
+          <UserSyncGlobal />
+          <ConfirmProvider>
+            {children}
+          </ConfirmProvider>
         </ClerkProvider>
       </body>
     </html>

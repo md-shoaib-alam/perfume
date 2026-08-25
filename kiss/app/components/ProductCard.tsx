@@ -63,7 +63,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           <img
             src={product.image}
             alt={product.name}
-            className="w-full h-full object-cover"
+            loading="lazy"
+            decoding="async"
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
           />
 
           {/* Sold Out Badge when selected size is sold out */}
