@@ -140,8 +140,8 @@ export const MenuDrawer: React.FC<MenuDrawerProps> = ({
                   ))}
                 </nav>
 
-                {/* My Account section at the bottom (Mobile) */}
-                <div className="mt-8 pt-4 border-t border-slate-100 space-y-2.5">
+                {/* My Account section at the bottom (Mobile Only) */}
+                <div className="sm:hidden mt-8 pt-4 border-t border-slate-100 space-y-2.5">
                   <h4 className="font-serif text-lg font-bold text-slate-900 mb-3">My Account</h4>
                   
                   {isLoaded && isSignedIn ? (

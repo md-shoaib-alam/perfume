@@ -1,5 +1,5 @@
 'use client';
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 
 const REELS = [
   {
@@ -59,6 +59,36 @@ export const ReelShortsSection: React.FC = () => {
   const [startX, setStartX] = useState(0);
   const [scrollLeft, setScrollLeft] = useState(0);
 
+  const [reelsList, setReelsList] = useState(REELS);
+  const [logosList, setLogosList] = useState(LOGOS);
+
+  useEffect(() => {
+    const loadData = () => {
+      try {
+        if (typeof window !== 'undefined') {
+          const storedReels = localStorage.getItem('neesh_reels_data');
+          if (storedReels) {
+            setReelsList(JSON.parse(storedReels));
+          }
+          const storedLogos = localStorage.getItem('neesh_press_logos');
+          if (storedLogos) {
+            const parsed = JSON.parse(storedLogos);
+            // Double the list if short for smooth infinite loop
+            setLogosList(parsed.length < 12 ? [...parsed, ...parsed] : parsed);
+          }
+        }
+      } catch (e) {}
+    };
+
+    loadData();
+    window.addEventListener('neesh_reels_updated', loadData);
+    window.addEventListener('storage', loadData);
+    return () => {
+      window.removeEventListener('neesh_reels_updated', loadData);
+      window.removeEventListener('storage', loadData);
+    };
+  }, []);
+
   const handleMouseDown = (e: React.MouseEvent) => {
     setIsMouseDown(true);
     if (!scrollRef.current) return;
@@ -96,14 +126,14 @@ export const ReelShortsSection: React.FC = () => {
           <div className="absolute left-0 top-0 bottom-0 w-8 sm:w-16 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none" />
           <div className="absolute right-0 top-0 bottom-0 w-8 sm:w-16 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none" />
 
-          {/* Marquee Track 1 + Track 2 (100% gapless infinite loop) */}
-          <div className="flex w-max overflow-hidden">
+          {/* Marquee Track (Parent translates -50% smoothly, with 2 identical gap-aligned tracks) */}
+          <div className="flex w-max animate-marquee">
             {/* Track 1 */}
-            <div className="flex shrink-0 animate-marquee space-x-12 sm:space-x-16 items-center text-slate-900 font-serif font-bold text-xl sm:text-2xl tracking-widest pr-12 sm:pr-16">
-              {LOGOS.map((logo, idx) => (
+            <div className="flex shrink-0 items-center gap-12 sm:gap-16 pr-12 sm:pr-16 text-slate-900 font-serif font-bold text-xl sm:text-2xl tracking-widest">
+              {logosList.map((logo, idx) => (
                 <span 
                   key={`l1-${idx}`} 
-                  className="hover:text-[#d6a750] transition-colors cursor-pointer whitespace-nowrap uppercase"
+                  className="hover:text-[#d6a750] transition-colors cursor-pointer whitespace-nowrap uppercase select-none"
                 >
                   {logo}
                 </span>
@@ -111,11 +141,11 @@ export const ReelShortsSection: React.FC = () => {
             </div>
 
             {/* Track 2 */}
-            <div className="flex shrink-0 animate-marquee space-x-12 sm:space-x-16 items-center text-slate-900 font-serif font-bold text-xl sm:text-2xl tracking-widest pr-12 sm:pr-16" aria-hidden="true">
-              {LOGOS.map((logo, idx) => (
+            <div className="flex shrink-0 items-center gap-12 sm:gap-16 pr-12 sm:pr-16 text-slate-900 font-serif font-bold text-xl sm:text-2xl tracking-widest" aria-hidden="true">
+              {logosList.map((logo, idx) => (
                 <span 
                   key={`l2-${idx}`} 
-                  className="hover:text-[#d6a750] transition-colors cursor-pointer whitespace-nowrap uppercase"
+                  className="hover:text-[#d6a750] transition-colors cursor-pointer whitespace-nowrap uppercase select-none"
                 >
                   {logo}
                 </span>
@@ -134,18 +164,18 @@ export const ReelShortsSection: React.FC = () => {
         onMouseMove={handleMouseMove}
         className="max-w-[1680px] mx-auto px-4 sm:px-6 lg:px-8 overflow-x-auto select-none py-2 cursor-grab active:cursor-grabbing [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
       >
-        <div className="flex gap-5 min-w-max">
-          {REELS.map((reel, idx) => (
+        <div className="flex gap-4 sm:gap-5 min-w-max">
+          {reelsList.map((reel, idx) => (
             <div
-              key={idx}
-              className="w-56 sm:w-64 bg-slate-900 rounded-xl overflow-hidden border border-slate-200/20 shadow-md group flex flex-col justify-between cursor-pointer transform transition-transform duration-500 hover:-translate-y-1.5 hover:shadow-xl"
+              key={reel.id || idx}
+              className="w-48 sm:w-56 bg-slate-900 rounded-xl overflow-hidden border border-slate-200/20 shadow-md group flex flex-col justify-between cursor-pointer transform transition-transform duration-300 hover:-translate-y-1 hover:shadow-lg"
             >
               <div className="relative aspect-[9/16] overflow-hidden">
                 <img
                   src={reel.image}
                   alt={reel.title}
                   draggable={false}
-                  className="w-full h-full object-cover group-hover:scale-108 transition-transform duration-700 ease-out"
+                  className="w-full h-full object-cover"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-black/30 p-4 flex flex-col justify-between">
                   <span className="text-[10px] font-sans font-bold uppercase tracking-widest text-[#d6a750]">
