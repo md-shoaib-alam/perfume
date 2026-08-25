@@ -74,10 +74,77 @@ export const OrdersManager: React.FC = () => {
         </div>
       </div>
 
-      {/* Orders Table */}
-      <div className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
+      {/* Mobile Orders Cards (< md) */}
+      <div className="md:hidden space-y-3.5">
+        {loading ? (
+          <div className="text-center py-10 bg-white rounded-2xl border border-slate-200 text-slate-400 text-xs font-semibold">
+            Loading orders...
+          </div>
+        ) : filteredOrders.length === 0 ? (
+          <div className="text-center py-10 bg-white rounded-2xl border border-slate-200 text-slate-400 text-xs font-semibold">
+            No orders found.
+          </div>
+        ) : (
+          filteredOrders.map((ord) => (
+            <div
+              key={ord._id || ord.orderNumber}
+              className="bg-white rounded-2xl border border-slate-200 p-4 shadow-xs space-y-3"
+            >
+              {/* Order Header: ID + Date + Amount */}
+              <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+                <div>
+                  <span className="font-mono font-bold text-slate-900 text-xs">{ord.orderNumber}</span>
+                  <p className="text-[10px] text-slate-400">
+                    {ord.createdAt ? new Date(ord.createdAt).toLocaleDateString() : 'Just now'}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <span className="font-bold text-slate-900 text-sm">₹{(ord.total || 0).toLocaleString('en-IN')}</span>
+                  <p className="text-[10px] text-slate-400">{ord.items?.length || 1} items</p>
+                </div>
+              </div>
+
+              {/* Customer Info */}
+              <div className="flex items-center justify-between text-xs">
+                <div>
+                  <p className="font-semibold text-slate-800">{ord.customer?.name || 'Customer'}</p>
+                  <p className="text-[11px] text-slate-400">{ord.customer?.city || 'India'}</p>
+                </div>
+
+                {/* Status Dropdown */}
+                <select
+                  value={ord.orderStatus || 'Processing'}
+                  onChange={(e) => handleStatusChange(ord._id || ord.orderNumber, e.target.value)}
+                  className={`text-[11px] font-bold px-2.5 py-1 rounded-full border focus:outline-none cursor-pointer ${getStatusBadge(
+                    ord.orderStatus
+                  )}`}
+                >
+                  <option value="Pending">Pending</option>
+                  <option value="Processing">Processing</option>
+                  <option value="Shipped">Shipped</option>
+                  <option value="Delivered">Delivered</option>
+                  <option value="Cancelled">Cancelled</option>
+                </select>
+              </div>
+
+              {/* View Details Action */}
+              <div className="pt-2 border-t border-slate-100">
+                <button
+                  onClick={() => setSelectedOrder(ord)}
+                  className="w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-semibold rounded-xl transition-colors cursor-pointer text-center"
+                >
+                  View Order Details
+                </button>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Desktop Orders Table (hidden on mobile, visible on >= md) */}
+      <div className="hidden md:block bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs text-slate-700">
+          <table className="w-full text-left text-xs text-slate-700 min-w-[650px]">
             <thead className="bg-slate-50 border-b border-slate-200 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
               <tr>
                 <th className="px-5 py-3">Order ID</th>
@@ -135,7 +202,7 @@ export const OrdersManager: React.FC = () => {
                     <td className="px-4 py-3.5 text-right">
                       <button
                         onClick={() => setSelectedOrder(ord)}
-                        className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-medium rounded transition-colors"
+                        className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-medium rounded transition-colors cursor-pointer"
                       >
                         View Details
                       </button>

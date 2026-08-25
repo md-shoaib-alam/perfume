@@ -100,13 +100,13 @@ export const PerfumersCelebritiesManager: React.FC = () => {
       {activeSection === 'perfumers' ? (
         <form onSubmit={handleSave} className="space-y-4">
           {perfumers.map((p, idx) => (
-            <div key={p.id} className="bg-white p-6 rounded-xl border border-slate-200 shadow-xs grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
+            <div key={p.id} className="bg-white p-5 sm:p-6 rounded-2xl border border-slate-200 shadow-xs grid grid-cols-1 md:grid-cols-12 gap-5 sm:gap-6 items-center">
               <div className="md:col-span-3 flex flex-col items-center text-center">
-                <div className="w-24 h-24 rounded-full border-2 border-[#d6a750] p-1 overflow-hidden bg-slate-100 shadow-md">
+                <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full border-2 border-[#d6a750] p-1 overflow-hidden bg-slate-100 shadow-md">
                   <img src={p.image} alt={p.name} className="w-full h-full object-cover rounded-full" />
                 </div>
                 <h4 className="font-serif font-bold text-slate-900 text-sm mt-3">{p.name}</h4>
-                <span className="text-[10px] text-amber-700 font-semibold bg-amber-50 px-2 py-0.5 rounded mt-1">
+                <span className="text-[10px] text-amber-700 font-semibold bg-amber-50 px-2.5 py-0.5 rounded-full mt-1">
                   {p.award}
                 </span>
               </div>
@@ -122,7 +122,7 @@ export const PerfumersCelebritiesManager: React.FC = () => {
                       upd[idx].award = e.target.value;
                       setPerfumers(upd);
                     }}
-                    className="w-full bg-slate-50 border border-slate-200 rounded px-3 py-2 text-xs focus:outline-none focus:border-[#d6a750]"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:border-[#d6a750]"
                   />
                 </div>
 
@@ -136,7 +136,7 @@ export const PerfumersCelebritiesManager: React.FC = () => {
                       upd[idx].quote = e.target.value;
                       setPerfumers(upd);
                     }}
-                    className="w-full bg-slate-50 border border-slate-200 rounded px-3 py-2 text-xs focus:outline-none focus:border-[#d6a750]"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:border-[#d6a750]"
                   />
                 </div>
 
@@ -150,17 +150,17 @@ export const PerfumersCelebritiesManager: React.FC = () => {
                       upd[idx].bio = e.target.value;
                       setPerfumers(upd);
                     }}
-                    className="w-full bg-slate-50 border border-slate-200 rounded px-3 py-2 text-xs focus:outline-none focus:border-[#d6a750]"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:border-[#d6a750]"
                   />
                 </div>
               </div>
             </div>
           ))}
 
-          <div className="flex justify-end">
+          <div className="flex justify-end pt-2">
             <button
               type="submit"
-              className="px-6 py-2.5 bg-[#c59b48] hover:bg-[#b58b38] text-black font-bold text-xs uppercase tracking-wider rounded shadow-md"
+              className="w-full sm:w-auto px-8 py-3 bg-[#c59b48] hover:bg-[#b58b38] text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow-xs transition-all cursor-pointer"
             >
               Save Perfumers
             </button>
@@ -169,14 +169,12 @@ export const PerfumersCelebritiesManager: React.FC = () => {
       ) : (
         <form onSubmit={handleSave} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {celebrities.map((c, idx) => (
-            <div key={c.id} className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs space-y-3 text-xs">
+            <div key={c.id} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-3.5 text-xs">
               <div className="flex items-center gap-3">
-                <img src={c.image} alt={c.name} className="w-14 h-16 object-cover rounded shadow-xs bg-slate-100" />
-                <div>
-                  <h4 className="font-serif font-bold text-slate-900 text-sm">{c.name}</h4>
-                  <span className="text-[10px] text-amber-700 font-bold uppercase tracking-wider">
-                    {c.perfume}
-                  </span>
+                <img src={c.image} alt={c.name} className="w-14 h-16 object-cover rounded-xl shadow-xs bg-slate-100 border border-slate-200" />
+                <div className="flex-1 min-w-0">
+                  <h4 className="font-serif font-bold text-slate-900 text-sm truncate">{c.name}</h4>
+                  <span className="text-[10px] uppercase tracking-wider text-[#c59b48] font-bold block mt-0.5">{c.perfume}</span>
                 </div>
               </div>
 
@@ -190,12 +188,12 @@ export const PerfumersCelebritiesManager: React.FC = () => {
                     upd[idx].name = e.target.value;
                     setCelebrities(upd);
                   }}
-                  className="w-full bg-slate-50 border border-slate-200 rounded px-3 py-1.5 text-xs focus:outline-none focus:border-[#d6a750]"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:border-[#d6a750]"
                 />
               </div>
 
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">Perfume Title</label>
+                <label className="block font-semibold text-slate-700 mb-1">Endorsed Fragrance</label>
                 <input
                   type="text"
                   value={c.perfume}
@@ -204,18 +202,18 @@ export const PerfumersCelebritiesManager: React.FC = () => {
                     upd[idx].perfume = e.target.value;
                     setCelebrities(upd);
                   }}
-                  className="w-full bg-slate-50 border border-slate-200 rounded px-3 py-1.5 text-xs focus:outline-none focus:border-[#d6a750]"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:border-[#d6a750]"
                 />
               </div>
             </div>
           ))}
 
-          <div className="sm:col-span-2 flex justify-end">
+          <div className="sm:col-span-2 flex justify-end pt-2">
             <button
               type="submit"
-              className="px-6 py-2.5 bg-[#c59b48] hover:bg-[#b58b38] text-black font-bold text-xs uppercase tracking-wider rounded shadow-md"
+              className="w-full sm:w-auto px-8 py-3 bg-[#c59b48] hover:bg-[#b58b38] text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow-xs transition-all cursor-pointer"
             >
-              Save Celebrities
+              Save Celebrity Spotlights
             </button>
           </div>
         </form>

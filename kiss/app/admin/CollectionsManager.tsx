@@ -57,9 +57,9 @@ export const CollectionsManager: React.FC = () => {
         )}
       </div>
 
-      <form onSubmit={handleSave} className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+      <form onSubmit={handleSave} className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
         {circles.map((item, idx) => (
-          <div key={item.id} className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs space-y-4">
+          <div key={item.id} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-4">
             <div className="flex items-center gap-4">
               <div className="w-16 h-16 rounded-full border-2 border-[#d6a750] p-1 shrink-0 overflow-hidden bg-slate-100">
                 <img src={item.image} alt={item.name} className="w-full h-full object-cover rounded-full" />
@@ -77,7 +77,7 @@ export const CollectionsManager: React.FC = () => {
                   type="text"
                   value={item.name}
                   onChange={(e) => handleUpdate(idx, 'name', e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded px-3 py-2 text-xs focus:outline-none focus:border-[#d6a750]"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs focus:outline-none focus:border-[#d6a750]"
                 />
               </div>
 
@@ -87,7 +87,7 @@ export const CollectionsManager: React.FC = () => {
                   type="text"
                   value={item.subname}
                   onChange={(e) => handleUpdate(idx, 'subname', e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded px-3 py-2 text-xs focus:outline-none focus:border-[#d6a750]"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs focus:outline-none focus:border-[#d6a750]"
                 />
               </div>
 
@@ -97,7 +97,7 @@ export const CollectionsManager: React.FC = () => {
                   type="text"
                   value={item.image}
                   onChange={(e) => handleUpdate(idx, 'image', e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded px-3 py-2 text-xs focus:outline-none focus:border-[#d6a750]"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs focus:outline-none focus:border-[#d6a750]"
                 />
               </div>
             </div>
@@ -107,7 +107,7 @@ export const CollectionsManager: React.FC = () => {
         <div className="sm:col-span-2 flex justify-end pt-2">
           <button
             type="submit"
-            className="px-6 py-2.5 bg-[#c59b48] hover:bg-[#b58b38] text-black font-bold text-xs uppercase tracking-wider rounded shadow-md transition-all"
+            className="w-full sm:w-auto px-8 py-3 bg-[#c59b48] hover:bg-[#b58b38] text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow-xs transition-all cursor-pointer"
           >
             Save All Collections
           </button>

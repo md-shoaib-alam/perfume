@@ -82,7 +82,7 @@ export const SettingsManager: React.FC = () => {
                 type="number"
                 value={settings.freeGiftThreshold}
                 onChange={(e) => setSettings({ ...settings, freeGiftThreshold: Number(e.target.value) })}
-                className="w-full bg-slate-50 border border-slate-200 rounded px-3 py-2 text-xs focus:outline-none focus:border-[#d6a750]"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs focus:outline-none focus:border-[#d6a750]"
               />
             </div>
 
@@ -92,7 +92,7 @@ export const SettingsManager: React.FC = () => {
                 type="email"
                 value={settings.contactEmail}
                 onChange={(e) => setSettings({ ...settings, contactEmail: e.target.value })}
-                className="w-full bg-slate-50 border border-slate-200 rounded px-3 py-2 text-xs focus:outline-none focus:border-[#d6a750]"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs focus:outline-none focus:border-[#d6a750]"
               />
             </div>
 
@@ -102,7 +102,7 @@ export const SettingsManager: React.FC = () => {
                 type="text"
                 value={settings.contactPhone}
                 onChange={(e) => setSettings({ ...settings, contactPhone: e.target.value })}
-                className="w-full bg-slate-50 border border-slate-200 rounded px-3 py-2 text-xs focus:outline-none focus:border-[#d6a750]"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs focus:outline-none focus:border-[#d6a750]"
               />
             </div>
           </div>
@@ -111,7 +111,7 @@ export const SettingsManager: React.FC = () => {
         <div className="flex justify-end pt-4 border-t border-slate-100">
           <button
             type="submit"
-            className="px-6 py-2.5 bg-[#c59b48] hover:bg-[#b58b38] text-black font-bold text-xs uppercase tracking-wider rounded shadow-md transition-all"
+            className="w-full sm:w-auto px-8 py-3 bg-[#c59b48] hover:bg-[#b58b38] text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow-xs transition-all cursor-pointer"
           >
             Save Settings
           </button>

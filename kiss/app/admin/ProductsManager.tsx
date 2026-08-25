@@ -208,10 +208,108 @@ export const ProductsManager: React.FC = () => {
         </select>
       </div>
 
-      {/* Products Table */}
-      <div className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
+      {/* Mobile Products Cards List (< md) */}
+      <div className="md:hidden space-y-3.5">
+        {loading ? (
+          <div className="text-center py-10 bg-white rounded-2xl border border-slate-200 text-slate-400 text-xs font-semibold">
+            Loading catalog...
+          </div>
+        ) : filteredProducts.length === 0 ? (
+          <div className="text-center py-10 bg-white rounded-2xl border border-slate-200 text-slate-400 text-xs font-semibold">
+            No products found for this filter.
+          </div>
+        ) : (
+          filteredProducts.map((prod) => (
+            <div
+              key={prod.id}
+              className="bg-white rounded-2xl border border-slate-200 p-4 shadow-xs space-y-3.5"
+            >
+              {/* Top Row: Thumbnail + Details + Gender */}
+              <div className="flex items-start gap-3">
+                <img
+                  src={prod.image}
+                  alt={prod.name}
+                  className="w-16 h-16 object-cover rounded-xl border border-slate-200 shrink-0 bg-slate-100"
+                />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between gap-2">
+                    <h4 className="font-serif text-sm font-bold text-slate-900 truncate">
+                      {prod.name}
+                    </h4>
+                    <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold shrink-0 ${
+                      prod.gender === 'For Her'
+                        ? 'bg-pink-100 text-pink-800'
+                        : prod.gender === 'Gift Sets'
+                        ? 'bg-purple-100 text-purple-800'
+                        : 'bg-blue-100 text-blue-800'
+                    }`}>
+                      {prod.gender || 'For Him'}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-500 truncate mt-0.5">{prod.subtitle}</p>
+                  
+                  {/* Status Badges */}
+                  <div className="flex flex-wrap gap-1 mt-1.5">
+                    {prod.isBestseller && (
+                      <span className="px-1.5 py-0.5 bg-amber-100 text-amber-800 text-[9px] font-bold rounded">
+                        BESTSELLER
+                      </span>
+                    )}
+                    {prod.isPreOrder && (
+                      <span className="px-1.5 py-0.5 bg-emerald-100 text-emerald-800 text-[9px] font-bold rounded">
+                        PRE-ORDER
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Middle Row: Volume Options & Prices */}
+              <div className="pt-2 border-t border-slate-100">
+                <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block mb-1.5">
+                  Available Sizes & Pricing
+                </span>
+                <div className="flex flex-wrap gap-1.5">
+                  {prod.sizeOptions && prod.sizeOptions.length > 0 ? (
+                    prod.sizeOptions.map((opt, i) => (
+                      <span key={i} className={`px-2 py-1 rounded-lg text-[10px] font-semibold border ${
+                        opt.isSoldOut 
+                          ? 'bg-red-50 text-red-700 border-red-200 line-through'
+                          : 'bg-slate-50 text-slate-800 border-slate-200'
+                      }`}>
+                        {opt.size}: ₹{opt.price.toLocaleString('en-IN')}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="font-bold text-slate-900 text-xs">₹{prod.price.toLocaleString('en-IN')}</span>
+                  )}
+                </div>
+              </div>
+
+              {/* Bottom Actions */}
+              <div className="pt-2 flex items-center gap-2 border-t border-slate-100">
+                <button
+                  onClick={() => handleOpenEdit(prod)}
+                  className="flex-1 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-semibold rounded-xl transition-colors cursor-pointer text-center"
+                >
+                  Edit Product
+                </button>
+                <button
+                  onClick={() => handleDelete(prod.id)}
+                  className="px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-semibold rounded-xl transition-colors cursor-pointer"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Desktop Products Table (hidden on mobile, visible on >= md) */}
+      <div className="hidden md:block bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs text-slate-700">
+          <table className="w-full text-left text-xs text-slate-700 min-w-[700px]">
             <thead className="bg-slate-50 border-b border-slate-200 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
               <tr>
                 <th className="px-5 py-3">Product</th>
@@ -382,41 +480,41 @@ export const ProductsManager: React.FC = () => {
                   </button>
                 </div>
 
-                <div className="space-y-2 pt-2">
+                <div className="space-y-2.5 pt-2">
                   {formData.sizeOptions?.map((opt, idx) => (
-                    <div key={idx} className="flex items-center gap-3 bg-white p-2.5 rounded-lg border border-slate-200">
-                      <div className="w-28">
+                    <div key={idx} className="grid grid-cols-2 sm:flex sm:items-center gap-2.5 bg-white p-3 rounded-xl border border-slate-200">
+                      <div className="col-span-1 sm:w-28">
                         <label className="block text-[10px] font-semibold text-slate-500 mb-0.5">Volume Size</label>
                         <input
                           type="text"
                           value={opt.size}
                           onChange={(e) => handleUpdateSizeOption(idx, 'size', e.target.value)}
                           placeholder="e.g. 100ml"
-                          className="w-full bg-slate-50 border border-slate-200 rounded px-2 py-1 text-xs font-semibold focus:outline-none focus:border-[#d6a750]"
+                          className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs font-semibold focus:outline-none focus:border-[#d6a750]"
                         />
                       </div>
 
-                      <div className="w-32">
+                      <div className="col-span-1 sm:w-32">
                         <label className="block text-[10px] font-semibold text-slate-500 mb-0.5">Price (₹)</label>
                         <input
                           type="number"
                           value={opt.price}
                           onChange={(e) => handleUpdateSizeOption(idx, 'price', Number(e.target.value))}
-                          className="w-full bg-slate-50 border border-slate-200 rounded px-2 py-1 text-xs font-bold text-slate-900 focus:outline-none focus:border-[#d6a750]"
+                          className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs font-bold text-slate-900 focus:outline-none focus:border-[#d6a750]"
                         />
                       </div>
 
-                      <div className="w-32">
+                      <div className="col-span-1 sm:w-32">
                         <label className="block text-[10px] font-semibold text-slate-500 mb-0.5">Original MRP (₹)</label>
                         <input
                           type="number"
                           value={opt.originalPrice || 0}
                           onChange={(e) => handleUpdateSizeOption(idx, 'originalPrice', Number(e.target.value))}
-                          className="w-full bg-slate-50 border border-slate-200 rounded px-2 py-1 text-xs text-slate-500 focus:outline-none focus:border-[#d6a750]"
+                          className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-500 focus:outline-none focus:border-[#d6a750]"
                         />
                       </div>
 
-                      <div className="flex items-center gap-1.5 pt-4">
+                      <div className="col-span-1 flex items-center justify-between sm:pt-4 sm:ml-auto gap-2">
                         <label className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-700 cursor-pointer">
                           <input
                             type="checkbox"
@@ -426,16 +524,16 @@ export const ProductsManager: React.FC = () => {
                           />
                           <span className={opt.isSoldOut ? 'text-red-600 font-bold' : ''}>Sold Out</span>
                         </label>
-                      </div>
 
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveSizeOption(idx)}
-                        className="text-red-500 hover:text-red-700 text-base font-bold ml-auto pt-3 px-2 cursor-pointer"
-                        title="Remove size"
-                      >
-                        ✕
-                      </button>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveSizeOption(idx)}
+                          className="text-red-500 hover:text-red-700 text-sm font-bold p-1 cursor-pointer"
+                          title="Remove size"
+                        >
+                          ✕
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
