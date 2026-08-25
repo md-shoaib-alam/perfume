@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { Show, UserButton } from '@clerk/nextjs';
 import { AuthModal } from '../auth/AuthModal';
+import { client as appwriteClient } from '@/lib/appwrite';
 import { DashboardOverview } from './DashboardOverview';
 import { ProductsManager } from './ProductsManager';
 import { OrdersManager } from './OrdersManager';
@@ -23,6 +24,41 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onBackToStore }) => {
   const [activeTab, setActiveTab] = useState<TabType>('overview');
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
+  const [pingStatus, setPingStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [pingMessage, setPingMessage] = useState<string>('');
+
+  const handlePingAppwrite = async () => {
+    setPingStatus('loading');
+    setPingMessage('Pinging...');
+    const startTime = Date.now();
+    try {
+      if (typeof (appwriteClient as any).ping === 'function') {
+        const res = await (appwriteClient as any).ping();
+        const duration = Date.now() - startTime;
+        setPingStatus('success');
+        setPingMessage(`OK (${duration}ms)`);
+        console.log('Appwrite ping response:', res);
+      } else {
+        const endpoint = process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT || 'https://sgp.cloud.appwrite.io/v1';
+        const projectId = process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID || '6a8d5a010000ea833fb9';
+        const res = await fetch(`${endpoint}/health`, {
+          headers: { 'X-Appwrite-Project': projectId }
+        });
+        const duration = Date.now() - startTime;
+        setPingStatus('success');
+        setPingMessage(`OK (${duration}ms)`);
+      }
+    } catch (err: any) {
+      console.error('Appwrite ping error:', err);
+      setPingStatus('error');
+      setPingMessage('Error');
+    }
+
+    setTimeout(() => {
+      setPingStatus('idle');
+      setPingMessage('');
+    }, 4000);
+  };
 
   const TABS: { id: TabType; name: string; icon: React.ReactNode }[] = [
     {
@@ -159,6 +195,38 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onBackToStore }) => {
 
         {/* Footer Actions */}
         <div className="p-4 border-t border-slate-800 space-y-2">
+          {/* Appwrite Status Ping Button */}
+          <button
+            onClick={handlePingAppwrite}
+            disabled={pingStatus === 'loading'}
+            className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${
+              pingStatus === 'success'
+                ? 'bg-emerald-950/70 text-emerald-300 border-emerald-500/50'
+                : pingStatus === 'error'
+                ? 'bg-rose-950/70 text-rose-300 border-rose-500/50'
+                : pingStatus === 'loading'
+                ? 'bg-amber-950/70 text-amber-300 border-amber-500/50 animate-pulse'
+                : 'bg-slate-900 text-slate-300 border-slate-700 hover:border-slate-600 hover:text-white'
+            }`}
+            title="Test Appwrite Connection Ping"
+          >
+            <div className="flex items-center gap-2">
+              <span className="text-sm">
+                {pingStatus === 'loading' ? '⏳' : pingStatus === 'success' ? '✅' : pingStatus === 'error' ? '❌' : '⚡'}
+              </span>
+              <span>Appwrite Status</span>
+            </div>
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-black/40">
+              {pingStatus === 'loading'
+                ? 'Pinging...'
+                : pingStatus === 'success'
+                ? pingMessage || 'Connected'
+                : pingStatus === 'error'
+                ? 'Error'
+                : 'Ping'}
+            </span>
+          </button>
+
           <button
             onClick={onBackToStore}
             className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-semibold transition-all border border-slate-700 cursor-pointer"
@@ -308,6 +376,38 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onBackToStore }) => {
 
             {/* Mobile Drawer Footer */}
             <div className="p-4 border-t border-slate-800 space-y-2">
+              {/* Appwrite Status Ping Button */}
+              <button
+                onClick={handlePingAppwrite}
+                disabled={pingStatus === 'loading'}
+                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
+                  pingStatus === 'success'
+                    ? 'bg-emerald-950/70 text-emerald-300 border-emerald-500/50'
+                    : pingStatus === 'error'
+                    ? 'bg-rose-950/70 text-rose-300 border-rose-500/50'
+                    : pingStatus === 'loading'
+                    ? 'bg-amber-950/70 text-amber-300 border-amber-500/50 animate-pulse'
+                    : 'bg-slate-900 text-slate-300 border-slate-700 hover:border-slate-600 hover:text-white'
+                }`}
+                title="Test Appwrite Connection Ping"
+              >
+                <div className="flex items-center gap-2">
+                  <span className="text-sm">
+                    {pingStatus === 'loading' ? '⏳' : pingStatus === 'success' ? '✅' : pingStatus === 'error' ? '❌' : '⚡'}
+                  </span>
+                  <span>Appwrite Status</span>
+                </div>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-black/40">
+                  {pingStatus === 'loading'
+                    ? 'Pinging...'
+                    : pingStatus === 'success'
+                    ? pingMessage || 'Connected'
+                    : pingStatus === 'error'
+                    ? 'Error'
+                    : 'Ping'}
+                </span>
+              </button>
+
               <button
                 onClick={() => {
                   setIsMobileNavOpen(false);

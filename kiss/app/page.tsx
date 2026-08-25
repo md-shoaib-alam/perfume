@@ -19,6 +19,7 @@ import { AuthModal } from './auth/AuthModal';
 import { AccountDashboard } from './components/AccountDashboard';
 import { api } from './services/api';
 import { PRODUCTS as FALLBACK_PRODUCTS } from './data/products';
+import { client as appwriteClient } from '../lib/appwrite';
 import type { Product, CartItem } from './types';
 
 export default function Page() {
@@ -33,8 +34,15 @@ export default function Page() {
   const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin');
   const [selectedProductModal, setSelectedProductModal] = useState<Product | null>(null);
 
-  // Load products from backend / localStorage
+  // Load products & ping Appwrite
   useEffect(() => {
+    // Ping Appwrite backend server to verify connection setup
+    if (typeof (appwriteClient as any).ping === 'function') {
+      (appwriteClient as any).ping()
+        .then((res: any) => console.log('Appwrite connected successfully:', res))
+        .catch((err: any) => console.warn('Appwrite ping status:', err));
+    }
+
     const load = async () => {
       const data = await api.getProducts();
       if (data && data.length > 0) {
