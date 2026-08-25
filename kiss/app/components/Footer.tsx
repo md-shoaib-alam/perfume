@@ -188,9 +188,10 @@ export const Footer: React.FC = () => {
                     subscribe to get notified about product launches, special offers and company news.
                   </p>
                   
-                  <form onSubmit={handleSubscribe} className="relative w-full">
+                  <form onSubmit={handleSubscribe} suppressHydrationWarning className="relative w-full">
                     <input
                       type="email"
+                      suppressHydrationWarning
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="Your Email"

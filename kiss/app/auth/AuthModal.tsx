@@ -46,6 +46,23 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     }
   }, [isOpen]);
 
+  // Reset loading state when window regains focus or navigates back (e.g. OAuth cancelled)
+  useEffect(() => {
+    const handleReturnToTab = () => {
+      setIsLoading(false);
+    };
+
+    window.addEventListener('focus', handleReturnToTab);
+    window.addEventListener('visibilitychange', handleReturnToTab);
+    window.addEventListener('pageshow', handleReturnToTab);
+
+    return () => {
+      window.removeEventListener('focus', handleReturnToTab);
+      window.removeEventListener('visibilitychange', handleReturnToTab);
+      window.removeEventListener('pageshow', handleReturnToTab);
+    };
+  }, []);
+
   // Resend OTP countdown timer
   useEffect(() => {
     let interval: NodeJS.Timeout;
