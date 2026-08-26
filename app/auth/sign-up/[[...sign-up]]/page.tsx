@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useSignIn, useSignUp, useClerk } from '@clerk/nextjs';
+import { useClerk } from '@clerk/nextjs';
 import { api } from '@/app/services/api';
 
 type AuthStep = 'identifier' | 'link_email' | 'otp';
@@ -25,8 +25,6 @@ export default function CustomSignUpPage() {
   const otpInputsRef = useRef<(HTMLInputElement | null)[]>([]);
 
   const clerk = useClerk();
-  const { isLoaded: isSignInLoaded, signIn, setActive: setSignInActive } = useSignIn();
-  const { isLoaded: isSignUpLoaded, signUp, setActive: setSignUpActive } = useSignUp();
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -236,24 +234,29 @@ export default function CustomSignUpPage() {
     setErrorMsg('');
 
     try {
-      if (activeAuthType === 'signup' && isSignUpLoaded && signUp) {
-        const result = await signUp.attemptEmailAddressVerification({ code });
-        if (result.status === 'complete' && setSignUpActive) {
-          await setSignUpActive({ session: result.createdSessionId });
+      const client = await getClerkClient();
+      if (!client) {
+        throw new Error('Authentication client is not available.');
+      }
+
+      if (activeAuthType === 'signup' && client.signUp) {
+        const result = await client.signUp.attemptEmailAddressVerification({ code });
+        if (result.status === 'complete' && clerk.setActive) {
+          await clerk.setActive({ session: result.createdSessionId });
           setSuccessMsg('Account created & verified! Welcome to NEESH.');
           setTimeout(() => {
             router.push('/');
           }, 900);
           return;
         }
-      } else if (activeAuthType === 'signin' && isSignInLoaded && signIn) {
-        const result = await signIn.attemptFirstFactor({
+      } else if (activeAuthType === 'signin' && client.signIn) {
+        const result = await client.signIn.attemptFirstFactor({
           strategy: 'email_code',
           code,
         });
 
-        if (result.status === 'complete' && setSignInActive) {
-          await setSignInActive({ session: result.createdSessionId });
+        if (result.status === 'complete' && clerk.setActive) {
+          await clerk.setActive({ session: result.createdSessionId });
           setSuccessMsg('Signed in successfully! Welcome to NEESH.');
           setTimeout(() => {
             router.push('/');
@@ -305,8 +308,8 @@ export default function CustomSignUpPage() {
         continueSignUpUrl: homeUrl,
       };
 
-      if (typeof clerk?.authenticateWithRedirect === 'function') {
-        await clerk.authenticateWithRedirect(oauthParams);
+      if (typeof (clerk as any)?.authenticateWithRedirect === 'function') {
+        await (clerk as any).authenticateWithRedirect(oauthParams);
         return;
       }
 

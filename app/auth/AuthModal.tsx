@@ -336,8 +336,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       };
 
       // Priority 1: Top-level Clerk universal redirect (handles new & existing users for both Apple & Google)
-      if (typeof clerk?.authenticateWithRedirect === 'function') {
-        await clerk.authenticateWithRedirect(oauthParams);
+      if (typeof (clerk as any)?.authenticateWithRedirect === 'function') {
+        await (clerk as any).authenticateWithRedirect(oauthParams);
         return;
       }
 

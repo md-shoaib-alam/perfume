@@ -1,86 +1,101 @@
 'use client';
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import type { Product, ProductSizeOption } from '../types';
 import { api } from '../services/api';
 import { MediaUploader } from '../components/MediaUploader';
 import { useConfirm } from '../components/CustomConfirmModal';
+import { deleteMediaFromAppwrite } from '@/lib/appwrite';
+import { getProductSlug } from '../utils/slug';
 
 
 export const ProductsManager: React.FC = () => {
   const { showConfirm, showAlert } = useConfirm();
   const [products, setProducts] = useState<Product[]>([]);
+  const [collections, setCollections] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [genderFilter, setGenderFilter] = useState('all');
+  const [collectionFilter, setCollectionFilter] = useState('all');
+  const [openActionMenuId, setOpenActionMenuId] = useState<string | null>(null);
   
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [formData, setFormData] = useState<Partial<Product>>({
     name: '',
-    subtitle: '',
+    subtitle: 'Extrait De Parfum',
     category: 'extrait-de-parfum',
     gender: 'For Him',
-    price: 4950,
-    originalPrice: 6200,
+    collection: 'haute-collection',
+    price: 3600,
+    originalPrice: 4200,
     volume: '100ml',
     image: '',
     hoverImage: '',
+    description: '',
+    notes: { top: [], heart: [], base: [] },
     isBestseller: false,
     isNew: false,
     isPreOrder: false,
-    shippingNote: '',
-    buttonText: 'ADD TO BAG',
-    tagline: '',
-    description: '',
-    notes: { top: [], heart: [], base: [] },
+    stock: 100,
     sizeOptions: [
-      { size: '15ml', price: 1900, originalPrice: 2400, isSoldOut: false },
-      { size: '50ml', price: 3200, originalPrice: 4200, isSoldOut: false },
-      { size: '100ml', price: 4950, originalPrice: 6200, isSoldOut: false }
-    ]
+      { size: '15ml', price: 1900, isSoldOut: false },
+      { size: '50ml', price: 2900, isSoldOut: false },
+      { size: '100ml', price: 3600, isSoldOut: false }
+    ],
+    storyBlocks: []
   });
 
-  const loadProducts = async () => {
+  const loadData = async () => {
     setLoading(true);
     try {
-      const data = await api.getProducts();
-      setProducts(data);
+      const [prodsData, colsData] = await Promise.all([
+        api.getProducts(),
+        api.getCollections().catch(() => [])
+      ]);
+      setProducts(prodsData || []);
+      setCollections(colsData || []);
+    } catch (err: any) {
+      console.error('Failed to load products/collections:', err);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    loadProducts();
+    loadData();
+    const handleDocClick = () => setOpenActionMenuId(null);
+    window.addEventListener('click', handleDocClick);
+    return () => window.removeEventListener('click', handleDocClick);
   }, []);
 
   const handleOpenAdd = () => {
     setEditingProduct(null);
     setFormData({
       name: '',
-      subtitle: '',
+      subtitle: 'Extrait De Parfum',
       category: 'extrait-de-parfum',
       gender: 'For Him',
-      price: 0,
-      originalPrice: 0,
+      collection: 'haute-collection',
+      price: 3600,
+      originalPrice: 4200,
       volume: '100ml',
       image: '',
       hoverImage: '',
+      description: '',
+      notes: { top: [], heart: [], base: [] },
       isBestseller: false,
       isNew: false,
       isPreOrder: false,
-      shippingNote: '',
-      buttonText: 'ADD TO BAG',
-      tagline: '',
-      description: '',
-      notes: { top: [], heart: [], base: [] },
+      stock: 100,
       sizeOptions: [
-        { size: '15ml', price: 0, originalPrice: 0, isSoldOut: false },
-        { size: '50ml', price: 0, originalPrice: 0, isSoldOut: false },
-        { size: '100ml', price: 0, originalPrice: 0, isSoldOut: false }
-      ]
+        { size: '15ml', price: 1900, isSoldOut: false },
+        { size: '50ml', price: 2900, isSoldOut: false },
+        { size: '100ml', price: 3600, isSoldOut: false }
+      ],
+      storyBlocks: []
     });
     setIsModalOpen(true);
   };
@@ -90,13 +105,15 @@ export const ProductsManager: React.FC = () => {
     setFormData({
       ...product,
       gender: product.gender || 'For Him',
-      sizeOptions: product.sizeOptions && product.sizeOptions.length > 0
-        ? product.sizeOptions
+      collection: product.collection || 'haute-collection',
+      sizeOptions: product.sizeOptions && product.sizeOptions.length > 0 
+        ? product.sizeOptions 
         : [
             { size: '15ml', price: 1900, isSoldOut: false },
             { size: '50ml', price: Math.round(product.price * 0.58), isSoldOut: false },
             { size: '100ml', price: product.price, isSoldOut: false }
-          ]
+          ],
+      storyBlocks: product.storyBlocks || []
     });
     setIsModalOpen(true);
   };
@@ -104,14 +121,28 @@ export const ProductsManager: React.FC = () => {
   const handleDelete = async (id: string) => {
     const confirmed = await showConfirm({
       title: 'Remove Perfume',
-      message: 'Are you sure you want to remove this perfume from catalog?',
+      message: 'Are you sure you want to remove this perfume from catalog? All associated image assets will be deleted from storage.',
       confirmText: 'Delete',
       variant: 'danger'
     });
     if (!confirmed) return;
+
+    const productToDelete = products.find(p => p.id === id);
     try {
       await api.deleteProduct(id);
-      await loadProducts();
+      
+      // Clean up orphaned images from Appwrite Storage to prevent wasted storage resources
+      if (productToDelete) {
+        if (productToDelete.image) deleteMediaFromAppwrite(productToDelete.image).catch(() => {});
+        if (productToDelete.hoverImage) deleteMediaFromAppwrite(productToDelete.hoverImage).catch(() => {});
+        if (productToDelete.storyBlocks) {
+          productToDelete.storyBlocks.forEach(b => {
+            if (b.image) deleteMediaFromAppwrite(b.image).catch(() => {});
+          });
+        }
+      }
+
+      await loadData();
     } catch (err: any) {
       await showAlert({
         title: 'Error Deleting Product',
@@ -150,6 +181,40 @@ export const ProductsManager: React.FC = () => {
     setFormData({ ...formData, sizeOptions: current });
   };
 
+  const handleAddStoryBlock = () => {
+    const current = formData.storyBlocks || [];
+    if (current.length >= 10) {
+      showAlert({
+        title: 'Maximum Limit Reached',
+        message: 'You can upload up to 10 visual storytelling blocks per fragrance.',
+        variant: 'warning'
+      });
+      return;
+    }
+    setFormData({
+      ...formData,
+      storyBlocks: [
+        ...current,
+        { image: '', title: '', description: '' }
+      ]
+    });
+  };
+
+  const handleUpdateStoryBlock = (idx: number, field: string, val: string) => {
+    const current = [...(formData.storyBlocks || [])];
+    current[idx] = { ...current[idx], [field]: val };
+    setFormData({ ...formData, storyBlocks: current });
+  };
+
+  const handleRemoveStoryBlock = (idx: number) => {
+    const targetBlock = formData.storyBlocks?.[idx];
+    if (targetBlock?.image) {
+      deleteMediaFromAppwrite(targetBlock.image).catch(() => {});
+    }
+    const current = (formData.storyBlocks || []).filter((_, i) => i !== idx);
+    setFormData({ ...formData, storyBlocks: current });
+  };
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name || !formData.price) {
@@ -163,12 +228,19 @@ export const ProductsManager: React.FC = () => {
 
     try {
       if (editingProduct) {
+        // Clean up replaced images from Appwrite Storage to keep storage lean
+        if (editingProduct.image && formData.image && editingProduct.image !== formData.image) {
+          deleteMediaFromAppwrite(editingProduct.image).catch(() => {});
+        }
+        if (editingProduct.hoverImage && formData.hoverImage && editingProduct.hoverImage !== formData.hoverImage) {
+          deleteMediaFromAppwrite(editingProduct.hoverImage).catch(() => {});
+        }
         await api.updateProduct(editingProduct.id, formData);
       } else {
         await api.createProduct(formData);
       }
       setIsModalOpen(false);
-      await loadProducts();
+      await loadData();
     } catch (err: any) {
       await showAlert({
         title: 'Error Saving Product',
@@ -181,9 +253,13 @@ export const ProductsManager: React.FC = () => {
   const filteredProducts = products.filter((p) => {
     const matchesCat = categoryFilter === 'all' || p.category === categoryFilter;
     const matchesGender = genderFilter === 'all' || p.gender === genderFilter;
+    const matchesCollection = collectionFilter === 'all' || 
+                              p.collection === collectionFilter ||
+                              (collectionFilter === 'haute-collection' && !p.collection);
     const matchesSearch = p.name.toLowerCase().includes(search.toLowerCase()) || 
-                          p.subtitle?.toLowerCase().includes(search.toLowerCase());
-    return matchesCat && matchesGender && matchesSearch;
+                          p.subtitle?.toLowerCase().includes(search.toLowerCase()) ||
+                          (p.collection && p.collection.toLowerCase().includes(search.toLowerCase()));
+    return matchesCat && matchesGender && matchesCollection && matchesSearch;
   });
 
   return (
@@ -192,7 +268,7 @@ export const ProductsManager: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-xl border border-slate-200 shadow-xs">
         <div>
           <h2 className="text-xl font-serif font-bold text-slate-900">Fragrance Catalog Manager</h2>
-          <p className="text-xs text-slate-500">Configure fragrance gender targeting, multi-volume pricing, and inventory.</p>
+          <p className="text-xs text-slate-500">Configure fragrance collections, gender targeting, multi-volume pricing, and inventory.</p>
         </div>
 
         <button
@@ -204,20 +280,40 @@ export const ProductsManager: React.FC = () => {
       </div>
 
       {/* Filter Bar */}
-      <div className="flex flex-col sm:flex-row gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         <input
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search perfumes by name or accords..."
-          className="flex-1 bg-white border border-slate-200 rounded-lg px-4 py-2 text-xs text-slate-900 focus:outline-none focus:border-[#d6a750]"
+          className="w-full bg-white border border-slate-200 rounded-lg px-4 py-2 text-xs text-slate-900 focus:outline-none focus:border-[#d6a750]"
         />
+
+        {/* Collection Filter */}
+        <select
+          value={collectionFilter}
+          onChange={(e) => setCollectionFilter(e.target.value)}
+          className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-[#d6a750]"
+        >
+          <option value="all">All Collections</option>
+          {collections.map((col) => (
+            <option key={col.id || col.slug} value={col.slug || col.title?.toLowerCase()}>
+              {col.title}
+            </option>
+          ))}
+          <option value="haute-collection">Haute Collection</option>
+          <option value="bureau-collection">Bureau Collection</option>
+          <option value="luxe-collection">Luxe Collection</option>
+          <option value="miss-neesh">Miss NEESH Collection</option>
+          <option value="pour-femme">Pour Femme / Women</option>
+          <option value="pour-homme">Pour Homme / Men</option>
+        </select>
 
         {/* Gender / Audience Filter */}
         <select
           value={genderFilter}
           onChange={(e) => setGenderFilter(e.target.value)}
-          className="bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-[#d6a750]"
+          className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-[#d6a750]"
         >
           <option value="all">All Targets (Him / Her / Gifts)</option>
           <option value="For Him">For Him (Men)</option>
@@ -229,12 +325,13 @@ export const ProductsManager: React.FC = () => {
         <select
           value={categoryFilter}
           onChange={(e) => setCategoryFilter(e.target.value)}
-          className="bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-[#d6a750]"
+          className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-[#d6a750]"
         >
           <option value="all">All Categories</option>
           <option value="extrait-de-parfum">Extrait De Parfum</option>
           <option value="attar">Imperial Attar</option>
-          <option value="gift-set">Gift & Discovery Set</option>
+          <option value="discovery-set">Discovery Set</option>
+          <option value="gift-set">Luxury Gift Set</option>
         </select>
       </div>
 
@@ -278,7 +375,14 @@ export const ProductsManager: React.FC = () => {
                       {prod.gender || 'For Him'}
                     </span>
                   </div>
-                  <p className="text-[11px] text-slate-500 truncate mt-0.5">{prod.subtitle}</p>
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    {prod.collection && (
+                      <span className="px-1.5 py-0.5 bg-amber-50 text-[#916618] border border-amber-200/80 rounded text-[9px] font-bold uppercase tracking-wider">
+                        {prod.collection.replace(/-/g, ' ')}
+                      </span>
+                    )}
+                    <p className="text-[11px] text-slate-500 truncate">{prod.subtitle}</p>
+                  </div>
                   
                   {/* Status Badges */}
                   <div className="flex flex-wrap gap-1 mt-1.5">
@@ -316,22 +420,65 @@ export const ProductsManager: React.FC = () => {
                     <span className="font-bold text-slate-900 text-xs">₹{prod.price.toLocaleString('en-IN')}</span>
                   )}
                 </div>
-              </div>
+              </div>              {/* Bottom Actions */}
+              <div className="pt-2 flex items-center justify-between border-t border-slate-100">
+                <Link
+                  href={`/products/${getProductSlug(prod)}`}
+                  target="_blank"
+                  className="text-xs font-semibold text-[#caa04c] hover:text-[#b88f3e] inline-flex items-center gap-1"
+                >
+                  <span>View on Store</span>
+                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                  </svg>
+                </Link>
 
-              {/* Bottom Actions */}
-              <div className="pt-2 flex items-center gap-2 border-t border-slate-100">
-                <button
-                  onClick={() => handleOpenEdit(prod)}
-                  className="flex-1 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-semibold rounded-xl transition-colors cursor-pointer text-center"
-                >
-                  Edit Product
-                </button>
-                <button
-                  onClick={() => handleDelete(prod.id)}
-                  className="px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-semibold rounded-xl transition-colors cursor-pointer"
-                >
-                  Delete
-                </button>
+                <div className="relative inline-block text-left" onClick={(e) => e.stopPropagation()}>
+                  <button
+                    type="button"
+                    onClick={() => setOpenActionMenuId(openActionMenuId === prod.id ? null : prod.id)}
+                    className="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-900 flex items-center justify-center transition-colors cursor-pointer border border-slate-200"
+                    title="Actions"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+                    </svg>
+                  </button>
+
+                  {openActionMenuId === prod.id && (
+                    <div className="absolute right-0 bottom-9 w-44 bg-white rounded-xl shadow-xl border border-slate-200 py-1.5 z-30 animate-fade-in-up">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setOpenActionMenuId(null);
+                          handleOpenEdit(prod);
+                        }}
+                        className="w-full px-3.5 py-2 text-left text-xs font-semibold text-slate-800 hover:bg-slate-50 flex items-center gap-2.5 transition-colors cursor-pointer"
+                      >
+                        <svg className="w-3.5 h-3.5 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                        <span>Edit Fragrance</span>
+                      </button>
+
+                      <div className="h-px bg-slate-100 my-1" />
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setOpenActionMenuId(null);
+                          handleDelete(prod.id);
+                        }}
+                        className="w-full px-3.5 py-2 text-left text-xs font-semibold text-rose-600 hover:bg-rose-50 flex items-center gap-2.5 transition-colors cursor-pointer"
+                      >
+                        <svg className="w-3.5 h-3.5 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                        <span>Delete Fragrance</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           ))
@@ -339,26 +486,28 @@ export const ProductsManager: React.FC = () => {
       </div>
 
       {/* Desktop Products Table (hidden on mobile, visible on >= md) */}
-      <div className="hidden md:block bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs text-slate-700 min-w-[760px]">
+      <div className="hidden md:block bg-white rounded-xl border border-slate-200 shadow-xs overflow-visible">
+        <div className="overflow-x-visible">
+          <table className="w-full text-left text-xs text-slate-700 min-w-[950px]">
             <thead className="bg-slate-50 border-b border-slate-200 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
               <tr>
                 <th className="px-5 py-3.5">Product</th>
-                <th className="px-4 py-3.5">Audience</th>
+                <th className="px-4 py-3.5">Collection</th>
+                <th className="px-4 py-3.5">Category</th>
+                <th className="px-4 py-3.5">Gender / Target</th>
                 <th className="px-4 py-3.5">Volume Options & Prices</th>
                 <th className="px-4 py-3.5">Status</th>
-                <th className="px-5 py-3.5 text-right whitespace-nowrap w-36">Actions</th>
+                <th className="px-5 py-3.5 text-right whitespace-nowrap w-24">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {loading ? (
                 <tr>
-                  <td colSpan={5} className="text-center py-8 text-slate-400">Loading catalog...</td>
+                  <td colSpan={7} className="text-center py-8 text-slate-400">Loading catalog...</td>
                 </tr>
               ) : filteredProducts.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="text-center py-8 text-slate-400">No products found for this filter.</td>
+                  <td colSpan={7} className="text-center py-8 text-slate-400">No products found for this filter.</td>
                 </tr>
               ) : (
                 filteredProducts.map((prod) => (
@@ -377,6 +526,24 @@ export const ProductsManager: React.FC = () => {
                           <div className="text-[11px] text-slate-500 truncate max-w-xs">{prod.subtitle}</div>
                         </div>
                       </div>
+                    </td>
+                    <td className="px-4 py-3.5 align-middle whitespace-nowrap">
+                      <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-50 text-[#916618] border border-amber-200/80 capitalize">
+                        {(prod.collection || 'haute-collection').replace(/-/g, ' ')}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3.5 align-middle whitespace-nowrap">
+                      <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200 capitalize">
+                        {prod.category === 'extrait-de-parfum'
+                          ? 'Extrait De Parfum'
+                          : prod.category === 'attar'
+                          ? 'Imperial Attar'
+                          : prod.category === 'discovery-set'
+                          ? 'Discovery Set'
+                          : prod.category === 'gift-set'
+                          ? 'Gift Set'
+                          : prod.category || 'Extrait De Parfum'}
+                      </span>
                     </td>
                     <td className="px-4 py-3.5 align-middle whitespace-nowrap">
                       <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${
@@ -424,27 +591,64 @@ export const ProductsManager: React.FC = () => {
                       </div>
                     </td>
                     <td className="px-5 py-3.5 text-right whitespace-nowrap align-middle">
-                      <div className="flex items-center justify-end gap-2">
+                      <div className="relative inline-block text-left" onClick={(e) => e.stopPropagation()}>
                         <button
                           type="button"
-                          onClick={() => handleOpenEdit(prod)}
-                          className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-semibold rounded-lg transition-all cursor-pointer inline-flex items-center gap-1.5 border border-slate-200 hover:border-slate-300 shadow-2xs"
+                          onClick={() => setOpenActionMenuId(openActionMenuId === prod.id ? null : prod.id)}
+                          className="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-900 flex items-center justify-center transition-colors cursor-pointer border border-slate-200 shadow-2xs"
+                          title="Actions"
                         >
-                          <svg className="w-3.5 h-3.5 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
                           </svg>
-                          <span>Edit</span>
                         </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDelete(prod.id)}
-                          className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-semibold rounded-lg transition-all cursor-pointer inline-flex items-center gap-1.5 border border-rose-200 hover:border-rose-300 shadow-2xs"
-                        >
-                          <svg className="w-3.5 h-3.5 text-rose-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                          </svg>
-                          <span>Delete</span>
-                        </button>
+
+                        {openActionMenuId === prod.id && (
+                          <div className="absolute right-0 top-9 w-44 bg-white rounded-xl shadow-xl border border-slate-200 py-1.5 z-40 animate-fade-in-up">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setOpenActionMenuId(null);
+                                handleOpenEdit(prod);
+                              }}
+                              className="w-full px-3.5 py-2 text-left text-xs font-semibold text-slate-800 hover:bg-slate-50 flex items-center gap-2.5 transition-colors cursor-pointer"
+                            >
+                              <svg className="w-3.5 h-3.5 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                              </svg>
+                              <span>Edit Fragrance</span>
+                            </button>
+
+                            <Link
+                              href={`/products/${getProductSlug(prod)}`}
+                              target="_blank"
+                              onClick={() => setOpenActionMenuId(null)}
+                              className="w-full px-3.5 py-2 text-left text-xs font-semibold text-slate-800 hover:bg-slate-50 flex items-center gap-2.5 transition-colors cursor-pointer"
+                            >
+                              <svg className="w-3.5 h-3.5 text-[#caa04c]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                              </svg>
+                              <span>View on Store</span>
+                            </Link>
+
+                            <div className="h-px bg-slate-100 my-1" />
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setOpenActionMenuId(null);
+                                handleDelete(prod.id);
+                              }}
+                              className="w-full px-3.5 py-2 text-left text-xs font-semibold text-rose-600 hover:bg-rose-50 flex items-center gap-2.5 transition-colors cursor-pointer"
+                            >
+                              <svg className="w-3.5 h-3.5 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                              <span>Delete Fragrance</span>
+                            </button>
+                          </div>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -468,20 +672,36 @@ export const ProductsManager: React.FC = () => {
                   {editingProduct ? editingProduct.name : 'Create a new artisanal perfume listing in the store catalog'}
                 </p>
               </div>
-              <button
-                type="button"
-                onClick={() => setIsModalOpen(false)}
-                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-colors cursor-pointer"
-              >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
+              <div className="flex items-center gap-2">
+                {editingProduct && (
+                  <a
+                    href={`/products/${editingProduct.id}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-3.5 py-1.5 bg-[#c59b48]/10 hover:bg-[#c59b48]/20 text-[#916618] font-bold text-xs rounded-xl border border-[#c59b48]/30 flex items-center gap-1.5 transition-all shadow-2xs"
+                    title="Preview live product page and hero scroll showcase"
+                  >
+                    <svg className="w-3.5 h-3.5 text-[#916618]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    </svg>
+                    <span>Preview Storefront UI</span>
+                  </a>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setIsModalOpen(false)}
+                  className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-colors cursor-pointer"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
             </div>
 
             <form onSubmit={handleSave} className="space-y-6">
-              {/* Basic Details */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {/* Basic Details: Fragrance Name, Collection, Category, Target Gender, Subtitle */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1.5">Fragrance Name *</label>
                   <input
@@ -495,7 +715,44 @@ export const ProductsManager: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">Target Category / Gender *</label>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">Collection / Story Line *</label>
+                  <select
+                    value={formData.collection || 'haute-collection'}
+                    onChange={(e) => setFormData({ ...formData, collection: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-900 focus:outline-none focus:border-[#d6a750] focus:bg-white transition-all cursor-pointer"
+                  >
+                    <option value="haute-collection">Haute Collection</option>
+                    <option value="bureau-collection">Bureau Collection</option>
+                    <option value="luxe-collection">Luxe Collection</option>
+                    <option value="miss-neesh">Miss NEESH Collection</option>
+                    <option value="pour-femme">Pour Femme / Women</option>
+                    <option value="pour-homme">Pour Homme / Men</option>
+                    <option value="discovery-sets">Discovery & Travel Sets</option>
+                    <option value="gift-sets">Luxury Gift Sets</option>
+                    {collections && collections.length > 0 && collections.map((col) => (
+                      <option key={col.id || col.slug} value={col.slug || col.title?.toLowerCase()}>
+                        {col.title}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">Product Category *</label>
+                  <select
+                    value={formData.category || 'extrait-de-parfum'}
+                    onChange={(e) => setFormData({ ...formData, category: e.target.value as any })}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-900 focus:outline-none focus:border-[#d6a750] focus:bg-white transition-all cursor-pointer"
+                  >
+                    <option value="extrait-de-parfum">Extrait De Parfum</option>
+                    <option value="attar">Imperial Attar</option>
+                    <option value="discovery-set">Discovery Set</option>
+                    <option value="gift-set">Luxury Gift Set</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">Target Gender *</label>
                   <select
                     value={formData.gender || 'For Him'}
                     onChange={(e) => setFormData({ ...formData, gender: e.target.value as any })}
@@ -504,17 +761,17 @@ export const ProductsManager: React.FC = () => {
                     <option value="For Him">For Him (Men)</option>
                     <option value="For Her">For Her (Women)</option>
                     <option value="Unisex">Unisex</option>
-                    <option value="Gift Sets">Gift Sets / Discovery</option>
+                    <option value="Gift Sets">Gift Sets</option>
                   </select>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">Concentration / Subtitle</label>
+                <div className="sm:col-span-2 lg:col-span-2">
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">Concentration / Notes Subtitle</label>
                   <input
                     type="text"
                     value={formData.subtitle || ''}
                     onChange={(e) => setFormData({ ...formData, subtitle: e.target.value })}
-                    placeholder="e.g. Extrait De Parfum"
+                    placeholder="e.g. Extrait De Parfum • Fresh, Earthy, Woody"
                     className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-[#d6a750] focus:bg-white transition-all"
                   />
                 </div>
@@ -619,6 +876,114 @@ export const ProductsManager: React.FC = () => {
                   onChange={(url) => setFormData({ ...formData, hoverImage: url })}
                   helperText="Packaging / alternative lifestyle photo shown on hover."
                 />
+              </div>
+
+              {/* Visual Storytelling Blocks (Max 10 Images with Title & Description) */}
+              <div className="p-5 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h4 className="font-serif font-bold text-slate-900 text-xs uppercase tracking-wider">
+                        Product Story & Detail Gallery (Max 10)
+                      </h4>
+                      <span className="px-2 py-0.5 bg-amber-100 text-amber-900 rounded-full text-[10px] font-bold">
+                        {formData.storyBlocks?.length || 0} / 10
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-500 mt-0.5">
+                      Upload high-resolution lifestyle images (16:9 / 9:16) with centered titles and craftsmanship stories displayed on the product page.
+                    </p>
+                  </div>
+
+                  {(formData.storyBlocks?.length || 0) < 10 && (
+                    <button
+                      type="button"
+                      onClick={handleAddStoryBlock}
+                      className="px-3.5 py-1.5 bg-[#c59b48] hover:bg-[#b58b38] text-white font-semibold text-xs tracking-wider rounded-lg shadow-2xs cursor-pointer flex items-center gap-1.5 self-start sm:self-auto transition-all"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                      </svg>
+                      <span>Add Story Block</span>
+                    </button>
+                  )}
+                </div>
+
+                {(!formData.storyBlocks || formData.storyBlocks.length === 0) ? (
+                  <div className="py-6 text-center bg-white rounded-xl border border-dashed border-slate-300 text-xs text-slate-400">
+                    No visual story blocks added yet. Click &quot;Add Story Block&quot; to upload lifestyle photos with titles.
+                  </div>
+                ) : (
+                  <div className="space-y-4 pt-1">
+                    {formData.storyBlocks.map((block, idx) => (
+                      <div key={idx} className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs space-y-3">
+                        <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                          <span className="font-serif font-bold text-slate-900 text-xs uppercase tracking-wider">
+                            Story Block #{idx + 1}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveStoryBlock(idx)}
+                            className="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded transition-colors cursor-pointer"
+                            title="Remove Story Block"
+                          >
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
+                        </div>
+
+                        <MediaUploader
+                          label="Story Visual Photo (Appwrite Storage) *"
+                          value={block.image || ''}
+                          onChange={(url) => handleUpdateStoryBlock(idx, 'image', url)}
+                          helperText="High-res lifestyle photo featuring the bottle in nature, model hands, or ingredients."
+                        />
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                              Block Title <span className="text-slate-400 font-normal">(Optional Serif Header)</span>
+                            </label>
+                            <input
+                              type="text"
+                              value={block.title || ''}
+                              onChange={(e) => handleUpdateStoryBlock(idx, 'title', e.target.value)}
+                              placeholder="e.g. Lingers like a star trail"
+                              className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-[#d6a750] focus:bg-white"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                              Block Subtitle <span className="text-slate-400 font-normal">(Optional Champagne Accent)</span>
+                            </label>
+                            <input
+                              type="text"
+                              value={block.subtitle || ''}
+                              onChange={(e) => handleUpdateStoryBlock(idx, 'subtitle', e.target.value)}
+                              placeholder="e.g. Master Perfumer Craftsmanship"
+                              className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-[#d6a750] focus:bg-white"
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                            Story Description / Narrative Text <span className="text-slate-400 font-normal">(Optional)</span>
+                          </label>
+                          <textarea
+                            rows={2}
+                            value={block.description || ''}
+                            onChange={(e) => handleUpdateStoryBlock(idx, 'description', e.target.value)}
+                            placeholder="e.g. For perfumer Kevin Mathys, a signature is about being distinct without the need to be unorthodox. A vibrant projection crafted with high concentration..."
+                            className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs text-slate-900 focus:outline-none focus:border-[#d6a750] focus:bg-white"
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div>

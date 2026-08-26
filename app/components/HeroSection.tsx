@@ -9,6 +9,7 @@ export interface HeroSlide {
   desktopImage: string;
   mobileImage: string;
   linkUrl: string;
+  position?: number;
 }
 
 interface HeroSectionProps {

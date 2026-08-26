@@ -1,5 +1,7 @@
 'use client';
+
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { api } from '../services/api';
 import { APPWRITE_ENDPOINT, APPWRITE_PROJECT_ID, APPWRITE_BUCKET_ID } from '@/lib/appwrite';
 
@@ -36,7 +38,7 @@ const DEFAULT_CAMPAIGNS: CampaignItem[] = [
   }
 ];
 
-export const GenderCampaignBanners: React.FC<GenderCampaignBannersProps> = ({ onSelectGender }) => {
+export const GenderCampaignBanners: React.FC<GenderCampaignBannersProps> = () => {
   const [campaigns, setCampaigns] = useState<CampaignItem[]>(DEFAULT_CAMPAIGNS);
 
   useEffect(() => {
@@ -80,26 +82,14 @@ export const GenderCampaignBanners: React.FC<GenderCampaignBannersProps> = ({ on
     loadCampaignMedia();
   }, []);
 
-  const handleClick = (e: React.MouseEvent, gender: 'For Him' | 'For Her') => {
-    e.preventDefault();
-    if (onSelectGender) {
-      onSelectGender(gender);
-    }
-    const elem = document.getElementById('bestsellers');
-    if (elem) {
-      elem.scrollIntoView({ behavior: 'smooth' });
-    }
-  };
-
   return (
     <section className="py-6 sm:py-10 bg-white">
       <div className="max-w-[1680px] mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
           {campaigns.map((item) => (
-            <button
-              type="button"
+            <Link
               key={item.id}
-              onClick={(e) => handleClick(e, item.gender)}
+              href={`/collections/${item.id}`}
               aria-label={`Shop ${item.title}`}
               className="group relative aspect-[4/5] sm:aspect-[3/4] md:aspect-[4/5] overflow-hidden rounded-md cursor-pointer block bg-slate-900 shadow-md text-left w-full"
             >
@@ -128,7 +118,7 @@ export const GenderCampaignBanners: React.FC<GenderCampaignBannersProps> = ({ on
                   DISCOVER
                 </span>
               </div>
-            </button>
+            </Link>
           ))}
         </div>
       </div>

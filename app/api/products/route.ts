@@ -3,12 +3,12 @@ import { databases, APPWRITE_DATABASE_ID } from '@/lib/appwrite';
 import { ID, Query } from 'appwrite';
 
 const formatProductDoc = (doc: any) => {
-  let parsedNotes = { top: [], heart: [], base: [] };
+  let parsedNotes: { top: string[]; heart: string[]; base: string[] } = { top: [], heart: [], base: [] };
   if (doc.notes) {
     try {
       parsedNotes = typeof doc.notes === 'string' ? JSON.parse(doc.notes) : doc.notes;
     } catch (e) {
-      parsedNotes = { top: [doc.notes], heart: [], base: [] };
+      parsedNotes = { top: [String(doc.notes)], heart: [], base: [] };
     }
   }
 
@@ -21,6 +21,15 @@ const formatProductDoc = (doc: any) => {
     try {
       parsedSizeOptions = typeof doc.sizeOptions === 'string' ? JSON.parse(doc.sizeOptions) : doc.sizeOptions;
     } catch (e) {}
+  }
+
+  let parsedStoryBlocks: any[] = [];
+  if (doc.storyBlocks) {
+    try {
+      parsedStoryBlocks = typeof doc.storyBlocks === 'string' ? JSON.parse(doc.storyBlocks) : doc.storyBlocks;
+    } catch (e) {
+      parsedStoryBlocks = [];
+    }
   }
 
   return {
@@ -47,7 +56,9 @@ const formatProductDoc = (doc: any) => {
     notes: parsedNotes,
     description: doc.description || '',
     stock: doc.stock == null ? 100 : Number(doc.stock),
-    sizeOptions: parsedSizeOptions
+    collection: doc.collection || '',
+    sizeOptions: parsedSizeOptions,
+    storyBlocks: parsedStoryBlocks
   };
 };
 
@@ -59,8 +70,30 @@ export async function GET(req: Request) {
     const id = searchParams.get('id');
 
     if (id) {
-      const doc = await databases.getDocument(APPWRITE_DATABASE_ID, 'products', id);
-      return NextResponse.json(formatProductDoc(doc));
+      try {
+        const doc = await databases.getDocument(APPWRITE_DATABASE_ID, 'products', id);
+        return NextResponse.json(formatProductDoc(doc));
+      } catch (docErr) {
+        // Fallback: look up by slug in all products
+        const listRes = await databases.listDocuments(APPWRITE_DATABASE_ID, 'products', [Query.limit(100)]);
+        const found = (listRes.documents || []).find((doc: any) => {
+          const docSlug = (doc.name || '')
+            .toLowerCase()
+            .trim()
+            .replace(/\s+/g, '-')
+            .replace(/&/g, '-and-')
+            .replace(/[^\w\-]+/g, '')
+            .replace(/\-\-+/g, '-')
+            .replace(/^-+/, '')
+            .replace(/-+$/, '');
+          return docSlug === id.toLowerCase() || doc.$id === id;
+        });
+
+        if (found) {
+          return NextResponse.json(formatProductDoc(found));
+        }
+        return NextResponse.json(null, { status: 404 });
+      }
     }
 
     const queries: string[] = [Query.limit(100)];
@@ -101,7 +134,9 @@ export async function POST(req: Request) {
       tagline: product.tagline || '',
       badgeText: product.badgeText || '',
       badgeSubtext: product.badgeSubtext || '',
+      collection: product.collection || '',
       sizeOptions: JSON.stringify(product.sizeOptions || []),
+      storyBlocks: JSON.stringify(product.storyBlocks || []),
       stock: product.stock == null ? 100 : Number(product.stock)
     };
 
@@ -125,6 +160,7 @@ export async function PUT(req: Request) {
     if (updates.subtitle !== undefined) cleanData.subtitle = updates.subtitle;
     if (updates.category !== undefined) cleanData.category = updates.category;
     if (updates.gender !== undefined) cleanData.gender = updates.gender;
+    if (updates.collection !== undefined) cleanData.collection = updates.collection;
     if (updates.price !== undefined) cleanData.price = Number(updates.price);
     if (updates.originalPrice !== undefined) cleanData.originalPrice = Number(updates.originalPrice);
     if (updates.rating !== undefined) cleanData.rating = Number(updates.rating);
@@ -143,6 +179,7 @@ export async function PUT(req: Request) {
     if (updates.badgeText !== undefined) cleanData.badgeText = updates.badgeText;
     if (updates.badgeSubtext !== undefined) cleanData.badgeSubtext = updates.badgeSubtext;
     if (updates.sizeOptions !== undefined) cleanData.sizeOptions = typeof updates.sizeOptions === 'string' ? updates.sizeOptions : JSON.stringify(updates.sizeOptions);
+    if (updates.storyBlocks !== undefined) cleanData.storyBlocks = typeof updates.storyBlocks === 'string' ? updates.storyBlocks : JSON.stringify(updates.storyBlocks);
     if (updates.stock !== undefined) cleanData.stock = updates.stock == null ? 100 : Number(updates.stock);
 
     const doc = await databases.updateDocument(

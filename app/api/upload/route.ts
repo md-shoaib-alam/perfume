@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { uploadMediaToAppwrite } from '@/lib/appwrite';
+import { uploadMediaToAppwrite, deleteMediaFromAppwrite } from '@/lib/appwrite';
 
 export async function POST(req: Request) {
   try {
@@ -20,5 +20,22 @@ export async function POST(req: Request) {
   } catch (err: any) {
     console.error('Server upload error:', err);
     return NextResponse.json({ error: err.message || 'Upload failed' }, { status: 500 });
+  }
+}
+
+export async function DELETE(req: Request) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const fileId = searchParams.get('fileId') || searchParams.get('url');
+
+    if (!fileId) {
+      return NextResponse.json({ error: 'No fileId or url provided' }, { status: 400 });
+    }
+
+    const success = await deleteMediaFromAppwrite(fileId);
+    return NextResponse.json({ success });
+  } catch (err: any) {
+    console.error('Server delete error:', err);
+    return NextResponse.json({ error: err.message || 'Delete failed' }, { status: 500 });
   }
 }

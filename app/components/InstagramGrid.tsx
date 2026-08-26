@@ -32,7 +32,7 @@ export const InstagramGrid: React.FC = () => {
             <img
               src={img}
               alt="Neesh Instagram"
-              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+              className="w-full h-full object-cover"
             />
             <div className="absolute inset-0 bg-amber-950/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-amber-300">
               <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">

@@ -186,37 +186,46 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onBackToStore }) => {
   ];
 
   return (
-    <div className="flex min-h-screen bg-[#f8fafc] text-slate-900 font-sans">
+    <div className="flex min-h-screen bg-[#faf9f6] text-slate-800 font-sans antialiased">
       
-      {/* Sidebar - Desktop */}
-      <aside className="w-64 bg-[#111827] text-slate-300 flex flex-col justify-between hidden md:flex shrink-0 shadow-xl border-r border-slate-800">
+      {/* Sidebar - Desktop Refined Light Luxury */}
+      <aside className="w-64 bg-white text-slate-700 flex flex-col justify-between hidden md:flex shrink-0 shadow-xs border-r border-slate-200/90">
         <div>
           {/* Brand Header */}
-          <div className="p-6 border-b border-slate-800 flex items-center justify-between">
-            <div>
-              <span className="font-serif text-xl font-bold tracking-widest text-[#c59b48]">NEESH™</span>
-              <p className="text-[10px] uppercase font-bold tracking-wider text-slate-500 mt-0.5">Admin Management</p>
+          <div className="h-16 px-5 border-b border-slate-100 flex items-center justify-between bg-white">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center text-[#d6a750] font-serif font-bold text-xs tracking-wider shadow-xs shrink-0">
+                N
+              </div>
+              <div className="leading-none">
+                <span className="font-serif font-bold text-sm tracking-[0.18em] text-slate-900 block">
+                  NEESH<span className="text-[10px] text-[#caa04c] font-sans font-normal ml-0.5">™</span>
+                </span>
+                <span className="text-[8.5px] font-sans font-semibold tracking-[0.16em] text-slate-400 uppercase block mt-1">
+                  Admin Console
+                </span>
+              </div>
             </div>
-            <span className="bg-[#c59b48]/10 text-[#c59b48] border border-[#c59b48]/20 px-2 py-0.5 rounded text-[10px] font-bold">
-              PRO
+            <span className="px-2 py-0.5 bg-slate-100 text-slate-600 border border-slate-200 rounded-md text-[9px] font-bold font-mono tracking-wider">
+              v2.0
             </span>
           </div>
 
           {/* Navigation Links */}
-          <nav className="p-4 space-y-1">
+          <nav className="p-3 space-y-1">
             {TABS.map((tab) => {
               const isActive = activeTab === tab.id;
               return (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id as TabType)}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-semibold tracking-wide transition-all ${
+                  className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold tracking-wide transition-all cursor-pointer ${
                     isActive 
-                      ? 'bg-[#c59b48] text-black font-bold shadow-md shadow-[#c59b48]/20' 
-                      : 'hover:bg-slate-800 text-slate-400 hover:text-white'
+                      ? 'bg-[#fbf7ee] text-[#855e16] font-bold border border-[#caa04c]/50 shadow-2xs' 
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50 border border-transparent'
                   }`}
                 >
-                  <span className="text-base">{tab.icon}</span>
+                  <span className={isActive ? 'text-[#b88f3e]' : 'text-slate-400'}>{tab.icon}</span>
                   <span>{tab.name}</span>
                 </button>
               );
@@ -225,43 +234,43 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onBackToStore }) => {
         </div>
 
         {/* Footer Actions */}
-        <div className="p-4 border-t border-slate-800 space-y-2">
+        <div className="p-3.5 border-t border-slate-100 bg-slate-50/70 space-y-2.5">
           {/* Appwrite Status Ping Button */}
           <button
             onClick={handlePingAppwrite}
             disabled={pingStatus === 'loading'}
-            className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${
+            className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
               pingStatus === 'success'
-                ? 'bg-emerald-950/70 text-emerald-300 border-emerald-500/50'
+                ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
                 : pingStatus === 'error'
-                ? 'bg-rose-950/70 text-rose-300 border-rose-500/50'
+                ? 'bg-rose-50 text-rose-700 border-rose-200'
                 : pingStatus === 'loading'
-                ? 'bg-amber-950/70 text-amber-300 border-amber-500/50 animate-pulse'
-                : 'bg-slate-900 text-slate-300 border-slate-700 hover:border-slate-600 hover:text-white'
+                ? 'bg-amber-50 text-amber-800 border-amber-200 animate-pulse'
+                : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300 shadow-2xs'
             }`}
             title="Test Appwrite Connection Ping"
           >
             <div className="flex items-center gap-2">
               <span>{renderPingIcon(pingStatus)}</span>
-              <span>Appwrite Status</span>
+              <span className="text-[11px]">Appwrite Cloud</span>
             </div>
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-black/40">
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 font-bold">
               {pingStatus === 'loading'
                 ? 'Pinging...'
                 : pingStatus === 'success'
-                ? pingMessage || 'Connected'
+                ? pingMessage || 'Live'
                 : pingStatus === 'error'
                 ? 'Error'
-                : 'Ping'}
+                : 'Live'}
             </span>
           </button>
 
           <button
             onClick={onBackToStore}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-semibold transition-all border border-slate-700 cursor-pointer"
+            className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-white hover:bg-slate-100 text-slate-800 rounded-xl text-xs font-bold transition-all border border-slate-200 shadow-2xs cursor-pointer"
           >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            <svg className="w-3.5 h-3.5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
             <span>Back to Storefront</span>
           </button>
@@ -277,7 +286,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onBackToStore }) => {
             <button 
               type="button"
               onClick={() => setIsMobileNavOpen(!isMobileNavOpen)}
-              className="md:hidden p-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 cursor-pointer transition-colors"
+              className="md:hidden p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 cursor-pointer transition-colors border border-slate-200"
               aria-label="Open Admin Menu"
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -293,7 +302,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onBackToStore }) => {
           <div className="flex items-center gap-2 sm:gap-3">
             <button
               onClick={onBackToStore}
-              className="px-2.5 sm:px-3 py-1 sm:py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5"
+              className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 border border-slate-200"
             >
               <span className="hidden sm:inline">Storefront Preview</span>
               <span className="sm:hidden">Store</span>
@@ -305,7 +314,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onBackToStore }) => {
             {/* Custom Authentication Integration */}
             <div className="flex items-center gap-2 bg-slate-50 px-2.5 py-1 rounded-full border border-slate-200">
               <Show when="signed-in">
-                <UserButton afterSignOutUrl="/" />
+                <UserButton />
                 <span className="text-[11px] font-semibold text-slate-700 hidden sm:inline">Admin User</span>
               </Show>
               <Show when="signed-out">
@@ -321,17 +330,17 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onBackToStore }) => {
         </header>
 
         {/* Mobile Horizontal Fast Tab Swiper */}
-        <div className="md:hidden bg-slate-900 border-b border-slate-800 px-3 py-2 overflow-x-auto flex gap-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden shrink-0">
+        <div className="md:hidden bg-white border-b border-slate-200 px-3 py-2 overflow-x-auto flex gap-2 scrollbar-none shrink-0">
           {TABS.map((tab) => {
             const isActive = activeTab === tab.id;
             return (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as TabType)}
-                className={`px-3 py-1.5 rounded-lg text-[11px] font-semibold whitespace-nowrap flex items-center gap-1.5 transition-colors shrink-0 cursor-pointer ${
+                className={`px-3 py-1.5 rounded-xl text-[11px] font-semibold whitespace-nowrap flex items-center gap-1.5 transition-colors shrink-0 cursor-pointer ${
                   isActive
-                    ? 'bg-[#c59b48] text-black font-bold shadow-xs'
-                    : 'bg-slate-800 text-slate-300 hover:text-white'
+                    ? 'bg-[#fbf7ee] text-[#855e16] font-bold border border-[#caa04c]/50 shadow-2xs'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                 }`}
               >
                 <span>{tab.icon}</span>
@@ -343,7 +352,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onBackToStore }) => {
 
         {/* Dynamic Tab Content Body */}
         <main className="flex-1 p-4 sm:p-8 overflow-y-auto">
-          {activeTab === 'overview' && <DashboardOverview onNavigateTo={setActiveTab} />}
+          {activeTab === 'overview' && <DashboardOverview onNavigateTo={(tab) => setActiveTab(tab as TabType)} />}
           {activeTab === 'products' && <ProductsManager />}
           {activeTab === 'orders' && <OrdersManager />}
           {activeTab === 'hero' && <HeroManager />}
@@ -362,22 +371,31 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onBackToStore }) => {
         <div className="fixed inset-0 z-50 md:hidden flex">
           {/* Backdrop */}
           <div 
-            className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity"
+            className="fixed inset-0 bg-black/50 backdrop-blur-xs transition-opacity"
             onClick={() => setIsMobileNavOpen(false)}
           />
           
           {/* Slide-in Drawer */}
-          <div className="relative w-72 max-w-[85vw] bg-[#111827] text-slate-300 shadow-2xl flex flex-col justify-between z-10 animate-slide-in-left border-r border-slate-800 h-full">
+          <div className="relative w-72 max-w-[85vw] bg-white text-slate-700 shadow-2xl flex flex-col justify-between z-10 animate-slide-in-left border-r border-slate-200 h-full">
             <div>
               {/* Brand & Close Header */}
-              <div className="p-5 border-b border-slate-800 flex items-center justify-between">
-                <div>
-                  <span className="font-serif text-xl font-bold tracking-widest text-[#c59b48]">NEESH™</span>
-                  <p className="text-[10px] uppercase font-bold tracking-wider text-slate-500 mt-0.5">Admin Management</p>
+              <div className="p-5 border-b border-slate-100 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center text-[#d6a750] font-serif font-bold text-xs tracking-wider shadow-xs shrink-0">
+                    N
+                  </div>
+                  <div className="leading-none">
+                    <span className="font-serif font-bold text-sm tracking-[0.18em] text-slate-900 block">
+                      NEESH<span className="text-[10px] text-[#caa04c] font-sans font-normal ml-0.5">™</span>
+                    </span>
+                    <span className="text-[8.5px] font-sans font-semibold tracking-[0.16em] text-slate-400 uppercase block mt-1">
+                      Admin Console
+                    </span>
+                  </div>
                 </div>
                 <button
                   onClick={() => setIsMobileNavOpen(false)}
-                  className="w-8 h-8 rounded-lg bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center cursor-pointer transition-colors"
+                  className="w-8 h-8 rounded-lg bg-slate-100 text-slate-500 hover:text-slate-900 flex items-center justify-center cursor-pointer transition-colors"
                   aria-label="Close Navigation"
                 >
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -399,11 +417,11 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onBackToStore }) => {
                       }}
                       className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold tracking-wide transition-all cursor-pointer ${
                         isActive 
-                          ? 'bg-[#c59b48] text-black font-bold shadow-md shadow-[#c59b48]/20' 
-                          : 'hover:bg-slate-800 text-slate-300 hover:text-white'
+                          ? 'bg-[#fbf7ee] text-[#855e16] font-bold border border-[#caa04c]/50 shadow-2xs' 
+                          : 'text-slate-600 hover:bg-slate-50'
                       }`}
                     >
-                      <span className="text-base">{tab.icon}</span>
+                      <span className={isActive ? 'text-[#b88f3e]' : 'text-slate-400'}>{tab.icon}</span>
                       <span>{tab.name}</span>
                     </button>
                   );
@@ -412,43 +430,13 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onBackToStore }) => {
             </div>
 
             {/* Mobile Drawer Footer */}
-            <div className="p-4 border-t border-slate-800 space-y-2">
-              {/* Appwrite Status Ping Button */}
-              <button
-                onClick={handlePingAppwrite}
-                disabled={pingStatus === 'loading'}
-                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
-                  pingStatus === 'success'
-                    ? 'bg-emerald-950/70 text-emerald-300 border-emerald-500/50'
-                    : pingStatus === 'error'
-                    ? 'bg-rose-950/70 text-rose-300 border-rose-500/50'
-                    : pingStatus === 'loading'
-                    ? 'bg-amber-950/70 text-amber-300 border-amber-500/50 animate-pulse'
-                    : 'bg-slate-900 text-slate-300 border-slate-700 hover:border-slate-600 hover:text-white'
-                }`}
-                title="Test Appwrite Connection Ping"
-              >
-                <div className="flex items-center gap-2">
-                  <span>{renderPingIcon(pingStatus)}</span>
-                  <span>Appwrite Status</span>
-                </div>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-black/40">
-                  {pingStatus === 'loading'
-                    ? 'Pinging...'
-                    : pingStatus === 'success'
-                    ? pingMessage || 'Connected'
-                    : pingStatus === 'error'
-                    ? 'Error'
-                    : 'Ping'}
-                </span>
-              </button>
-
+            <div className="p-4 border-t border-slate-100 bg-slate-50 space-y-2.5">
               <button
                 onClick={() => {
                   setIsMobileNavOpen(false);
                   onBackToStore();
                 }}
-                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-semibold transition-all border border-slate-700 cursor-pointer"
+                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-white hover:bg-slate-100 text-slate-800 rounded-xl text-xs font-bold transition-all border border-slate-200 shadow-2xs cursor-pointer"
               >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />

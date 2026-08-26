@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { api } from '../services/api';
 import type { Product } from '../types';
 
@@ -8,9 +8,11 @@ interface TravelSetSectionProps {
   product?: Product;
 }
 
-export const TravelSetSection: React.FC<TravelSetSectionProps> = ({ onCustomize, product: initialProduct }) => {
+export const TravelSetSection: React.FC<TravelSetSectionProps> = ({
+  onCustomize,
+  product: initialProduct
+}) => {
   const [product, setProduct] = useState<Product | null>(initialProduct || null);
-  const [loading, setLoading] = useState<boolean>(!initialProduct);
 
   useEffect(() => {
     if (initialProduct) {
@@ -20,20 +22,19 @@ export const TravelSetSection: React.FC<TravelSetSectionProps> = ({ onCustomize,
 
     const loadTravelSetOffer = async () => {
       try {
-        const products = await api.getProducts();
-        const found = products.find(
-          (p) =>
-            p.category === 'travel-set' ||
-            p.name.toLowerCase().includes('travel') ||
-            p.category === 'gift-set'
-        );
-        if (found) {
-          setProduct(found);
+        const products = await api.getProducts('discovery-set');
+        if (products && products.length > 0) {
+          const match =
+            products.find(
+              (p) =>
+                p.name.toLowerCase().includes('travel') ||
+                p.name.toLowerCase().includes('closet') ||
+                p.subtitle?.toLowerCase().includes('travel')
+            ) || products[0];
+          setProduct(match);
         }
       } catch (err) {
-        console.warn('Failed to load travel set product from Appwrite:', err);
-      } finally {
-        setLoading(false);
+        console.warn('Failed to load travel set product:', err);
       }
     };
 
@@ -52,32 +53,32 @@ export const TravelSetSection: React.FC<TravelSetSectionProps> = ({ onCustomize,
     'https://images.unsplash.com/photo-1541643600914-78b084683601?auto=format&fit=crop&w=800&q=80';
 
   return (
-    <section className="py-20 bg-slate-900 border-t border-amber-900/30">
+    <section className="py-20 bg-[#fafafa] border-t border-slate-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-gradient-to-r from-slate-950 via-slate-900 to-amber-950 rounded-3xl border border-amber-900/50 p-8 md:p-14 overflow-hidden relative shadow-2xl">
+        <div className="bg-[#faf9f6] rounded-3xl border border-amber-200/60 p-8 md:p-14 overflow-hidden relative shadow-md">
           
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center relative z-10">
             
             <div className="lg:col-span-7 space-y-6">
-              <span className="text-xs uppercase tracking-[0.3em] text-amber-400 font-semibold bg-amber-950/60 px-3 py-1 rounded-full border border-amber-900/50">
+              <span className="text-xs uppercase tracking-[0.25em] text-[#916618] font-bold bg-amber-100/70 px-3.5 py-1.5 rounded-full border border-amber-200/60 inline-block">
                 {badgeText}
               </span>
 
-              <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl font-bold text-white leading-tight">
-                {product?.name ? product.name.toUpperCase() : 'NEESH MY CLOSET'} <br />
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-yellow-400 to-amber-200">
+              <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl font-normal text-slate-900 leading-tight">
+                {product?.name ? product.name : 'NEESH MY CLOSET'} <br />
+                <span className="text-[#b88f3e]">
                   {headingTitle}
                 </span>
               </h2>
 
-              <p className="text-slate-300 text-sm sm:text-base leading-relaxed">
+              <p className="text-slate-600 text-sm sm:text-base leading-relaxed font-sans">
                 {description}
               </p>
 
               <div className="flex flex-wrap gap-4 pt-2">
                 <button
                   onClick={() => onCustomize(product || undefined)}
-                  className="px-8 py-3.5 bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 font-bold uppercase tracking-widest text-xs rounded-full shadow-lg shadow-amber-500/20 hover:scale-105 transition-all cursor-pointer"
+                  className="px-8 py-3.5 bg-[#c59b48] hover:bg-[#b58b38] active:bg-[#a57b28] text-white font-bold uppercase tracking-widest text-xs rounded-full shadow-md transition-all cursor-pointer"
                 >
                   {buttonLabel}
                 </button>
@@ -85,13 +86,13 @@ export const TravelSetSection: React.FC<TravelSetSectionProps> = ({ onCustomize,
             </div>
 
             <div className="lg:col-span-5 relative">
-              <div className="rounded-2xl overflow-hidden border border-amber-500/30 shadow-2xl">
+              <div className="rounded-2xl overflow-hidden border border-amber-200/60 shadow-xl bg-white aspect-square max-h-[420px]">
                 <img
                   src={imageUrl}
-                  alt={product?.name || 'Custom Travel Set'}
+                  alt={product?.name || 'Travel Set'}
                   loading="lazy"
                   decoding="async"
-                  className="w-full h-[320px] object-cover"
+                  className="w-full h-full object-cover"
                 />
               </div>
             </div>

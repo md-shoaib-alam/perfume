@@ -24,6 +24,15 @@ const formatProductDoc = (doc: any): Product => {
     } catch (e) {}
   }
 
+  let parsedStoryBlocks = [];
+  if (doc.storyBlocks) {
+    try {
+      parsedStoryBlocks = typeof doc.storyBlocks === 'string' ? JSON.parse(doc.storyBlocks) : doc.storyBlocks;
+    } catch (e) {
+      parsedStoryBlocks = [];
+    }
+  }
+
   return {
     id: doc.$id || doc.id,
     name: doc.name || 'Untitled Perfume',
@@ -48,7 +57,9 @@ const formatProductDoc = (doc: any): Product => {
     notes: parsedNotes,
     description: doc.description || '',
     stock: doc.stock == null ? 100 : Number(doc.stock),
-    sizeOptions: parsedSizeOptions
+    collection: doc.collection || '',
+    sizeOptions: parsedSizeOptions,
+    storyBlocks: parsedStoryBlocks
   };
 };
 
@@ -101,7 +112,24 @@ export const api = {
       const doc = await databases.getDocument(APPWRITE_DATABASE_ID, 'products', id);
       return formatProductDoc(doc);
     } catch (err) {
-      console.warn('Appwrite getProductById query error:', err);
+      try {
+        const list = await databases.listDocuments(APPWRITE_DATABASE_ID, 'products', [Query.limit(100)]);
+        const match = (list.documents || []).find((d: any) => {
+          const s = (d.name || '')
+            .toLowerCase()
+            .trim()
+            .replace(/\s+/g, '-')
+            .replace(/&/g, '-and-')
+            .replace(/[^\w\-]+/g, '')
+            .replace(/\-\-+/g, '-')
+            .replace(/^-+/, '')
+            .replace(/-+$/, '');
+          return s === id.toLowerCase() || d.$id === id;
+        });
+        if (match) return formatProductDoc(match);
+      } catch (listErr) {
+        console.warn('Appwrite getProductById query error:', listErr);
+      }
       return null;
     }
   },
@@ -143,7 +171,9 @@ export const api = {
         tagline: product.tagline || '',
         badgeText: product.badgeText || '',
         badgeSubtext: product.badgeSubtext || '',
+        collection: product.collection || '',
         sizeOptions: JSON.stringify(product.sizeOptions || []),
+        storyBlocks: JSON.stringify(product.storyBlocks || []),
         stock: product.stock == null ? 100 : Number(product.stock)
       };
 
@@ -180,6 +210,7 @@ export const api = {
       if (updates.subtitle !== undefined) cleanData.subtitle = updates.subtitle;
       if (updates.category !== undefined) cleanData.category = updates.category;
       if (updates.gender !== undefined) cleanData.gender = updates.gender;
+      if (updates.collection !== undefined) cleanData.collection = updates.collection;
       if (updates.price !== undefined) cleanData.price = Number(updates.price);
       if (updates.originalPrice !== undefined) cleanData.originalPrice = Number(updates.originalPrice);
       if (updates.rating !== undefined) cleanData.rating = Number(updates.rating);
@@ -198,6 +229,7 @@ export const api = {
       if (updates.badgeText !== undefined) cleanData.badgeText = updates.badgeText;
       if (updates.badgeSubtext !== undefined) cleanData.badgeSubtext = updates.badgeSubtext;
       if (updates.sizeOptions !== undefined) cleanData.sizeOptions = typeof updates.sizeOptions === 'string' ? updates.sizeOptions : JSON.stringify(updates.sizeOptions);
+      if (updates.storyBlocks !== undefined) cleanData.storyBlocks = typeof updates.storyBlocks === 'string' ? updates.storyBlocks : JSON.stringify(updates.storyBlocks);
       if (updates.stock !== undefined) cleanData.stock = updates.stock == null ? 100 : Number(updates.stock);
 
       const doc = await databases.updateDocument(
@@ -606,13 +638,18 @@ export const api = {
     }
 
     try {
-      const res = await databases.listDocuments(APPWRITE_DATABASE_ID, 'collections', [Query.limit(10)]);
+      const res = await databases.listDocuments(APPWRITE_DATABASE_ID, 'collections', [Query.limit(50)]);
       if (res && res.documents) {
-        return res.documents.map(d => ({
+        return res.documents.map((d: any) => ({
           id: d.$id,
-          name: d.name,
-          subname: d.subname,
-          image: d.image
+          slug: d.slug || '',
+          name: d.name || '',
+          subname: d.subname || '',
+          image: d.image || '',
+          bannerImage: d.bannerImage || '',
+          subtitle: d.subtitle || '',
+          editorial: d.editorial || '',
+          badge: d.badge || ''
         }));
       }
     } catch (err) {
@@ -623,17 +660,23 @@ export const api = {
 
   async updateCollection(id: string, data: any): Promise<any> {
     try {
+      const cleanData: any = {};
+      if (data.name !== undefined) cleanData.name = data.name;
+      if (data.subname !== undefined) cleanData.subname = data.subname;
+      if (data.image !== undefined) cleanData.image = data.image;
+      if (data.slug !== undefined) cleanData.slug = data.slug;
+      if (data.bannerImage !== undefined) cleanData.bannerImage = data.bannerImage;
+      if (data.subtitle !== undefined) cleanData.subtitle = data.subtitle;
+      if (data.editorial !== undefined) cleanData.editorial = data.editorial;
+      if (data.badge !== undefined) cleanData.badge = data.badge;
+
       return await databases.updateDocument(
         APPWRITE_DATABASE_ID,
         'collections',
         id,
-        {
-          name: data.name,
-          subname: data.subname,
-          image: data.image
-        }
+        cleanData
       );
-    } catch (err) {
+    } catch (err: any) {
       console.error('Appwrite updateCollection error:', err);
       throw err;
     }

@@ -11,11 +11,18 @@ export interface ProductSizeOption {
   isSoldOut?: boolean;
 }
 
+export interface ProductStoryBlock {
+  image: string;
+  title?: string;
+  subtitle?: string;
+  description?: string;
+}
+
 export interface Product {
   id: string;
   name: string;
   subtitle: string;
-  category: 'extrait-de-parfum' | 'attar' | 'discovery-set' | 'gift-set';
+  category: 'extrait-de-parfum' | 'attar' | 'discovery-set' | 'gift-set' | 'travel-set';
   gender?: 'For Him' | 'For Her' | 'Unisex' | 'Gift Sets';
   price: number;
   originalPrice: number;
@@ -35,7 +42,9 @@ export interface Product {
   notes: FragranceNotes;
   description: string;
   stock?: number;
+  collection?: string;
   sizeOptions?: ProductSizeOption[];
+  storyBlocks?: ProductStoryBlock[];
 }
 
 export interface CartItem {
@@ -63,4 +72,5 @@ export interface HeroSlide {
   desktopImage: string;
   mobileImage: string;
   linkUrl: string;
+  position?: number;
 }

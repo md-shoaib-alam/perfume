@@ -36,7 +36,7 @@ export const HeroManager: React.FC = () => {
     linkUrl: '#bestsellers'
   };
 
-  const handleUpdateCurrent = (field: keyof HeroSlide, val: string) => {
+  const handleUpdateCurrent = (field: keyof HeroSlide, val: string | number) => {
     const updated = [...slides];
     if (updated[activeSlideIdx]) {
       updated[activeSlideIdx] = { ...updated[activeSlideIdx], [field]: val };
@@ -195,7 +195,7 @@ export const HeroManager: React.FC = () => {
               onClick={() => setActiveSlideIdx(idx)}
               className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2.5 ${
                 activeSlideIdx === idx
-                  ? 'bg-slate-900 text-[#d6a750] shadow-md shadow-slate-900/10 border border-slate-800'
+                  ? 'bg-[#d6a750] text-white shadow-md shadow-[#d6a750]/25'
                   : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200'
               }`}
             >
@@ -206,7 +206,7 @@ export const HeroManager: React.FC = () => {
                     e.stopPropagation();
                     handleDeleteSlide(idx);
                   }}
-                  className="w-4 h-4 rounded-full bg-slate-700/40 hover:bg-red-500 text-white flex items-center justify-center cursor-pointer transition-colors"
+                  className="w-4 h-4 rounded-full bg-white/30 hover:bg-rose-600 text-white flex items-center justify-center cursor-pointer transition-colors"
                   title="Remove Slide"
                 >
                   <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -248,44 +248,51 @@ export const HeroManager: React.FC = () => {
             {/* Media Uploaders */}
             <div className="space-y-4">
               <MediaUploader
-                label="Desktop Banner Image (16:9 Widescreen) *"
+                label="Desktop Banner Image (16:9 Landscape - Min 1920x1080) *"
                 value={currentSlide.desktopImage || ''}
                 onChange={(url) => handleUpdateCurrent('desktopImage', url)}
-                helperText="High-resolution widescreen banner for desktop and tablets."
+                helperText="Appwrite Cloud Storage uploaded high-res landscape banner for laptops and desktops."
               />
 
               <MediaUploader
-                label="Mobile Banner Image (Vertical Orientation) *"
+                label="Mobile Portrait Banner Image (9:16 Vertical - Min 1080x1920)"
                 value={currentSlide.mobileImage || ''}
                 onChange={(url) => handleUpdateCurrent('mobileImage', url)}
-                helperText="Vertical mobile optimized banner image."
+                helperText="Crisp portrait banner tailored for smartphone screens. (Falls back to desktop if omitted)."
               />
             </div>
 
-            <div>
-              <label className="flex items-center gap-1.5 font-semibold text-slate-700 mb-1">
-                <svg className="w-3.5 h-3.5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-                </svg>
-                <span>Click Target Destination URL / Link</span>
-              </label>
-              <input
-                type="text"
-                value={currentSlide.linkUrl}
-                onChange={(e) => handleUpdateCurrent('linkUrl', e.target.value)}
-                placeholder="#bestsellers or /product/1 or https://..."
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-mono focus:outline-none focus:border-[#d6a750]"
-              />
-              <p className="text-[10px] text-slate-400 mt-1">
-                When any customer taps or clicks anywhere on this banner, they will be navigated to this destination.
-              </p>
+            {/* Link & Position */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">Click Action / Target URL</label>
+                <input
+                  type="text"
+                  value={currentSlide.linkUrl || ''}
+                  onChange={(e) => handleUpdateCurrent('linkUrl', e.target.value)}
+                  placeholder="e.g. /products/haute-vetiver or #bestsellers"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-mono text-slate-900 focus:outline-none focus:border-[#d6a750]"
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">Display Sort Order</label>
+                <input
+                  type="number"
+                  min="0"
+                  value={currentSlide.position || 0}
+                  onChange={(e) => handleUpdateCurrent('position', Number(e.target.value))}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-900 focus:outline-none focus:border-[#d6a750]"
+                />
+              </div>
             </div>
 
-            <div className="flex items-center justify-between pt-4 border-t border-slate-100 gap-3">
-              <div className="flex items-center gap-2">
+            {/* Submit Bar */}
+            <div className="pt-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3">
+              <div>
                 {saved && (
-                  <span className="text-emerald-600 font-bold text-xs flex items-center gap-1.5 animate-fade-in-up">
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <span className="text-emerald-700 text-xs font-bold flex items-center gap-1 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-200 animate-fade-in">
+                    <svg className="w-4 h-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                     </svg>
                     <span>Changes Saved Successfully!</span>
@@ -356,10 +363,10 @@ export const HeroManager: React.FC = () => {
               </div>
             </div>
 
-            {/* Live Preview Display Box */}
-            <div className="flex justify-center bg-slate-950 p-4 sm:p-5 rounded-xl overflow-hidden relative shadow-inner">
+            {/* Live Preview Display Box - Pure Light Luxury Canvas */}
+            <div className="flex justify-center bg-[#faf9f6] border border-amber-200/60 p-4 sm:p-6 rounded-2xl overflow-hidden relative shadow-inner">
               {previewMode === 'desktop' ? (
-                <div className="w-full aspect-video rounded-lg overflow-hidden relative border border-slate-800 shadow-xl bg-black flex items-center justify-center">
+                <div className="w-full aspect-video rounded-xl overflow-hidden relative border-2 border-slate-200 shadow-lg bg-white flex items-center justify-center">
                   {currentSlide.desktopImage ? (
                     <img
                       src={currentSlide.desktopImage}
@@ -369,19 +376,19 @@ export const HeroManager: React.FC = () => {
                       className="w-full h-full object-cover object-center"
                     />
                   ) : (
-                    <div className="flex flex-col items-center justify-center text-slate-600 text-xs">
-                      <svg className="w-7 h-7 mb-1.5 opacity-40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <div className="flex flex-col items-center justify-center text-slate-400 text-xs">
+                      <svg className="w-7 h-7 mb-1.5 opacity-40 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                       </svg>
                       <span>No Desktop Image Configured</span>
                     </div>
                   )}
-                  <div className="absolute top-2 left-2 bg-black/70 backdrop-blur-xs text-white text-[9px] font-mono px-2 py-0.5 rounded border border-white/10">
+                  <div className="absolute top-2 left-2 bg-white/90 backdrop-blur-xs text-slate-800 text-[9px] font-mono font-bold px-2 py-0.5 rounded border border-slate-200 shadow-2xs">
                     16:9 Desktop View
                   </div>
                 </div>
               ) : (
-                <div className="w-full max-w-[220px] aspect-9/16 rounded-xl overflow-hidden relative border-2 border-slate-800 shadow-xl bg-black flex items-center justify-center">
+                <div className="w-full max-w-[220px] aspect-9/16 rounded-2xl overflow-hidden relative border-4 border-slate-300 shadow-xl bg-white flex items-center justify-center">
                   {(currentSlide.mobileImage || currentSlide.desktopImage) ? (
                     <img
                       src={currentSlide.mobileImage || currentSlide.desktopImage}
@@ -391,14 +398,14 @@ export const HeroManager: React.FC = () => {
                       className="w-full h-full object-cover object-center"
                     />
                   ) : (
-                    <div className="flex flex-col items-center justify-center text-slate-600 text-xs">
-                      <svg className="w-7 h-7 mb-1.5 opacity-40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <div className="flex flex-col items-center justify-center text-slate-400 text-xs">
+                      <svg className="w-7 h-7 mb-1.5 opacity-40 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
                       </svg>
                       <span>No Mobile Image Configured</span>
                     </div>
                   )}
-                  <div className="absolute top-2 left-2 bg-black/70 backdrop-blur-xs text-white text-[9px] font-mono px-2 py-0.5 rounded border border-white/10">
+                  <div className="absolute top-2 left-2 bg-white/90 backdrop-blur-xs text-slate-800 text-[9px] font-mono font-bold px-2 py-0.5 rounded border border-slate-200 shadow-2xs">
                     Mobile View
                   </div>
                 </div>

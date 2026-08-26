@@ -1,5 +1,6 @@
 'use client';
 import React, { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { api } from '../services/api';
 
 export const DashboardOverview: React.FC<{ onNavigateTo?: (tab: string) => void }> = ({ onNavigateTo }) => {
@@ -99,18 +100,18 @@ export const DashboardOverview: React.FC<{ onNavigateTo?: (tab: string) => void 
           </p>
         </div>
         <div className="flex flex-wrap gap-2.5">
-          <button
-            onClick={() => onNavigateTo?.('products')}
-            className="px-4 py-2 bg-[#c59b48] hover:bg-[#b58b38] text-black font-bold text-xs uppercase tracking-wider rounded shadow-md transition-all cursor-pointer"
+          <Link
+            href="/admin/products"
+            className="px-4 py-2 bg-[#c59b48] hover:bg-[#b58b38] text-black font-bold text-xs uppercase tracking-wider rounded shadow-md transition-all cursor-pointer inline-block"
           >
             + Add Product
-          </button>
-          <button
-            onClick={() => onNavigateTo?.('orders')}
-            className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white font-medium text-xs uppercase tracking-wider rounded border border-white/20 transition-all cursor-pointer"
+          </Link>
+          <Link
+            href="/admin/orders"
+            className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white font-medium text-xs uppercase tracking-wider rounded border border-white/20 transition-all cursor-pointer inline-block"
           >
             View Orders
-          </button>
+          </Link>
         </div>
       </div>
 
@@ -266,12 +267,12 @@ export const DashboardOverview: React.FC<{ onNavigateTo?: (tab: string) => void 
             </div>
           </div>
 
-          <button
-            onClick={() => onNavigateTo?.('products')}
-            className="w-full mt-4 py-2.5 bg-slate-900 hover:bg-black text-white text-xs font-semibold rounded transition-colors cursor-pointer"
+          <Link
+            href="/admin/products"
+            className="w-full mt-4 py-2.5 bg-slate-900 hover:bg-black text-white text-xs font-semibold rounded transition-colors cursor-pointer text-center block"
           >
             Manage Catalog Inventory
-          </button>
+          </Link>
         </div>
       </div>
     </div>

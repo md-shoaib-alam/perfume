@@ -12,32 +12,113 @@ if (APPWRITE_ENDPOINT && APPWRITE_PROJECT_ID) {
     .setProject(APPWRITE_PROJECT_ID);
 }
 
-
 const account = new Account(client);
 const databases = new Databases(client);
 const storage = new Storage(client);
 
 /**
- * Uploads an image or video file directly to the Appwrite Storage bucket (perfume_media)
- * and returns the direct public URL for viewing/streaming.
+ * Extracts Appwrite storage file ID from a full Appwrite storage view/download URL.
  */
-export async function uploadMediaToAppwrite(file: File): Promise<string> {
-  // If running in browser environment, route through /api/upload
+export function extractAppwriteFileId(urlOrId: string): string | null {
+  if (!urlOrId || typeof urlOrId !== 'string') return null;
+  const trimmed = urlOrId.trim();
+  if (/^[a-zA-Z0-9_-]+$/.test(trimmed) && !trimmed.startsWith('http')) {
+    return trimmed;
+  }
+  const match = trimmed.match(/\/files\/([a-zA-Z0-9_.-]+)/);
+  if (match && match[1]) {
+    return match[1];
+  }
+  return null;
+}
+
+/**
+ * Deletes a media file from the Appwrite Storage bucket (perfume_media) to prevent orphaned storage waste.
+ */
+export async function deleteMediaFromAppwrite(urlOrFileId: string): Promise<boolean> {
+  const fileId = extractAppwriteFileId(urlOrFileId);
+  if (!fileId) return false;
+
+  // If in browser, call DELETE /api/upload?fileId=...
   if (typeof window !== 'undefined') {
     try {
+      const res = await fetch(`/api/upload?fileId=${encodeURIComponent(fileId)}`, {
+        method: 'DELETE'
+      });
+      if (res.ok) return true;
+    } catch (err) {
+      console.warn('API DELETE /api/upload failed, trying direct SDK:', err);
+    }
+  }
+
+  // Server-side or direct SDK Appwrite Storage deletion
+  try {
+    if (APPWRITE_BUCKET_ID) {
+      await storage.deleteFile(APPWRITE_BUCKET_ID, fileId);
+      return true;
+    }
+  } catch (err: any) {
+    console.warn(`Appwrite deleteFile warning for ID ${fileId}:`, err?.message || err);
+  }
+  return false;
+}
+
+/**
+ * Uploads an image or video file directly to the Appwrite Storage bucket (perfume_media)
+ * with real-time percentage progress callback and returns the direct public URL.
+ */
+export async function uploadMediaToAppwrite(
+  file: File,
+  onProgress?: (percent: number) => void
+): Promise<string> {
+  // If running in browser environment, route through /api/upload with XHR for exact live percentage tracking
+  if (typeof window !== 'undefined') {
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
       const formData = new FormData();
       formData.append('file', file);
-      const res = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData
+
+      xhr.upload.addEventListener('progress', (event) => {
+        if (event.lengthComputable && onProgress) {
+          const percent = Math.round((event.loaded / event.total) * 100);
+          onProgress(percent);
+        }
       });
-      if (res.ok) {
-        const data = await res.json();
-        if (data.url) return data.url;
-      }
-    } catch (err) {
-      console.warn('API /api/upload failed, trying direct SDK:', err);
-    }
+
+      xhr.addEventListener('load', () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          try {
+            const data = JSON.parse(xhr.responseText);
+            if (data.url) {
+              if (onProgress) onProgress(100);
+              resolve(data.url);
+            } else {
+              reject(new Error(data.error || 'No URL returned from upload server'));
+            }
+          } catch (e: any) {
+            reject(new Error('Invalid response from upload server'));
+          }
+        } else {
+          try {
+            const data = JSON.parse(xhr.responseText);
+            reject(new Error(data.error || `Upload failed with status ${xhr.status}`));
+          } catch {
+            reject(new Error(`Upload failed with status ${xhr.status}`));
+          }
+        }
+      });
+
+      xhr.addEventListener('error', () => {
+        reject(new Error('Network error during media upload'));
+      });
+
+      xhr.addEventListener('abort', () => {
+        reject(new Error('Media upload was aborted'));
+      });
+
+      xhr.open('POST', '/api/upload');
+      xhr.send(formData);
+    });
   }
 
   // Server-side or direct SDK Appwrite Storage upload
@@ -52,6 +133,7 @@ export async function uploadMediaToAppwrite(file: File): Promise<string> {
       file
     );
     const fileUrl = storage.getFileView(APPWRITE_BUCKET_ID, uploaded.$id);
+    if (onProgress) onProgress(100);
     return fileUrl.toString();
   } catch (err: any) {
     console.error("Appwrite Storage upload error:", err);

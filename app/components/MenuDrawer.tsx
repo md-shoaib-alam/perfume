@@ -1,4 +1,5 @@
 'use client';
+
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useUser, useClerk } from '@clerk/nextjs';
@@ -13,6 +14,12 @@ interface MenuDrawerProps {
   onOpenAccount?: () => void;
 }
 
+interface MenuItemConfig {
+  name: string;
+  hasArrow: boolean;
+  href?: string;
+}
+
 export const MenuDrawer: React.FC<MenuDrawerProps> = ({
   isOpen,
   onClose,
@@ -20,7 +27,7 @@ export const MenuDrawer: React.FC<MenuDrawerProps> = ({
   onOpenCart: _onOpenCart,
   onOpenAdmin,
   onOpenAuth,
-  onOpenAccount
+  onOpenAccount: _onOpenAccount
 }) => {
   const [activeSubMenu, setActiveSubMenu] = useState<string | null>(null);
   const [isScrolled, setIsScrolled] = useState(false);
@@ -59,34 +66,35 @@ export const MenuDrawer: React.FC<MenuDrawerProps> = ({
     }
   }, [isOpen]);
 
-  const menuItems = [
-    { name: 'Shop All', hasArrow: false },
+  const menuItems: MenuItemConfig[] = [
+    { name: 'Shop All', hasArrow: false, href: '/collections/all' },
+    { name: 'For Him', hasArrow: false, href: '/collections/for-him' },
+    { name: 'For Her', hasArrow: false, href: '/collections/for-her' },
     { name: 'Shop by Collection', hasArrow: true },
-    { name: 'Trial Sets', hasArrow: false },
+    { name: 'Trial Sets', hasArrow: false, href: '/collections/discovery-set' },
     { name: 'Collector\'s Edition', hasArrow: true },
     { name: 'Combo', hasArrow: true },
-    { name: 'My Closet (4x10ml)', hasArrow: false },
-    { name: 'NEESH Gift Sets', hasArrow: false },
-    { name: 'NEESH in Offline Stores', hasArrow: false },
-    { name: 'Our Story', hasArrow: false },
+    { name: 'My Closet (4x10ml)', hasArrow: false, href: '/collections/travel-set' },
+    { name: 'NEESH Gift Sets', hasArrow: false, href: '/collections/gift-set' },
+    { name: 'Our Story', hasArrow: false, href: '/#heritage' },
   ];
 
-  const subMenus: Record<string, string[]> = {
+  const subMenus: Record<string, { label: string; href: string }[]> = {
     'Shop by Collection': [
-      'Bureau Collection',
-      'Luxe Collection',
-      'Haute Collection',
-      'Miss Neesh Collection'
+      { label: 'Bureau Collection', href: '/collections/bureau' },
+      { label: 'Luxe Collection', href: '/collections/luxe' },
+      { label: 'Haute Collection', href: '/collections/haute' },
+      { label: 'Miss Neesh Collection', href: '/collections/miss_neesh' }
     ],
     'Collector\'s Edition': [
-      'Tsunara Extrait De Parfum',
-      'Glazed Oud Special',
-      'Oriental Leather'
+      { label: 'Tsunara Extrait De Parfum', href: '/collections/all?q=tsunara' },
+      { label: 'Glazed Oud Special', href: '/collections/all?q=glazed' },
+      { label: 'Oriental Leather', href: '/collections/all?q=oriental' }
     ],
     'Combo': [
-      'Luxury Duo Pack',
-      'Daily Wear Combo',
-      'Signature Trio Pack'
+      { label: 'Luxury Duo Pack', href: '/collections/gift-set' },
+      { label: 'Daily Wear Combo', href: '/collections/gift-set' },
+      { label: 'Signature Trio Pack', href: '/collections/gift-set' }
     ]
   };
 
@@ -110,34 +118,39 @@ export const MenuDrawer: React.FC<MenuDrawerProps> = ({
               {/* Panel 1: Main Menu */}
               <div className="w-1/2 h-full flex flex-col justify-between px-6 pt-6 pb-6 overflow-y-auto">
                 <nav className="space-y-4">
-                  {menuItems.map((item) => (
-                    <a
-                      key={item.name}
-                      href="#bestsellers"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        if (item.hasArrow && subMenus[item.name]) {
-                          setActiveSubMenu(item.name);
-                        } else {
-                          onClose();
-                          document.getElementById('bestsellers')?.scrollIntoView({ behavior: 'smooth' });
-                        }
-                      }}
-                      className="flex items-center justify-between text-base font-normal tracking-wide text-slate-800 hover:text-[#d6a13d] py-1 transition-colors group"
-                    >
-                      <span>{item.name}</span>
-                      {item.hasArrow && (
-                        <svg 
-                          className="w-4 h-4 text-slate-400 group-hover:text-[#d6a13d] transition-colors" 
-                          fill="none" 
-                          viewBox="0 0 24 24" 
-                          stroke="currentColor"
+                  {menuItems.map((item) => {
+                    if (item.hasArrow && subMenus[item.name]) {
+                      return (
+                        <button
+                          key={item.name}
+                          type="button"
+                          onClick={() => setActiveSubMenu(item.name)}
+                          className="w-full flex items-center justify-between text-base font-normal tracking-wide text-slate-800 hover:text-[#d6a13d] py-1 transition-colors group cursor-pointer text-left"
                         >
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5l7 7-7 7" />
-                        </svg>
-                      )}
-                    </a>
-                  ))}
+                          <span>{item.name}</span>
+                          <svg 
+                            className="w-4 h-4 text-slate-400 group-hover:text-[#d6a13d] transition-colors" 
+                            fill="none" 
+                            viewBox="0 0 24 24" 
+                            stroke="currentColor"
+                          >
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5l7 7-7 7" />
+                          </svg>
+                        </button>
+                      );
+                    }
+
+                    return (
+                      <Link
+                        key={item.name}
+                        href={item.href || '/collections/all'}
+                        onClick={onClose}
+                        className="flex items-center justify-between text-base font-normal tracking-wide text-slate-800 hover:text-[#d6a13d] py-1 transition-colors group"
+                      >
+                        <span>{item.name}</span>
+                      </Link>
+                    );
+                  })}
                 </nav>
 
                 {/* My Account section at the bottom (Mobile Only) */}
@@ -155,7 +168,8 @@ export const MenuDrawer: React.FC<MenuDrawerProps> = ({
                               loading="lazy"
                               decoding="async"
                               className="w-full h-full object-cover"
-                            />                          ) : (
+                            />
+                          ) : (
                             <span className="text-xs font-bold text-[#b69254]">
                               {user?.firstName ? user.firstName[0] : (
                                 <svg className="w-4 h-4 fill-none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
@@ -258,18 +272,14 @@ export const MenuDrawer: React.FC<MenuDrawerProps> = ({
 
                 <nav className="space-y-5">
                   {(activeSubMenu ? subMenus[activeSubMenu] : [])?.map((subItem) => (
-                    <a
-                      key={subItem}
-                      href="#bestsellers"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        onClose();
-                        document.getElementById('bestsellers')?.scrollIntoView({ behavior: 'smooth' });
-                      }}
+                    <Link
+                      key={subItem.label}
+                      href={subItem.href}
+                      onClick={onClose}
                       className="block text-base font-normal tracking-wide text-slate-800 hover:text-[#d6a13d] py-1.5 transition-colors"
                     >
-                      {subItem}
-                    </a>
+                      {subItem.label}
+                    </Link>
                   ))}
                 </nav>
               </div>

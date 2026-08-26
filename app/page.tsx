@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { AnnouncementBar } from './components/AnnouncementBar';
 import { Navbar } from './components/Navbar';
 import { HeroSection } from './components/HeroSection';
@@ -18,25 +19,35 @@ import { MenuDrawer } from './components/MenuDrawer';
 import { AuthModal } from './auth/AuthModal';
 import { AccountDashboard } from './components/AccountDashboard';
 import { api } from './services/api';
+import { useCart } from './hooks/useCart';
+import { getProductSlug } from './utils/slug';
 import { client as appwriteClient } from '../lib/appwrite';
-import type { Product, CartItem } from './types';
+import type { Product } from './types';
 
 export default function Page() {
+  const router = useRouter();
   const [productsList, setProductsList] = useState<Product[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [activeTab, setActiveTab] = useState<'For Him' | 'For Her' | 'Gift Sets'>('For Him');
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [cartItems, setCartItems] = useState<CartItem[]>([]);
-  const [isCartOpen, setIsCartOpen] = useState<boolean>(false);
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
   const [isAccountOpen, setIsAccountOpen] = useState<boolean>(false);
   const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin');
   const [selectedProductModal, setSelectedProductModal] = useState<Product | null>(null);
 
+  const {
+    cartItems,
+    totalCartCount,
+    isCartOpen,
+    setIsCartOpen,
+    addToCart,
+    updateQuantity,
+    removeItem
+  } = useCart();
+
   // Load products & ping Appwrite
   useEffect(() => {
-    // Ping Appwrite backend server to verify connection setup
     if (typeof (appwriteClient as any).ping === 'function') {
       (appwriteClient as any).ping()
         .then((res: any) => console.log('Appwrite connected successfully:', res))
@@ -70,6 +81,7 @@ export default function Page() {
       document.removeEventListener('visibilitychange', handleVisibility);
     };
   }, []);
+
   // Filter products by activeTab gender & search query
   const filteredProducts = useMemo(() => {
     return productsList.filter((product) => {
@@ -98,61 +110,6 @@ export default function Page() {
     });
   }, [searchQuery, productsList, activeTab]);
 
-  // Cart operations
-  const handleAddToCart = (product: Product, size?: string, unitPrice?: number) => {
-    const resolvedSize =
-      size ||
-      (product.sizeOptions && product.sizeOptions.length > 0
-        ? product.sizeOptions[0].size
-        : product.volume || '100ml');
-
-    const resolvedPrice =
-      unitPrice ??
-      (product.sizeOptions && product.sizeOptions.length > 0
-        ? product.sizeOptions.find((opt) => opt.size === resolvedSize)?.price ?? product.price
-        : product.price);
-
-    setCartItems((prev) => {
-      const existing = prev.find(
-        (item) => item.product.id === product.id && item.selectedSize === resolvedSize
-      );
-      if (existing) {
-        return prev.map((item) =>
-          item.product.id === product.id && item.selectedSize === resolvedSize
-            ? { ...item, quantity: item.quantity + 1 }
-            : item
-        );
-      }
-      return [
-        ...prev,
-        { product, quantity: 1, selectedSize: resolvedSize, unitPrice: resolvedPrice }
-      ];
-    });
-    setIsCartOpen(true);
-  };
-
-  const handleUpdateQuantity = (productId: string, delta: number, size?: string) => {
-    setCartItems((prev) =>
-      prev
-        .map((item) => {
-          if (item.product.id === productId && (size === undefined || item.selectedSize === size)) {
-            const newQty = item.quantity + delta;
-            return newQty > 0 ? { ...item, quantity: newQty } : null;
-          }
-          return item;
-        })
-        .filter(Boolean) as CartItem[]
-    );
-  };
-
-  const handleRemoveItem = (productId: string, size?: string) => {
-    setCartItems((prev) =>
-      prev.filter((item) => !(item.product.id === productId && (size === undefined || item.selectedSize === size)))
-    );
-  };
-
-  const totalCartCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
-
   return (
     <div className="min-h-screen bg-white text-slate-900 font-sans selection:bg-[#d6a13d] selection:text-black relative">
       
@@ -171,7 +128,10 @@ export default function Page() {
         onOpenAccount={() => setIsAccountOpen(true)}
         isMenuOpen={isMenuOpen}
         searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
+        onSearchChange={(q) => {
+          setSearchQuery(q);
+          if (q.trim()) router.push(`/collections/all?q=${encodeURIComponent(q)}`);
+        }}
       />
 
       {/* 3. Tsunara Hero Banner */}
@@ -230,8 +190,8 @@ export default function Page() {
               <div key={product.id} className="w-[72vw] max-w-[260px] flex-shrink-0 snap-center sm:w-auto sm:max-w-none">
                 <ProductCard
                   product={product}
-                  onAddToCart={handleAddToCart}
-                  onSelectProduct={(p) => setSelectedProductModal(p)}
+                  onAddToCart={addToCart}
+                  onSelectProduct={(p) => router.push(`/products/${getProductSlug(p)}`)}
                 />
               </div>
             ))}
@@ -265,8 +225,8 @@ export default function Page() {
         isOpen={isCartOpen}
         onClose={() => setIsCartOpen(false)}
         cartItems={cartItems}
-        onUpdateQuantity={handleUpdateQuantity}
-        onRemoveItem={handleRemoveItem}
+        onUpdateQuantity={updateQuantity}
+        onRemoveItem={removeItem}
       />
 
       {/* 10.5 Sliding Hamburger Menu Drawer */}
@@ -293,7 +253,7 @@ export default function Page() {
       <AccountDashboard
         isOpen={isAccountOpen}
         onClose={() => setIsAccountOpen(false)}
-        onAddToCart={handleAddToCart}
+        onAddToCart={addToCart}
       />
 
       {/* Quick View Product Modal */}
@@ -334,22 +294,32 @@ export default function Page() {
                   </span>
                 </div>
 
-                <button
-                  onClick={() => {
-                    const defaultOption =
-                      selectedProductModal.sizeOptions && selectedProductModal.sizeOptions.length > 0
-                        ? selectedProductModal.sizeOptions[0]
-                        : null;
-                    const defaultSize = defaultOption?.size || selectedProductModal.volume || '100ml';
-                    const defaultPrice = defaultOption?.price ?? selectedProductModal.price;
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => {
+                      const defaultOption =
+                        selectedProductModal.sizeOptions && selectedProductModal.sizeOptions.length > 0
+                          ? selectedProductModal.sizeOptions[0]
+                          : null;
+                      const defaultSize = defaultOption?.size || selectedProductModal.volume || '100ml';
+                      const defaultPrice = defaultOption?.price ?? selectedProductModal.price;
 
-                    handleAddToCart(selectedProductModal, defaultSize, defaultPrice);
-                    setSelectedProductModal(null);
-                  }}
-                  className="w-full py-3 bg-[#d6a750] text-white font-sans font-bold text-xs uppercase tracking-widest rounded-md hover:bg-[#c49232] transition-colors cursor-pointer"
-                >
-                  ADD TO CART
-                </button>
+                      addToCart(selectedProductModal, defaultSize, defaultPrice);
+                      setSelectedProductModal(null);
+                    }}
+                    className="flex-1 py-3 bg-[#d6a750] text-white font-sans font-bold text-xs uppercase tracking-widest rounded-md hover:bg-[#c49232] transition-colors cursor-pointer"
+                  >
+                    ADD TO BAG
+                  </button>
+
+                  <Link
+                    href={`/products/${getProductSlug(selectedProductModal)}`}
+                    onClick={() => setSelectedProductModal(null)}
+                    className="px-4 py-3 bg-slate-900 hover:bg-black text-white font-sans font-bold text-xs uppercase tracking-widest rounded-md transition-colors text-center"
+                  >
+                    View Details
+                  </Link>
+                </div>
               </div>
             </div>
           </div>

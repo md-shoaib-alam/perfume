@@ -49,3 +49,20 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
   - **Next.js**: Use `./proxy.ts` convention (not `middleware.ts`), App Router standards, and Server Components/Route Handlers.
   - **Clerk**: Use latest Clerk v6+ React hooks (`useUser`, `useClerk`, `useSignIn`, `useSignUp`).
 - Always double check and provide the most current, up-to-date documentation and instructions.
+
+## 6. Strict Light Mode & Brand Color Palette Policy (Strict)
+- **STRICT LIGHT LUXURY SURFACES**: The storefront is designed exclusively in refined **Light Mode**.
+- **PROHIBITED COLORS**: **NEVER** use dark navy/midnight blue containers (`#0F172B`, dark `bg-slate-900` content boxes) for cards, olfactory pyramids, modals, or product detail sections.
+- **AUTHORIZED BRAND PALETTE ONLY**:
+  - **Background Surfaces**: Pure White (`bg-white`), Warm Luxury Cream (`bg-[#faf9f6]`, `bg-[#fafafa]`, `bg-slate-50`).
+  - **Borders**: Subtle Slate & Gold Borders (`border-slate-200`, `border-amber-200/50`).
+  - **Typography**: Deep Slate Charcoal (`text-slate-900`, `text-slate-800`, `text-slate-600`).
+  - **Signature Luxury Accents**: Champagne Gold (`#d6a750`, `#caa04c`, `#b88f3e`, `#c59b48`).
+  - **Action Highlights**: Crisp Black / Dark Slate (`#222222`, `bg-slate-900` for buttons only).
+- **Never create arbitrary new dark colors or dark navy containers**.
+
+## 7. Zero Image Hover Zoom / Scale Effect (Strict)
+- **NEVER use hover zoom or scale effects on images** anywhere in the storefront or admin panel (e.g. `hover:scale-105`, `group-hover:scale-105`, `group-hover:scale-110`, `transform hover:scale-*`).
+- Luxury photography must remain static, crisp, stable, and elegant on hover without jarring zoom-in transforms.
+
+

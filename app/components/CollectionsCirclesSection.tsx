@@ -1,5 +1,7 @@
 'use client';
+
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { api } from '../services/api';
 
 interface CollectionCircle {
@@ -42,9 +44,9 @@ export const CollectionsCirclesSection: React.FC = () => {
       <div className="max-w-4xl mx-auto px-4">
         <div className="flex items-center justify-center gap-4 sm:gap-10 md:gap-14">
           {collections.map((item) => (
-            <a
+            <Link
               key={item.id}
-              href={`#${item.id}`}
+              href={`/collections/${item.id}`}
               className="group flex flex-col items-center text-center cursor-pointer transition-transform hover:-translate-y-1"
             >
               {/* Gold Ring Circular Image */}
@@ -55,7 +57,7 @@ export const CollectionsCirclesSection: React.FC = () => {
                     alt={`${item.name} ${item.subname}`}
                     loading="lazy"
                     decoding="async"
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                    className="w-full h-full object-cover"
                   />
                 </div>
               </div>
@@ -69,7 +71,7 @@ export const CollectionsCirclesSection: React.FC = () => {
                   {item.subname}
                 </span>
               </div>
-            </a>
+            </Link>
           ))}
         </div>
       </div>
