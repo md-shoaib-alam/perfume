@@ -1,11 +1,6 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
 
-// Routes requiring standard customer authentication
-const isProtectedRoute = createRouteMatcher([
-  '/account(.*)',
-]);
-
 // Routes requiring admin role
 const isAdminRoute = createRouteMatcher([
   '/admin(.*)',
@@ -19,7 +14,7 @@ export default clerkMiddleware(async (auth, req) => {
   if (isAdminRoute(req)) {
     if (!userId) {
       const signInUrl = new URL('/auth/sign-in', req.url);
-      signInUrl.searchParams.set('redirect_url', req.url);
+      signInUrl.searchParams.set('redirect_url', '/admin');
       return NextResponse.redirect(signInUrl);
     }
 
@@ -32,15 +27,6 @@ export default clerkMiddleware(async (auth, req) => {
     // If role claim is present and explicitly not admin, redirect to home
     if (role && role !== 'admin') {
       return NextResponse.redirect(new URL('/', req.url));
-    }
-  }
-
-  // 2. Customer protected route protection
-  if (isProtectedRoute(req)) {
-    if (!userId) {
-      const signInUrl = new URL('/auth/sign-in', req.url);
-      signInUrl.searchParams.set('redirect_url', req.url);
-      return NextResponse.redirect(signInUrl);
     }
   }
 });

@@ -2,14 +2,17 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useClerk } from '@clerk/nextjs';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useClerk, useUser } from '@clerk/nextjs';
 import { api } from '@/app/services/api';
 
 type AuthStep = 'identifier' | 'link_email' | 'otp';
 
 export default function CustomSignUpPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const { isLoaded: isUserLoaded, isSignedIn, user } = useUser();
+
   const [step, setStep] = useState<AuthStep>('identifier');
   const [activeAuthType, setActiveAuthType] = useState<'signin' | 'signup'>('signup');
   
@@ -25,6 +28,38 @@ export default function CustomSignUpPage() {
   const otpInputsRef = useRef<(HTMLInputElement | null)[]>([]);
 
   const clerk = useClerk();
+
+  // Safely determine redirect target
+  const rawRedirect = searchParams?.get('redirect_url');
+  let targetUrl = '/account';
+  if (rawRedirect) {
+    try {
+      if (rawRedirect.startsWith('/')) {
+        targetUrl = rawRedirect;
+      } else {
+        const parsed = new URL(rawRedirect);
+        targetUrl = parsed.pathname + parsed.search;
+      }
+    } catch (e) {
+      targetUrl = rawRedirect;
+    }
+  }
+
+  // Determine if user has admin privileges
+  const isAdmin =
+    user?.publicMetadata?.role === 'admin' ||
+    (user as any)?.unsafeMetadata?.role === 'admin' ||
+    (user as any)?.role === 'admin';
+
+  // If redirect target is admin, but user is NOT an admin, automatically redirect to home '/'
+  const effectiveTarget = targetUrl.startsWith('/admin') && !isAdmin ? '/' : targetUrl;
+
+  // Auto redirect when user is already logged in
+  useEffect(() => {
+    if (isUserLoaded && isSignedIn) {
+      router.replace(effectiveTarget);
+    }
+  }, [isUserLoaded, isSignedIn, effectiveTarget, router]);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -349,22 +384,63 @@ export default function CustomSignUpPage() {
     }
   };
 
+  // While Clerk is initializing or if the user is already authenticated, show a smooth luxury transition screen
+  if (!isUserLoaded || isSignedIn) {
+    return (
+      <div className="min-h-screen bg-[#faf9f6] flex flex-col justify-between items-center selection:bg-[#d6a750] selection:text-white">
+        <header className="px-6 py-6 max-w-7xl mx-auto w-full flex items-center justify-between z-10">
+          <Link href="/" className="flex items-center gap-2 group cursor-pointer">
+            <img 
+              src="/assets/neesh_logo_130x40.avif" 
+              alt="NEESH PERFUMES" 
+              loading="lazy"
+              decoding="async"
+              className="h-7 w-auto object-contain" 
+            />
+          </Link>
+          <Link
+            href="/"
+            className="text-xs font-semibold text-slate-600 hover:text-[#d6a750] transition-colors"
+          >
+            ← Back to Store
+          </Link>
+        </header>
+
+        <main className="flex-1 flex items-center justify-center p-4">
+          <div className="animate-fade-in flex items-center justify-center">
+            <div className="w-8 h-8 border-2 border-[#d6a750] border-t-transparent rounded-full animate-spin" />
+          </div>
+        </main>
+
+        <footer className="py-6 text-center text-[11px] text-slate-400 z-10 border-t border-slate-200/60 w-full">
+          &copy; {new Date().getFullYear()} NEESH™ Perfumes. Encrypted & Secured by Clerk Auth.
+        </footer>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-slate-950 text-white flex flex-col justify-between selection:bg-[#d6a750] selection:text-black relative">
+    <div className="min-h-screen bg-[#faf9f6] text-slate-900 flex flex-col justify-between selection:bg-[#d6a750] selection:text-white relative">
       <header className="px-6 py-6 max-w-7xl mx-auto w-full flex items-center justify-between z-10">
         <Link href="/" className="flex items-center gap-2 group cursor-pointer">
-          <span className="font-serif text-2xl font-bold tracking-widest text-[#d6a750]">NEESH</span>
+          <img 
+            src="/assets/neesh_logo_130x40.avif" 
+            alt="NEESH PERFUMES" 
+            loading="lazy"
+            decoding="async"
+            className="h-7 w-auto object-contain" 
+          />
         </Link>
         <Link
           href="/"
-          className="text-xs font-semibold text-slate-300 hover:text-[#d6a750] transition-colors"
+          className="text-xs font-semibold text-slate-600 hover:text-[#d6a750] transition-colors"
         >
           ← Back to Store
         </Link>
       </header>
 
       <main className="flex-1 flex items-center justify-center p-4 z-10">
-        <div className="relative w-full max-w-[420px] bg-white rounded-3xl p-7 sm:p-9 shadow-2xl text-slate-900 font-sans border border-slate-100 animate-fade-in-up">
+        <div className="relative w-full max-w-[420px] bg-white rounded-3xl p-7 sm:p-9 shadow-xl shadow-slate-900/5 text-slate-900 font-sans border border-slate-200/80 animate-fade-in-up">
           
           {step !== 'identifier' && (
             <button
@@ -619,7 +695,7 @@ export default function CustomSignUpPage() {
         </div>
       </main>
 
-      <footer className="py-6 text-center text-[11px] text-slate-500 z-10 border-t border-white/5">
+      <footer className="py-6 text-center text-[11px] text-slate-500 z-10 border-t border-slate-200/60">
         &copy; {new Date().getFullYear()} NEESH™ Perfumes. Encrypted & Secured by Clerk Auth.
       </footer>
     </div>

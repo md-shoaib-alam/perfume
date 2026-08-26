@@ -32,14 +32,14 @@ export default function AccountPage() {
 
   useEffect(() => {
     if (isLoaded && !isSignedIn) {
-      router.push('/auth/sign-in');
+      router.push('/auth/sign-in?redirect_url=/account');
     }
   }, [isLoaded, isSignedIn, router]);
 
   if (!isLoaded || !isSignedIn) {
     return (
-      <div className="min-h-screen bg-[#fafafa] flex items-center justify-center">
-        <div className="text-center text-xs font-semibold text-slate-400">Loading your account...</div>
+      <div className="min-h-screen bg-[#faf9f6] flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-[#d6a750] border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
