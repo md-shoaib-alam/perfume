@@ -17,11 +17,7 @@ function readPress() {
 }
 
 function writePress(data: any) {
-  try {
-    fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2), 'utf-8');
-  } catch (e) {
-    console.error('Error writing data_press.json:', e);
-  }
+  fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2), 'utf-8');
 }
 
 export async function GET() {
@@ -35,6 +31,6 @@ export async function POST(req: Request) {
     writePress(body);
     return NextResponse.json({ success: true, data: body });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return NextResponse.json({ error: err?.message || 'Failed to save press data' }, { status: 500 });
   }
 }

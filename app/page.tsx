@@ -59,16 +59,17 @@ export default function Page() {
     load();
 
     const handleFocus = () => load();
-    window.addEventListener('focus', handleFocus);
-    window.addEventListener('visibilitychange', () => {
+    const handleVisibility = () => {
       if (document.visibilityState === 'visible') load();
-    });
+    };
+    window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', handleVisibility);
 
     return () => {
       window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleVisibility);
     };
   }, []);
-
   // Filter products by activeTab gender & search query
   const filteredProducts = useMemo(() => {
     return productsList.filter((product) => {
@@ -98,28 +99,43 @@ export default function Page() {
   }, [searchQuery, productsList, activeTab]);
 
   // Cart operations
-  const handleAddToCart = (product: Product, size: string) => {
+  const handleAddToCart = (product: Product, size?: string, unitPrice?: number) => {
+    const resolvedSize =
+      size ||
+      (product.sizeOptions && product.sizeOptions.length > 0
+        ? product.sizeOptions[0].size
+        : product.volume || '100ml');
+
+    const resolvedPrice =
+      unitPrice ??
+      (product.sizeOptions && product.sizeOptions.length > 0
+        ? product.sizeOptions.find((opt) => opt.size === resolvedSize)?.price ?? product.price
+        : product.price);
+
     setCartItems((prev) => {
       const existing = prev.find(
-        (item) => item.product.id === product.id && item.selectedSize === size
+        (item) => item.product.id === product.id && item.selectedSize === resolvedSize
       );
       if (existing) {
         return prev.map((item) =>
-          item.product.id === product.id && item.selectedSize === size
+          item.product.id === product.id && item.selectedSize === resolvedSize
             ? { ...item, quantity: item.quantity + 1 }
             : item
         );
       }
-      return [...prev, { product, quantity: 1, selectedSize: size }];
+      return [
+        ...prev,
+        { product, quantity: 1, selectedSize: resolvedSize, unitPrice: resolvedPrice }
+      ];
     });
     setIsCartOpen(true);
   };
 
-  const handleUpdateQuantity = (productId: string, delta: number) => {
+  const handleUpdateQuantity = (productId: string, delta: number, size?: string) => {
     setCartItems((prev) =>
       prev
         .map((item) => {
-          if (item.product.id === productId) {
+          if (item.product.id === productId && (size === undefined || item.selectedSize === size)) {
             const newQty = item.quantity + delta;
             return newQty > 0 ? { ...item, quantity: newQty } : null;
           }
@@ -129,8 +145,10 @@ export default function Page() {
     );
   };
 
-  const handleRemoveItem = (productId: string) => {
-    setCartItems((prev) => prev.filter((item) => item.product.id !== productId));
+  const handleRemoveItem = (productId: string, size?: string) => {
+    setCartItems((prev) =>
+      prev.filter((item) => !(item.product.id === productId && (size === undefined || item.selectedSize === size)))
+    );
   };
 
   const totalCartCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
@@ -281,18 +299,23 @@ export default function Page() {
       {/* Quick View Product Modal */}
       {selectedProductModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl max-w-xl w-full p-6 relative shadow-2xl border border-slate-200">
+          <div className="bg-white rounded-2xl p-6 max-w-2xl w-full relative shadow-2xl border border-slate-200">
             <button
               onClick={() => setSelectedProductModal(null)}
               className="absolute top-4 right-4 text-slate-500 hover:text-black p-2 cursor-pointer"
+              aria-label="Close quick view"
             >
-              ✕
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
             </button>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 items-center">
               <img
                 src={selectedProductModal.image}
                 alt={selectedProductModal.name}
+                loading="lazy"
+                decoding="async"
                 className="w-full h-64 object-cover rounded-xl"
               />
 
@@ -302,15 +325,28 @@ export default function Page() {
                 <p className="text-xs font-sans text-slate-500">{selectedProductModal.subtitle}</p>
 
                 <div className="pt-2">
-                  <span className="text-xl font-bold text-slate-900">Rs.{selectedProductModal.price.toLocaleString('en-IN')}.00</span>
+                  <span className="text-xl font-bold text-slate-900">
+                    Rs.{(
+                      selectedProductModal.sizeOptions && selectedProductModal.sizeOptions.length > 0
+                        ? selectedProductModal.sizeOptions[0].price
+                        : selectedProductModal.price
+                    ).toLocaleString('en-IN')}.00
+                  </span>
                 </div>
 
                 <button
                   onClick={() => {
-                    handleAddToCart(selectedProductModal, '100ml');
+                    const defaultOption =
+                      selectedProductModal.sizeOptions && selectedProductModal.sizeOptions.length > 0
+                        ? selectedProductModal.sizeOptions[0]
+                        : null;
+                    const defaultSize = defaultOption?.size || selectedProductModal.volume || '100ml';
+                    const defaultPrice = defaultOption?.price ?? selectedProductModal.price;
+
+                    handleAddToCart(selectedProductModal, defaultSize, defaultPrice);
                     setSelectedProductModal(null);
                   }}
-                  className="w-full py-3 bg-[#d6a13d] text-white font-sans font-bold text-xs uppercase tracking-widest rounded-md hover:bg-[#c49232] transition-colors cursor-pointer"
+                  className="w-full py-3 bg-[#d6a750] text-white font-sans font-bold text-xs uppercase tracking-widest rounded-md hover:bg-[#c49232] transition-colors cursor-pointer"
                 >
                   ADD TO CART
                 </button>

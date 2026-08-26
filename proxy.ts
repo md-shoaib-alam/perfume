@@ -23,8 +23,13 @@ export default clerkMiddleware(async (auth, req) => {
       return NextResponse.redirect(signInUrl);
     }
 
-    // Role check from sessionClaims (if configured in Clerk session token)
-    const role = (sessionClaims as any)?.metadata?.role;
+    // Role check from sessionClaims (supports metadata.role, publicMetadata.role, or role)
+    const role =
+      (sessionClaims as any)?.metadata?.role ||
+      (sessionClaims as any)?.publicMetadata?.role ||
+      (sessionClaims as any)?.role;
+
+    // If role claim is present and explicitly not admin, redirect to home
     if (role && role !== 'admin') {
       return NextResponse.redirect(new URL('/', req.url));
     }

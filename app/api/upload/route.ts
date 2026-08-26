@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
-import { storage, APPWRITE_BUCKET_ID } from '@/lib/appwrite';
-import { ID } from 'appwrite';
+import { uploadMediaToAppwrite } from '@/lib/appwrite';
 
 export async function POST(req: Request) {
   try {
@@ -11,18 +10,11 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 });
     }
 
-    const fileId = ID.unique();
-    const uploaded = await storage.createFile(
-      APPWRITE_BUCKET_ID,
-      fileId,
-      file
-    );
-
-    const fileUrl = storage.getFileView(APPWRITE_BUCKET_ID, uploaded.$id).toString();
+    // Route uploads through uploadMediaToAppwrite() for consistent validation and bucket behavior
+    const fileUrl = await uploadMediaToAppwrite(file);
 
     return NextResponse.json({
       success: true,
-      fileId: uploaded.$id,
       url: fileUrl
     });
   } catch (err: any) {

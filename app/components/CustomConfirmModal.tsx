@@ -1,5 +1,5 @@
 'use client';
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
 
 export type DialogVariant = 'danger' | 'warning' | 'info' | 'success';
 
@@ -76,7 +76,12 @@ export const ConfirmProvider: React.FC<{ children: ReactNode }> = ({ children })
   const [cancelText, setCancelText] = useState('Cancel');
   const [variant, setVariant] = useState<DialogVariant>('danger');
   const [resolver, setResolver] = useState<((val: boolean) => void) | null>(null);
+  const [handlers, setHandlers] = useState<{
+    onConfirm?: () => void | Promise<void>;
+    onCancel?: () => void;
+  }>({});
   const [loading, setLoading] = useState(false);
+  const primaryBtnRef = useRef<HTMLButtonElement>(null);
 
   const showConfirm = (options: ConfirmOptions): Promise<boolean> => {
     return new Promise((resolve) => {
@@ -86,6 +91,7 @@ export const ConfirmProvider: React.FC<{ children: ReactNode }> = ({ children })
       setCancelText(options.cancelText || 'Cancel');
       setVariant(options.variant || 'danger');
       setIsAlertMode(false);
+      setHandlers({ onConfirm: options.onConfirm, onCancel: options.onCancel });
       setResolver(() => resolve);
       setIsOpen(true);
     });
@@ -98,11 +104,13 @@ export const ConfirmProvider: React.FC<{ children: ReactNode }> = ({ children })
         setMessage(options);
         setConfirmText('OK');
         setVariant('info');
+        setHandlers({});
       } else {
         setTitle(options.title || 'Notice');
         setMessage(options.message);
         setConfirmText(options.buttonText || 'OK');
         setVariant(options.variant || 'info');
+        setHandlers({ onConfirm: options.onClose });
       }
       setIsAlertMode(true);
       setResolver(() => () => resolve());
@@ -112,19 +120,49 @@ export const ConfirmProvider: React.FC<{ children: ReactNode }> = ({ children })
 
   const handleConfirm = async () => {
     setLoading(true);
-    if (resolver) {
-      resolver(true);
+    try {
+      await handlers.onConfirm?.();
+      resolver?.(true);
+    } catch (err) {
+      console.error('Error in onConfirm handler:', err);
+    } finally {
+      setLoading(false);
+      setIsOpen(false);
     }
-    setLoading(false);
-    setIsOpen(false);
   };
 
   const handleCancel = () => {
-    if (resolver) {
-      resolver(false);
-    }
+    handlers.onCancel?.();
+    resolver?.(false);
     setIsOpen(false);
   };
+
+  // Keyboard accessibility: Escape dismissal and auto-focus
+  useEffect(() => {
+    if (!isOpen) return;
+
+    // Focus primary button when modal opens
+    const timer = setTimeout(() => {
+      primaryBtnRef.current?.focus();
+    }, 50);
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        if (isAlertMode) {
+          handleConfirm();
+        } else {
+          handleCancel();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOpen, isAlertMode, handlers, resolver]);
 
   return (
     <ConfirmContext.Provider value={{ showConfirm, showAlert }}>
@@ -132,7 +170,13 @@ export const ConfirmProvider: React.FC<{ children: ReactNode }> = ({ children })
 
       {/* Luxury Light Mode Confirmation & Alert Modal */}
       {isOpen && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+        <div 
+          role="dialog" 
+          aria-modal="true" 
+          aria-labelledby="dialog-title"
+          aria-describedby="dialog-description"
+          className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+        >
           {/* Backdrop with Subtle Luxury Blur */}
           <div
             onClick={!isAlertMode ? handleCancel : handleConfirm}
@@ -147,10 +191,10 @@ export const ConfirmProvider: React.FC<{ children: ReactNode }> = ({ children })
               <DialogIcon variant={variant} />
 
               <div className="flex-1 min-w-0 pt-0.5">
-                <h3 className="font-serif text-lg font-bold text-slate-900 tracking-wide">
+                <h3 id="dialog-title" className="font-serif text-lg font-bold text-slate-900 tracking-wide">
                   {title}
                 </h3>
-                <p className="text-xs text-slate-600 mt-1.5 leading-relaxed font-sans">
+                <p id="dialog-description" className="text-xs text-slate-600 mt-1.5 leading-relaxed font-sans">
                   {message}
                 </p>
               </div>
@@ -170,6 +214,7 @@ export const ConfirmProvider: React.FC<{ children: ReactNode }> = ({ children })
               )}
 
               <button
+                ref={primaryBtnRef}
                 type="button"
                 onClick={handleConfirm}
                 disabled={loading}

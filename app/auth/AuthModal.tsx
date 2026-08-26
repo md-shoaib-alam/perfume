@@ -278,23 +278,17 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       }
 
       if (activeAuthType === 'signup' && client.signUp) {
-        try {
-          const result = await client.signUp.attemptEmailAddressVerification({ code });
-          if (result.status === 'complete' && clerk.setActive) {
-            await clerk.setActive({ session: result.createdSessionId });
-            setSuccessMsg('Account created & verified! Welcome to NEESH.');
-            setTimeout(() => {
-              setIsLoading(false);
-              onClose();
-            }, 800);
-            return;
-          }
-        } catch (signupVerifyErr) {
-          console.log('SignUp verify note, trying signIn factor:', signupVerifyErr);
+        const result = await client.signUp.attemptEmailAddressVerification({ code });
+        if (result.status === 'complete' && clerk.setActive) {
+          await clerk.setActive({ session: result.createdSessionId });
+          setSuccessMsg('Account created & verified! Welcome to NEESH.');
+          setTimeout(() => {
+            setIsLoading(false);
+            onClose();
+          }, 800);
+          return;
         }
-      }
-
-      if (client.signIn) {
+      } else if (activeAuthType === 'signin' && client.signIn) {
         const result = await client.signIn.attemptFirstFactor({
           strategy: 'email_code',
           code,

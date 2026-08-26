@@ -121,6 +121,8 @@ export const Navbar: React.FC<NavbarProps> = ({
               <img 
                 src="/assets/neesh_logo_130x40.avif" 
                 alt="NEESH PERFUMES" 
+                loading="lazy"
+                decoding="async"
                 className="h-8.5 sm:h-10.5 w-auto object-contain transition-opacity duration-200 group-hover:opacity-90" 
               />
             </Link>
@@ -157,6 +159,8 @@ export const Navbar: React.FC<NavbarProps> = ({
                   <img
                     src={user.imageUrl}
                     alt={user.firstName || 'Profile'}
+                    loading="lazy"
+                    decoding="async"
                     className="w-7 h-7 rounded-full border border-[#d6a750] object-cover group-hover:ring-2 group-hover:ring-[#d6a750]/40 transition-all"
                   />
                 ) : (

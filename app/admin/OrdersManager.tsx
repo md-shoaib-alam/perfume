@@ -29,7 +29,7 @@ export const OrdersManager: React.FC = () => {
 
   const filteredOrders = orders.filter((o) => {
     if (statusFilter === 'all') return true;
-    return o.orderStatus === statusFilter;
+    return (o.orderStatus || 'Processing') === statusFilter;
   });
 
   const getStatusBadge = (status: string) => {
@@ -100,7 +100,9 @@ export const OrdersManager: React.FC = () => {
                 </div>
                 <div className="text-right">
                   <span className="font-bold text-slate-900 text-sm">₹{(ord.total || 0).toLocaleString('en-IN')}</span>
-                  <p className="text-[10px] text-slate-400">{ord.items?.length || 1} items</p>
+                  <p className="text-[10px] text-slate-400">
+                    {ord.items?.length || 0} {ord.items?.length === 1 ? 'item' : 'items'}
+                  </p>
                 </div>
               </div>
 
@@ -116,7 +118,7 @@ export const OrdersManager: React.FC = () => {
                   value={ord.orderStatus || 'Processing'}
                   onChange={(e) => handleStatusChange(ord._id || ord.orderNumber, e.target.value)}
                   className={`text-[11px] font-bold px-2.5 py-1 rounded-full border focus:outline-none cursor-pointer ${getStatusBadge(
-                    ord.orderStatus
+                    ord.orderStatus || 'Processing'
                   )}`}
                 >
                   <option value="Pending">Pending</option>
@@ -181,7 +183,7 @@ export const OrdersManager: React.FC = () => {
                         ₹{(ord.total || 0).toLocaleString('en-IN')}
                       </div>
                       <div className="text-[11px] text-slate-500">
-                        {ord.items?.length || 1} {ord.items?.length === 1 ? 'item' : 'items'}
+                        {ord.items?.length || 0} {ord.items?.length === 1 ? 'item' : 'items'}
                       </div>
                     </td>
                     <td className="px-4 py-3.5">
@@ -189,7 +191,7 @@ export const OrdersManager: React.FC = () => {
                         value={ord.orderStatus || 'Processing'}
                         onChange={(e) => handleStatusChange(ord._id || ord.orderNumber, e.target.value)}
                         className={`text-xs font-semibold px-2.5 py-1 rounded-full border focus:outline-none cursor-pointer ${getStatusBadge(
-                          ord.orderStatus
+                          ord.orderStatus || 'Processing'
                         )}`}
                       >
                         <option value="Pending">Pending</option>
@@ -237,8 +239,12 @@ export const OrdersManager: React.FC = () => {
               <div className="font-bold text-slate-900">{selectedOrder.customer?.name}</div>
               <div className="text-slate-600">{selectedOrder.customer?.email}</div>
               <div className="text-slate-600">{selectedOrder.customer?.phone}</div>
-              <div className="text-slate-600 pt-1 border-t border-slate-200 mt-2">
-                📍 {selectedOrder.customer?.address}, {selectedOrder.customer?.city} - {selectedOrder.customer?.postalCode}
+              <div className="text-slate-600 pt-1 border-t border-slate-200 mt-2 flex items-start gap-1.5">
+                <svg className="w-3.5 h-3.5 text-slate-400 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
+                </svg>
+                <span>{selectedOrder.customer?.address}, {selectedOrder.customer?.city} - {selectedOrder.customer?.postalCode}</span>
               </div>
             </div>
 
@@ -248,7 +254,13 @@ export const OrdersManager: React.FC = () => {
                 <div key={i} className="flex items-center justify-between text-xs py-2 border-b border-slate-100">
                   <div className="flex items-center gap-3">
                     {it.image && (
-                      <img src={it.image} alt={it.name} className="w-9 h-9 object-cover rounded bg-slate-100" />
+                      <img
+                        src={it.image}
+                        alt={it.name}
+                        loading="lazy"
+                        decoding="async"
+                        className="w-9 h-9 object-cover rounded bg-slate-100"
+                      />
                     )}
                     <div>
                       <div className="font-semibold text-slate-900">{it.name}</div>

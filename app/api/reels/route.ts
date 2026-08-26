@@ -32,13 +32,9 @@ function readReels() {
   ];
 }
 
-// Helper to write data safely
+// Helper to write data
 function writeReels(data: any) {
-  try {
-    fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2), 'utf-8');
-  } catch (e) {
-    console.error('Error writing data_reels.json:', e);
-  }
+  fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2), 'utf-8');
 }
 
 export async function GET() {
@@ -52,6 +48,7 @@ export async function POST(req: Request) {
     writeReels(body);
     return NextResponse.json({ success: true, data: body });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    console.error('Error in /api/reels POST:', err);
+    return NextResponse.json({ error: err.message || 'Failed to persist reels' }, { status: 500 });
   }
 }

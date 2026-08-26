@@ -4,13 +4,24 @@ import type { Product, Review } from '../types';
 
 // Helper to format Appwrite Product document to Product interface
 const formatProductDoc = (doc: any): Product => {
-  let parsedNotes = { top: [], heart: [], base: [] };
+  let parsedNotes = { top: [] as string[], heart: [] as string[], base: [] as string[] };
   if (doc.notes) {
     try {
       parsedNotes = typeof doc.notes === 'string' ? JSON.parse(doc.notes) : doc.notes;
     } catch (e) {
-      parsedNotes = { top: [doc.notes], heart: [], base: [] };
+      parsedNotes = { top: [String(doc.notes)], heart: [], base: [] };
     }
+  }
+
+  let parsedSizeOptions = [
+    { size: '15ml', price: Math.round(Number(doc.price) * 0.25), originalPrice: Math.round(Number(doc.originalPrice || doc.price) * 0.25), isSoldOut: false },
+    { size: '50ml', price: Math.round(Number(doc.price) * 0.65), originalPrice: Math.round(Number(doc.originalPrice || doc.price) * 0.65), isSoldOut: false },
+    { size: '100ml', price: Number(doc.price) || 0, originalPrice: Number(doc.originalPrice || doc.price) || 0, isSoldOut: false }
+  ];
+  if (doc.sizeOptions) {
+    try {
+      parsedSizeOptions = typeof doc.sizeOptions === 'string' ? JSON.parse(doc.sizeOptions) : doc.sizeOptions;
+    } catch (e) {}
   }
 
   return {
@@ -36,11 +47,8 @@ const formatProductDoc = (doc: any): Product => {
     badgeSubtext: doc.badgeSubtext || '',
     notes: parsedNotes,
     description: doc.description || '',
-    sizeOptions: [
-      { size: '15ml', price: Math.round(Number(doc.price) * 0.25), originalPrice: Math.round(Number(doc.originalPrice || doc.price) * 0.25), isSoldOut: false },
-      { size: '50ml', price: Math.round(Number(doc.price) * 0.65), originalPrice: Math.round(Number(doc.originalPrice || doc.price) * 0.65), isSoldOut: false },
-      { size: '100ml', price: Number(doc.price), originalPrice: Number(doc.originalPrice || doc.price), isSoldOut: false }
-    ]
+    stock: doc.stock == null ? 100 : Number(doc.stock),
+    sizeOptions: parsedSizeOptions
   };
 };
 
@@ -129,7 +137,14 @@ export const api = {
         notes: JSON.stringify(product.notes || {}),
         isBestseller: Boolean(product.isBestseller),
         isNew: Boolean(product.isNew),
-        stock: 100
+        isPreOrder: Boolean(product.isPreOrder),
+        shippingNote: product.shippingNote || '',
+        buttonText: product.buttonText || '',
+        tagline: product.tagline || '',
+        badgeText: product.badgeText || '',
+        badgeSubtext: product.badgeSubtext || '',
+        sizeOptions: JSON.stringify(product.sizeOptions || []),
+        stock: product.stock == null ? 100 : Number(product.stock)
       };
 
       const doc = await databases.createDocument(
@@ -173,9 +188,17 @@ export const api = {
       if (updates.image !== undefined) cleanData.image = updates.image;
       if (updates.hoverImage !== undefined) cleanData.hoverImage = updates.hoverImage;
       if (updates.description !== undefined) cleanData.description = updates.description;
-      if (updates.notes !== undefined) cleanData.notes = JSON.stringify(updates.notes);
+      if (updates.notes !== undefined) cleanData.notes = typeof updates.notes === 'string' ? updates.notes : JSON.stringify(updates.notes);
       if (updates.isBestseller !== undefined) cleanData.isBestseller = Boolean(updates.isBestseller);
       if (updates.isNew !== undefined) cleanData.isNew = Boolean(updates.isNew);
+      if (updates.isPreOrder !== undefined) cleanData.isPreOrder = Boolean(updates.isPreOrder);
+      if (updates.shippingNote !== undefined) cleanData.shippingNote = updates.shippingNote;
+      if (updates.buttonText !== undefined) cleanData.buttonText = updates.buttonText;
+      if (updates.tagline !== undefined) cleanData.tagline = updates.tagline;
+      if (updates.badgeText !== undefined) cleanData.badgeText = updates.badgeText;
+      if (updates.badgeSubtext !== undefined) cleanData.badgeSubtext = updates.badgeSubtext;
+      if (updates.sizeOptions !== undefined) cleanData.sizeOptions = typeof updates.sizeOptions === 'string' ? updates.sizeOptions : JSON.stringify(updates.sizeOptions);
+      if (updates.stock !== undefined) cleanData.stock = updates.stock == null ? 100 : Number(updates.stock);
 
       const doc = await databases.updateDocument(
         APPWRITE_DATABASE_ID,
@@ -207,9 +230,6 @@ export const api = {
     }
   },
 
-  // =========================================================================
-  // 2. ORDERS
-  // =========================================================================
   // =========================================================================
   // 2. ORDERS
   // =========================================================================
@@ -335,7 +355,7 @@ export const api = {
       return { id: doc.$id, status: doc.status, trackingNumber: (doc as any).trackingNumber };
     } catch (err: any) {
       console.error('Appwrite updateOrderStatus error:', err);
-      return { id, status };
+      throw new Error(err.message || 'Failed to update order status');
     }
   },
 
@@ -358,7 +378,8 @@ export const api = {
           title: d.title || '',
           comment: d.comment,
           verified: Boolean(d.verified),
-          productName: d.productName
+          productName: d.productName,
+          approved: d.approved !== undefined ? Boolean(d.approved) : true
         }));
       }
     } catch (err) {
@@ -380,6 +401,7 @@ export const api = {
           title: reviewData.title || '',
           comment: reviewData.comment || '',
           verified: true,
+          approved: true,
           date: new Date().toISOString().split('T')[0]
         }
       );
@@ -391,11 +413,47 @@ export const api = {
         title: doc.title,
         comment: doc.comment,
         verified: doc.verified,
-        productName: doc.productName
+        productName: doc.productName,
+        approved: doc.approved !== undefined ? Boolean(doc.approved) : true
       };
     } catch (err: any) {
       console.error('Appwrite createReview error:', err);
       throw new Error(err.message || 'Failed to submit review');
+    }
+  },
+
+  async updateReview(id: string, data: Partial<Review>): Promise<Review> {
+    try {
+      const doc = await databases.updateDocument(
+        APPWRITE_DATABASE_ID,
+        'reviews',
+        id,
+        data
+      );
+      return {
+        id: doc.$id,
+        author: doc.author,
+        rating: Number(doc.rating),
+        date: doc.date,
+        title: doc.title,
+        comment: doc.comment,
+        verified: doc.verified,
+        productName: doc.productName,
+        approved: doc.approved !== undefined ? Boolean(doc.approved) : true
+      };
+    } catch (err: any) {
+      console.error('Appwrite updateReview error:', err);
+      throw err;
+    }
+  },
+
+  async deleteReview(id: string): Promise<boolean> {
+    try {
+      await databases.deleteDocument(APPWRITE_DATABASE_ID, 'reviews', id);
+      return true;
+    } catch (err: any) {
+      console.error('Appwrite deleteReview error:', err);
+      throw err;
     }
   },
 
@@ -619,7 +677,7 @@ export const api = {
       }
     } catch (err: any) {
       console.error('Appwrite updateSettings error:', err);
-      return settings;
+      throw err;
     }
   },
 
@@ -638,6 +696,44 @@ export const api = {
       const totalRevenue = orders.reduce((sum, o: any) => sum + (Number(o.totalAmount) || 0), 0);
       const pendingOrders = orders.filter((o: any) => o.status === 'pending' || o.status === 'processing').length;
 
+      // Dynamic past 7 days velocity
+      const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      const past7Days = Array.from({ length: 7 }, (_, i) => {
+        const d = new Date();
+        d.setDate(d.getDate() - (6 - i));
+        return {
+          day: days[d.getDay()],
+          dateStr: d.toISOString().split('T')[0],
+          revenue: 0,
+          orders: 0
+        };
+      });
+
+      orders.forEach((o: any) => {
+        const orderDate = (o.$createdAt || '').split('T')[0];
+        const match = past7Days.find(p => p.dateStr === orderDate);
+        if (match) {
+          match.revenue += Number(o.totalAmount || 0);
+          match.orders += 1;
+        }
+      });
+
+      const maxDayRevenue = Math.max(...past7Days.map(d => d.revenue), 1);
+      const weeklyTrends = past7Days.map(d => ({
+        day: d.day,
+        amt: d.revenue >= 1000 ? `₹${(d.revenue / 1000).toFixed(0)}k` : `₹${d.revenue}`,
+        val: d.revenue === 0 ? 8 : Math.max(12, Math.round((d.revenue / maxDayRevenue) * 100))
+      }));
+
+      const stockAlerts = prodsRes.documents.slice(0, 5).map((p: any) => ({
+        id: p.$id,
+        name: p.name,
+        volume: p.volume || '100ml',
+        stock: Number(p.stock !== undefined ? p.stock : 100),
+        isLow: Number(p.stock !== undefined ? p.stock : 100) < 20,
+        isPreOrder: Boolean(p.isPreOrder)
+      }));
+
       return {
         totalRevenue,
         totalOrders: orders.length,
@@ -645,6 +741,8 @@ export const api = {
         totalReviews: reviewsRes.total,
         pendingOrders,
         lowStockProducts: prodsRes.documents.filter((p: any) => Number(p.stock) < 20).length,
+        weeklyTrends,
+        stockAlerts,
         recentOrders: orders.slice(0, 5).map(o => ({
           _id: o.$id,
           id: o.$id,
@@ -657,15 +755,7 @@ export const api = {
       };
     } catch (err) {
       console.warn('Appwrite getStats error:', err);
-      return {
-        totalRevenue: 0,
-        totalOrders: 0,
-        totalProducts: 0,
-        totalReviews: 0,
-        pendingOrders: 0,
-        lowStockProducts: 0,
-        recentOrders: []
-      };
+      throw err;
     }
   },
 
@@ -831,7 +921,3 @@ export const api = {
     }
   }
 };
-
-
-
-

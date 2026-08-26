@@ -12,6 +12,17 @@ const formatProductDoc = (doc: any) => {
     }
   }
 
+  let parsedSizeOptions = [
+    { size: '15ml', price: Math.round(Number(doc.price) * 0.25), originalPrice: Math.round(Number(doc.originalPrice || doc.price) * 0.25), isSoldOut: false },
+    { size: '50ml', price: Math.round(Number(doc.price) * 0.65), originalPrice: Math.round(Number(doc.originalPrice || doc.price) * 0.65), isSoldOut: false },
+    { size: '100ml', price: Number(doc.price) || 0, originalPrice: Number(doc.originalPrice || doc.price) || 0, isSoldOut: false }
+  ];
+  if (doc.sizeOptions) {
+    try {
+      parsedSizeOptions = typeof doc.sizeOptions === 'string' ? JSON.parse(doc.sizeOptions) : doc.sizeOptions;
+    } catch (e) {}
+  }
+
   return {
     id: doc.$id || doc.id,
     name: doc.name || 'Untitled Perfume',
@@ -35,12 +46,8 @@ const formatProductDoc = (doc: any) => {
     badgeSubtext: doc.badgeSubtext || '',
     notes: parsedNotes,
     description: doc.description || '',
-    stock: Number(doc.stock) || 100,
-    sizeOptions: [
-      { size: '15ml', price: Math.round(Number(doc.price) * 0.25), originalPrice: Math.round(Number(doc.originalPrice || doc.price) * 0.25), isSoldOut: false },
-      { size: '50ml', price: Math.round(Number(doc.price) * 0.65), originalPrice: Math.round(Number(doc.originalPrice || doc.price) * 0.65), isSoldOut: false },
-      { size: '100ml', price: Number(doc.price), originalPrice: Number(doc.originalPrice || doc.price), isSoldOut: false }
-    ]
+    stock: doc.stock == null ? 100 : Number(doc.stock),
+    sizeOptions: parsedSizeOptions
   };
 };
 
@@ -88,7 +95,14 @@ export async function POST(req: Request) {
       notes: JSON.stringify(product.notes || {}),
       isBestseller: Boolean(product.isBestseller),
       isNew: Boolean(product.isNew),
-      stock: 100
+      isPreOrder: Boolean(product.isPreOrder),
+      shippingNote: product.shippingNote || '',
+      buttonText: product.buttonText || '',
+      tagline: product.tagline || '',
+      badgeText: product.badgeText || '',
+      badgeSubtext: product.badgeSubtext || '',
+      sizeOptions: JSON.stringify(product.sizeOptions || []),
+      stock: product.stock == null ? 100 : Number(product.stock)
     };
 
     const doc = await databases.createDocument(
@@ -119,9 +133,17 @@ export async function PUT(req: Request) {
     if (updates.image !== undefined) cleanData.image = updates.image;
     if (updates.hoverImage !== undefined) cleanData.hoverImage = updates.hoverImage;
     if (updates.description !== undefined) cleanData.description = updates.description;
-    if (updates.notes !== undefined) cleanData.notes = JSON.stringify(updates.notes);
+    if (updates.notes !== undefined) cleanData.notes = typeof updates.notes === 'string' ? updates.notes : JSON.stringify(updates.notes);
     if (updates.isBestseller !== undefined) cleanData.isBestseller = Boolean(updates.isBestseller);
     if (updates.isNew !== undefined) cleanData.isNew = Boolean(updates.isNew);
+    if (updates.isPreOrder !== undefined) cleanData.isPreOrder = Boolean(updates.isPreOrder);
+    if (updates.shippingNote !== undefined) cleanData.shippingNote = updates.shippingNote;
+    if (updates.buttonText !== undefined) cleanData.buttonText = updates.buttonText;
+    if (updates.tagline !== undefined) cleanData.tagline = updates.tagline;
+    if (updates.badgeText !== undefined) cleanData.badgeText = updates.badgeText;
+    if (updates.badgeSubtext !== undefined) cleanData.badgeSubtext = updates.badgeSubtext;
+    if (updates.sizeOptions !== undefined) cleanData.sizeOptions = typeof updates.sizeOptions === 'string' ? updates.sizeOptions : JSON.stringify(updates.sizeOptions);
+    if (updates.stock !== undefined) cleanData.stock = updates.stock == null ? 100 : Number(updates.stock);
 
     const doc = await databases.updateDocument(
       APPWRITE_DATABASE_ID,

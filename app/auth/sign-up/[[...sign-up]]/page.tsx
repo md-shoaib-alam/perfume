@@ -237,20 +237,16 @@ export default function CustomSignUpPage() {
 
     try {
       if (activeAuthType === 'signup' && isSignUpLoaded && signUp) {
-        try {
-          const result = await signUp.attemptEmailAddressVerification({ code });
-          if (result.status === 'complete' && setSignUpActive) {
-            await setSignUpActive({ session: result.createdSessionId });
-            setSuccessMsg('Account created & verified! Welcome to NEESH.');
-            setTimeout(() => {
-              router.push('/');
-            }, 900);
-            return;
-          }
-        } catch (e) {}
-      }
-
-      if (isSignInLoaded && signIn) {
+        const result = await signUp.attemptEmailAddressVerification({ code });
+        if (result.status === 'complete' && setSignUpActive) {
+          await setSignUpActive({ session: result.createdSessionId });
+          setSuccessMsg('Account created & verified! Welcome to NEESH.');
+          setTimeout(() => {
+            router.push('/');
+          }, 900);
+          return;
+        }
+      } else if (activeAuthType === 'signin' && isSignInLoaded && signIn) {
         const result = await signIn.attemptFirstFactor({
           strategy: 'email_code',
           code,

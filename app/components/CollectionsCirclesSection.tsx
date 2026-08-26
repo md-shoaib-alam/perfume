@@ -9,14 +9,21 @@ interface CollectionCircle {
   image: string;
 }
 
+const DEFAULT_COLLECTIONS: CollectionCircle[] = [
+  { id: 'bureau', name: 'Bureau', subname: 'Collection', image: 'https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?auto=format&fit=crop&w=400&q=80' },
+  { id: 'luxe', name: 'Luxe', subname: 'Collection', image: 'https://images.unsplash.com/photo-1523293182086-7651a899d37f?auto=format&fit=crop&w=400&q=80' },
+  { id: 'haute', name: 'Haute', subname: 'Collection', image: 'https://images.unsplash.com/photo-1594035910387-fea47794261f?auto=format&fit=crop&w=400&q=80' },
+  { id: 'miss_neesh', name: 'Miss NEESH', subname: 'Collection', image: 'https://images.unsplash.com/photo-1547887537-6158d64c35b3?auto=format&fit=crop&w=400&q=80' }
+];
+
 export const CollectionsCirclesSection: React.FC = () => {
-  const [collections, setCollections] = useState<CollectionCircle[]>([]);
+  const [collections, setCollections] = useState<CollectionCircle[]>(DEFAULT_COLLECTIONS);
 
   useEffect(() => {
     const load = async () => {
       try {
         const data = await api.getCollections();
-        if (data) {
+        if (data && data.length > 0) {
           setCollections(data);
         }
       } catch (e) {}

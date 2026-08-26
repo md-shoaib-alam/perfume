@@ -7,8 +7,8 @@ interface CartDrawerProps {
   isOpen: boolean;
   onClose: () => void;
   cartItems: CartItem[];
-  onUpdateQuantity: (productId: string, delta: number) => void;
-  onRemoveItem: (productId: string) => void;
+  onUpdateQuantity: (productId: string, delta: number, size?: string) => void;
+  onRemoveItem: (productId: string, size?: string) => void;
 }
 
 const FREE_GIFT_THRESHOLD = 5000;
@@ -33,7 +33,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
     };
   }, [isOpen]);
   const subtotal = cartItems.reduce(
-    (sum, item) => sum + item.product.price * item.quantity,
+    (sum, item) => sum + (item.unitPrice ?? item.product.price) * item.quantity,
     0
   );
 
@@ -61,16 +61,24 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
             </div>
             <button
               onClick={onClose}
-              className="text-slate-400 hover:text-black p-2 rounded-lg hover:bg-slate-100 transition-colors"
+              aria-label="Close cart"
+              className="text-slate-400 hover:text-black p-2 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
             >
-              ✕
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
             </button>
           </div>
 
           {/* Complimentary Sample Gift Progress Bar */}
           <div className="bg-[#fffdf7] border-b border-amber-200/80 p-4">
             <div className="flex items-center justify-between text-xs text-[#a07c3e] mb-2 font-semibold">
-              <span>🎁 Complimentary 5ml Extrait Sample</span>
+              <span className="flex items-center gap-1.5">
+                <svg className="w-4 h-4 text-[#d6a750] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" />
+                </svg>
+                <span>Complimentary 5ml Extrait Sample</span>
+              </span>
               <span>{giftProgress >= 100 ? 'UNLOCKED!' : `Add ₹${remainingForGift.toLocaleString('en-IN')} more`}</span>
             </div>
             <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden border border-amber-300/40">
@@ -85,11 +93,15 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
           <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-slate-50/50">
             {cartItems.length === 0 ? (
               <div className="text-center py-16 text-slate-400 space-y-4">
-                <div className="text-4xl">🛍️</div>
+                <div className="w-12 h-12 mx-auto rounded-full bg-amber-50 text-[#d6a750] flex items-center justify-center">
+                  <svg className="w-6 h-6 fill-none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                  </svg>
+                </div>
                 <p className="text-sm font-medium text-slate-600">Your shopping bag is currently empty.</p>
                 <button
                   onClick={onClose}
-                  className="px-6 py-2.5 bg-[#d6a750] text-white text-xs uppercase font-bold rounded-md hover:bg-[#c59843] transition-colors"
+                  className="px-6 py-2.5 bg-[#d6a750] text-white text-xs uppercase font-bold rounded-md hover:bg-[#c59843] transition-colors cursor-pointer"
                 >
                   Explore Collection
                 </button>
@@ -103,18 +115,22 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                   <img
                     src={item.product.image}
                     alt={item.product.name}
+                    loading="lazy"
+                    decoding="async"
                     className="w-20 h-24 object-cover rounded-lg border border-slate-100 bg-slate-100"
                   />
-
                   <div className="flex-1 flex flex-col justify-between">
                     <div>
                       <div className="flex justify-between items-start">
                         <h4 className="font-serif text-sm font-bold text-slate-900 line-clamp-1">{item.product.name}</h4>
                         <button
-                          onClick={() => onRemoveItem(item.product.id)}
-                          className="text-slate-400 hover:text-rose-500 text-xs"
+                          onClick={() => onRemoveItem(item.product.id, item.selectedSize)}
+                          aria-label={`Remove ${item.product.name}`}
+                          className="text-slate-400 hover:text-rose-500 p-1 transition-colors cursor-pointer"
                         >
-                          ✕
+                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                          </svg>
                         </button>
                       </div>
                       <p className="text-[11px] text-slate-500 font-medium">{item.selectedSize || item.product.volume}</p>
@@ -123,14 +139,14 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                     <div className="flex items-center justify-between mt-3">
                       <div className="flex items-center border border-slate-200 rounded-md bg-white">
                         <button
-                          onClick={() => onUpdateQuantity(item.product.id, -1)}
+                          onClick={() => onUpdateQuantity(item.product.id, -1, item.selectedSize)}
                           className="px-2.5 py-1 text-slate-600 hover:text-[#d6a750]"
                         >
                           -
                         </button>
                         <span className="px-2 text-xs font-mono font-bold text-slate-900">{item.quantity}</span>
                         <button
-                          onClick={() => onUpdateQuantity(item.product.id, 1)}
+                          onClick={() => onUpdateQuantity(item.product.id, 1, item.selectedSize)}
                           className="px-2.5 py-1 text-slate-600 hover:text-[#d6a750]"
                         >
                           +
@@ -138,7 +154,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                       </div>
 
                       <span className="font-bold text-slate-900 text-sm">
-                        ₹{(item.product.price * item.quantity).toLocaleString('en-IN')}
+                        ₹{((item.unitPrice ?? item.product.price) * item.quantity).toLocaleString('en-IN')}
                       </span>
                     </div>
                   </div>

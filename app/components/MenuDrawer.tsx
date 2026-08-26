@@ -149,8 +149,13 @@ export const MenuDrawer: React.FC<MenuDrawerProps> = ({
                       <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl flex items-center gap-3">
                         <div className="w-10 h-10 rounded-full border border-[#d6a750] bg-white flex items-center justify-center text-sm font-serif overflow-hidden">
                           {user?.imageUrl ? (
-                            <img src={user.imageUrl} alt="" className="w-full h-full object-cover" />
-                          ) : (
+                            <img
+                              src={user.imageUrl}
+                              alt=""
+                              loading="lazy"
+                              decoding="async"
+                              className="w-full h-full object-cover"
+                            />                          ) : (
                             <span className="text-xs font-bold text-[#b69254]">
                               {user?.firstName ? user.firstName[0] : (
                                 <svg className="w-4 h-4 fill-none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
@@ -162,9 +167,11 @@ export const MenuDrawer: React.FC<MenuDrawerProps> = ({
                         </div>
                         <div className="min-w-0 flex-1">
                           <p className="text-xs font-bold text-slate-900 truncate">
-                            {user?.firstName ? `${user.firstName} ${user.lastName || ''}` : user?.primaryEmailAddress?.emailAddress}
+                            {user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : (user?.primaryEmailAddress?.emailAddress || 'Customer Account')}
                           </p>
-                          <p className="text-[10px] text-slate-400 truncate">Silver Member • 50 Pts</p>
+                          {user?.primaryEmailAddress?.emailAddress && user?.firstName && (
+                            <p className="text-[10px] text-slate-400 truncate">{user.primaryEmailAddress.emailAddress}</p>
+                          )}
                         </div>
                       </div>
 

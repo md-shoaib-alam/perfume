@@ -60,26 +60,26 @@ export const ProductsManager: React.FC = () => {
     setEditingProduct(null);
     setFormData({
       name: '',
-      subtitle: 'Extrait De Parfum',
+      subtitle: '',
       category: 'extrait-de-parfum',
       gender: 'For Him',
-      price: 4950,
-      originalPrice: 6200,
+      price: 0,
+      originalPrice: 0,
       volume: '100ml',
-      image: 'https://images.unsplash.com/photo-1523293182086-7651a899d37f?auto=format&fit=crop&w=600&q=80',
-      hoverImage: 'https://images.unsplash.com/photo-1594035910387-fea47794261f?auto=format&fit=crop&w=600&q=80',
-      isBestseller: true,
+      image: '',
+      hoverImage: '',
+      isBestseller: false,
       isNew: false,
       isPreOrder: false,
       shippingNote: '',
       buttonText: 'ADD TO BAG',
-      tagline: 'Rare Woods • Golden Amber',
-      description: 'Handcrafted luxury fragrance formulation with 30% oil concentration.',
-      notes: { top: ['Bergamot', 'Saffron'], heart: ['Turkish Rose'], base: ['Oud', 'Amber'] },
+      tagline: '',
+      description: '',
+      notes: { top: [], heart: [], base: [] },
       sizeOptions: [
-        { size: '15ml', price: 1900, originalPrice: 2400, isSoldOut: false },
-        { size: '50ml', price: 3200, originalPrice: 4200, isSoldOut: false },
-        { size: '100ml', price: 4950, originalPrice: 6200, isSoldOut: false }
+        { size: '15ml', price: 0, originalPrice: 0, isSoldOut: false },
+        { size: '50ml', price: 0, originalPrice: 0, isSoldOut: false },
+        { size: '100ml', price: 0, originalPrice: 0, isSoldOut: false }
       ]
     });
     setIsModalOpen(true);
@@ -109,8 +109,16 @@ export const ProductsManager: React.FC = () => {
       variant: 'danger'
     });
     if (!confirmed) return;
-    await api.deleteProduct(id);
-    await loadProducts();
+    try {
+      await api.deleteProduct(id);
+      await loadProducts();
+    } catch (err: any) {
+      await showAlert({
+        title: 'Error Deleting Product',
+        message: `Failed to delete product: ${err.message}`,
+        variant: 'danger'
+      });
+    }
   };
 
   const handleAddSizeOption = () => {
@@ -153,13 +161,21 @@ export const ProductsManager: React.FC = () => {
       return;
     }
 
-    if (editingProduct) {
-      await api.updateProduct(editingProduct.id, formData);
-    } else {
-      await api.createProduct(formData);
+    try {
+      if (editingProduct) {
+        await api.updateProduct(editingProduct.id, formData);
+      } else {
+        await api.createProduct(formData);
+      }
+      setIsModalOpen(false);
+      await loadProducts();
+    } catch (err: any) {
+      await showAlert({
+        title: 'Error Saving Product',
+        message: `Failed to save product: ${err.message}`,
+        variant: 'danger'
+      });
     }
-    setIsModalOpen(false);
-    await loadProducts();
   };
 
   const filteredProducts = products.filter((p) => {
@@ -243,6 +259,8 @@ export const ProductsManager: React.FC = () => {
                 <img
                   src={prod.image}
                   alt={prod.name}
+                  loading="lazy"
+                  decoding="async"
                   className="w-16 h-16 object-cover rounded-xl border border-slate-200 shrink-0 bg-slate-100"
                 />
                 <div className="flex-1 min-w-0">
@@ -349,6 +367,8 @@ export const ProductsManager: React.FC = () => {
                       <img
                         src={prod.image}
                         alt={prod.name}
+                        loading="lazy"
+                        decoding="async"
                         className="w-11 h-11 object-cover rounded border border-slate-200 shrink-0 bg-slate-100"
                       />
                       <div>

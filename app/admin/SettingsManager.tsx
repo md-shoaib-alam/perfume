@@ -2,22 +2,29 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
 import { seedAppwriteDatabase } from '@/lib/seedAppwrite';
-
-
 import { useConfirm } from '../components/CustomConfirmModal';
 
 export const SettingsManager: React.FC = () => {
-  const { showConfirm } = useConfirm();
+  const { showConfirm, showAlert } = useConfirm();
   const [settings, setSettings] = useState({
     announcementText: 'FLAT 15% OFF | USE CODE: LUXE15',
     announcementCode: 'LUXE15',
     freeGiftThreshold: 3500,
     contactEmail: 'concierge@neesh.com',
-    contactPhone: '+91 (800) 555-NEESH'
+    contactPhone: '+91 (800) 555-NEESH',
+    returnsBadgeText: '7 DAYS',
+    returnsTitle: 'No Questions Asked Returns',
+    returnsDescription: 'Applicable on first order of 100ml and 50ml perfume bottles only',
+    deliveryTitle: 'Free & Fast Delivery',
+    deliveryDescription: 'on your doorsteps in 3-5 days, with a surprise',
+    guaranteeTitle: 'The Lingering Effect You Want',
+    guaranteeDescription: 'NEESH™ perfumes are blended with proven ingredients to last 10+ hours (Guaranteed)'
   });
   const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [seeding, setSeeding] = useState(false);
-  const [seedResult, setSeedResult] = useState<string | null>(null);
+  const [seedResult, setSeedResult] = useState<{ ok: boolean; message: string } | null>(null);
 
   const handleSeedDatabase = async () => {
     const confirmed = await showConfirm({
@@ -33,12 +40,21 @@ export const SettingsManager: React.FC = () => {
     try {
       const res = await seedAppwriteDatabase();
       if (res.errors.length > 0) {
-        setSeedResult(`Seeded with warnings: ${res.errors.join(', ')}`);
+        setSeedResult({
+          ok: false,
+          message: `Seeded with warnings: ${res.errors.join(', ')}`
+        });
       } else {
-        setSeedResult(`Successfully populated Appwrite (${res.products} products, ${res.coupons} coupons, ${res.hero_slides} slides, ${res.collections} collections)`);
+        setSeedResult({
+          ok: true,
+          message: `Successfully populated Appwrite (${res.products} products, ${res.coupons} coupons, ${res.hero_slides} slides, ${res.collections} collections)`
+        });
       }
     } catch (err: any) {
-      setSeedResult(`Seed failed: ${err.message}`);
+      setSeedResult({
+        ok: false,
+        message: `Seed failed: ${err.message}`
+      });
     } finally {
       setSeeding(false);
     }
@@ -46,17 +62,42 @@ export const SettingsManager: React.FC = () => {
 
   useEffect(() => {
     const load = async () => {
-      const data = await api.getSettings();
-      if (data) setSettings((prev) => ({ ...prev, ...data }));
+      setLoading(true);
+      try {
+        const data = await api.getSettings();
+        if (data) setSettings((prev) => ({ ...prev, ...data }));
+      } catch (err: any) {
+        console.warn('Failed to load settings:', err);
+        await showAlert({
+          title: 'Error Loading Settings',
+          message: `Could not retrieve store settings: ${err.message}`,
+          variant: 'danger'
+        });
+      } finally {
+        setLoading(false);
+      }
     };
     load();
   }, []);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    await api.updateSettings(settings);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
+    setSaving(true);
+    try {
+      await api.updateSettings(settings);
+      window.dispatchEvent(new Event('neesh_settings_updated'));
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch (err: any) {
+      console.error('Failed to save settings:', err);
+      await showAlert({
+        title: 'Error Saving Settings',
+        message: `Failed to save store settings: ${err.message || 'Unknown error occurred'}`,
+        variant: 'danger'
+      });
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -67,8 +108,11 @@ export const SettingsManager: React.FC = () => {
           <p className="text-xs text-slate-500">Configure top promotional ticker, discount coupons, and contact details.</p>
         </div>
         {saved && (
-          <span className="px-3 py-1 bg-emerald-100 text-emerald-800 text-xs font-semibold rounded">
-            ✓ Settings Updated
+          <span className="px-3 py-1 bg-emerald-100 text-emerald-800 text-xs font-semibold rounded flex items-center gap-1.5 animate-fade-in-up">
+            <svg className="w-3.5 h-3.5 text-emerald-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+            <span>Settings Updated</span>
           </span>
         )}
       </div>
@@ -98,6 +142,98 @@ export const SettingsManager: React.FC = () => {
                 onChange={(e) => setSettings({ ...settings, announcementCode: e.target.value })}
                 className="w-full bg-slate-50 border border-slate-200 rounded px-3 py-2 text-xs focus:outline-none focus:border-[#d6a750]"
               />
+            </div>
+          </div>
+        </div>
+
+        {/* Gold Trust & Guarantee Banner Section */}
+        <div>
+          <h4 className="font-serif font-bold text-slate-900 text-sm mb-3 pb-2 border-b border-slate-100">
+            Gold Trust & Guarantee Banner Claims
+          </h4>
+          <div className="space-y-4 text-xs">
+            {/* Returns Policy */}
+            <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-3">
+              <span className="font-bold text-slate-800">1. Returns Policy Claim</span>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">Badge Text</label>
+                  <input
+                    type="text"
+                    value={settings.returnsBadgeText || ''}
+                    onChange={(e) => setSettings({ ...settings, returnsBadgeText: e.target.value })}
+                    className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-[#d6a750]"
+                  />
+                </div>
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">Title</label>
+                  <input
+                    type="text"
+                    value={settings.returnsTitle || ''}
+                    onChange={(e) => setSettings({ ...settings, returnsTitle: e.target.value })}
+                    className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-[#d6a750]"
+                  />
+                </div>
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">Description</label>
+                  <input
+                    type="text"
+                    value={settings.returnsDescription || ''}
+                    onChange={(e) => setSettings({ ...settings, returnsDescription: e.target.value })}
+                    className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-[#d6a750]"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Delivery Policy */}
+            <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-3">
+              <span className="font-bold text-slate-800">2. Free & Fast Delivery Claim</span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">Title</label>
+                  <input
+                    type="text"
+                    value={settings.deliveryTitle || ''}
+                    onChange={(e) => setSettings({ ...settings, deliveryTitle: e.target.value })}
+                    className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-[#d6a750]"
+                  />
+                </div>
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">Description</label>
+                  <input
+                    type="text"
+                    value={settings.deliveryDescription || ''}
+                    onChange={(e) => setSettings({ ...settings, deliveryDescription: e.target.value })}
+                    className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-[#d6a750]"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Longevity Guarantee */}
+            <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-3">
+              <span className="font-bold text-slate-800">3. Lingering Effect & Longevity Guarantee</span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">Title</label>
+                  <input
+                    type="text"
+                    value={settings.guaranteeTitle || ''}
+                    onChange={(e) => setSettings({ ...settings, guaranteeTitle: e.target.value })}
+                    className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-[#d6a750]"
+                  />
+                </div>
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">Description</label>
+                  <input
+                    type="text"
+                    value={settings.guaranteeDescription || ''}
+                    onChange={(e) => setSettings({ ...settings, guaranteeDescription: e.target.value })}
+                    className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-[#d6a750]"
+                  />
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -143,9 +279,10 @@ export const SettingsManager: React.FC = () => {
         <div className="flex justify-end pt-4 border-t border-slate-100">
           <button
             type="submit"
-            className="w-full sm:w-auto px-8 py-3 bg-[#c59b48] hover:bg-[#b58b38] text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow-xs transition-all cursor-pointer"
+            disabled={saving}
+            className="w-full sm:w-auto px-8 py-3 bg-[#c59b48] hover:bg-[#b58b38] text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow-xs transition-all cursor-pointer disabled:opacity-50"
           >
-            Save Settings
+            {saving ? 'Saving...' : 'Save Settings'}
           </button>
         </div>
       </form>
@@ -155,7 +292,9 @@ export const SettingsManager: React.FC = () => {
         <div className="flex items-center justify-between">
           <div>
             <h3 className="font-serif text-lg font-bold text-[#c59b48] flex items-center gap-2">
-              <span>⚡</span>
+              <svg className="w-5 h-5 text-[#c59b48]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
               <span>Appwrite Database Initialization</span>
             </h3>
             <p className="text-xs text-slate-400 mt-1">
@@ -179,9 +318,9 @@ export const SettingsManager: React.FC = () => {
 
         {seedResult && (
           <div className={`p-3 rounded-lg text-xs font-semibold ${
-            seedResult.startsWith('✅') ? 'bg-emerald-950/70 text-emerald-300 border border-emerald-500/40' : 'bg-rose-950/70 text-rose-300 border border-rose-500/40'
+            seedResult.ok ? 'bg-emerald-950/70 text-emerald-300 border border-emerald-500/40' : 'bg-rose-950/70 text-rose-300 border border-rose-500/40'
           }`}>
-            {seedResult}
+            {seedResult.message}
           </div>
         )}
       </div>
@@ -189,4 +328,3 @@ export const SettingsManager: React.FC = () => {
     </div>
   );
 };
-

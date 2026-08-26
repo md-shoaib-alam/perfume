@@ -1,10 +1,10 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import type { Product } from '../types';
 
 interface ProductCardProps {
   product: Product;
-  onAddToCart: (product: Product, size: string) => void;
+  onAddToCart: (product: Product, size: string, unitPrice?: number) => void;
   onSelectProduct: (product: Product) => void;
 }
 
@@ -13,43 +13,38 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   onAddToCart,
   onSelectProduct
 }) => {
-  const sizes = product.sizeOptions && product.sizeOptions.length > 0
-    ? product.sizeOptions.map((opt) => opt.size)
-    : ['100ml', '50ml', '15ml'];
+  const sizes = useMemo(() => {
+    if (product.sizeOptions && product.sizeOptions.length > 0) {
+      return product.sizeOptions.map((opt) => opt.size);
+    }
+    return [product.volume || '100ml'];
+  }, [product.sizeOptions, product.volume]);
 
-  const [selectedSize, setSelectedSize] = useState<string>(sizes[0] || '100ml');
+  const [selectedSize, setSelectedSize] = useState<string>(sizes[0] || product.volume || '100ml');
 
-  // Compute price for selected size
-  const getCurrentSizeOption = () => {
+  // Resync selectedSize if the product or available size list changes
+  useEffect(() => {
+    if (!sizes.includes(selectedSize)) {
+      setSelectedSize(sizes[0] || product.volume || '100ml');
+    }
+  }, [product.id, sizes, selectedSize, product.volume]);
+
+  // Resolve active size option directly from database record
+  const currentOption = useMemo(() => {
     if (product.sizeOptions && product.sizeOptions.length > 0) {
       const match = product.sizeOptions.find((opt) => opt.size === selectedSize);
       if (match) return match;
     }
-    // Fallback calculations
-    if (selectedSize === '15ml') {
-      return {
-        size: '15ml',
-        price: product.id === 'haute-vetiver' ? 1900 : Math.round(product.price * 0.224),
-        isSoldOut: product.id === 'haute-vetiver'
-      };
-    }
-    if (selectedSize === '50ml') {
-      return {
-        size: '50ml',
-        price: Math.round(product.price * 0.58),
-        isSoldOut: false
-      };
-    }
     return {
-      size: '100ml',
+      size: product.volume || '100ml',
       price: product.price,
       isSoldOut: false
     };
-  };
+  }, [product.sizeOptions, product.volume, product.price, selectedSize]);
 
-  const currentOption = getCurrentSizeOption();
   const currentPrice = currentOption.price;
   const isCurrentlySoldOut = !!currentOption.isSoldOut;
+  const [imageLoaded, setImageLoaded] = useState(false);
 
   return (
     <div className="flex flex-col justify-between items-center text-center font-serif bg-white h-full p-1 sm:p-2 rounded-xl border border-transparent">
@@ -58,14 +53,22 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         {/* Product Image */}
         <div 
           onClick={() => onSelectProduct(product)}
-          className="relative w-full aspect-square max-h-[190px] sm:max-h-none overflow-hidden mb-2.5 sm:mb-4 cursor-pointer bg-slate-50 rounded-lg group"
+          className="relative w-full aspect-square max-h-[190px] sm:max-h-none overflow-hidden mb-2.5 sm:mb-4 cursor-pointer bg-slate-100 rounded-lg group"
         >
+          {/* Skeleton shimmer before load */}
+          {!imageLoaded && (
+            <div className="absolute inset-0 bg-slate-100 animate-pulse rounded-lg" />
+          )}
+
           <img
             src={product.image}
             alt={product.name}
             loading="lazy"
             decoding="async"
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+            onLoad={() => setImageLoaded(true)}
+            className={`w-full h-full object-cover transition-all duration-500 group-hover:scale-105 ${
+              imageLoaded ? 'opacity-100' : 'opacity-0'
+            }`}
           />
 
           {/* Sold Out Badge when selected size is sold out */}
@@ -102,22 +105,24 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           Rs.{currentPrice.toLocaleString('en-IN')}.00
         </p>
 
-        {/* Dynamic Size Selector Pills */}
-        <div className="flex items-center justify-center gap-1.5 sm:gap-2 mb-3 sm:mb-4 flex-wrap">
-          {sizes.map((size) => (
-            <button
-              key={size}
-              onClick={() => setSelectedSize(size)}
-              className={`px-2.5 py-0.5 sm:px-4 sm:py-1 text-[11px] sm:text-xs font-sans rounded-full transition-all border ${
-                selectedSize === size
-                  ? 'bg-[#353534] text-white border-[#353534] font-bold'
-                  : 'bg-[#f5f5f5] text-slate-600 border-transparent hover:bg-slate-200'
-              }`}
-            >
-              {size}
-            </button>
-          ))}
-        </div>
+        {/* Dynamic Size Selector Pills (Only when sizes are defined) */}
+        {sizes.length > 0 && (
+          <div className="flex items-center justify-center gap-1.5 sm:gap-2 mb-3 sm:mb-4 flex-wrap">
+            {sizes.map((size) => (
+              <button
+                key={size}
+                onClick={() => setSelectedSize(size)}
+                className={`px-2.5 py-0.5 sm:px-4 sm:py-1 text-[11px] sm:text-xs font-sans rounded-full transition-all border ${
+                  selectedSize === size
+                    ? 'bg-[#353534] text-white border-[#353534] font-bold'
+                    : 'bg-[#f5f5f5] text-slate-600 border-transparent hover:bg-slate-200'
+                }`}
+              >
+                {size}
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* Shipping Note */}
         {product.shippingNote && (
@@ -130,7 +135,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       {/* Action Button */}
       <button
         disabled={isCurrentlySoldOut}
-        onClick={() => onAddToCart(product, selectedSize)}
+        onClick={() => onAddToCart(product, selectedSize, currentPrice)}
         className={`w-full py-2.5 sm:py-3.5 font-sans font-bold text-[11px] sm:text-xs uppercase tracking-widest transition-colors shadow-sm ${
           isCurrentlySoldOut
             ? 'bg-slate-300 text-slate-500 cursor-not-allowed'

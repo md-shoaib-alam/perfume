@@ -13,7 +13,12 @@ export async function checkRole(role: Role): Promise<boolean> {
   if (!userId) return false;
 
   // 1. Fast check from customized JWT session token claims
-  const sessionRole = (sessionClaims as any)?.metadata?.role as Role | undefined;
+  const sessionRole = (
+    (sessionClaims as any)?.metadata?.role ||
+    (sessionClaims as any)?.publicMetadata?.role ||
+    (sessionClaims as any)?.role
+  ) as Role | undefined;
+
   if (sessionRole) {
     return sessionRole === role;
   }
@@ -35,7 +40,12 @@ export async function getUserRole(): Promise<Role | null> {
 
   if (!userId) return null;
 
-  const sessionRole = (sessionClaims as any)?.metadata?.role as Role | undefined;
+  const sessionRole = (
+    (sessionClaims as any)?.metadata?.role ||
+    (sessionClaims as any)?.publicMetadata?.role ||
+    (sessionClaims as any)?.role
+  ) as Role | undefined;
+
   if (sessionRole) return sessionRole;
 
   const user = await currentUser();

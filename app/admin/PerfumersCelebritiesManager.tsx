@@ -90,7 +90,7 @@ export const PerfumersCelebritiesManager: React.FC = () => {
             <div key={p.id || idx} className="bg-white p-5 sm:p-6 rounded-2xl border border-slate-200 shadow-xs grid grid-cols-1 md:grid-cols-12 gap-5 sm:gap-6 items-center">
               <div className="md:col-span-3 flex flex-col items-center text-center">
                 <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full border-2 border-[#d6a750] p-1 overflow-hidden bg-slate-100 shadow-md">
-                  <img src={p.image} alt={p.name} className="w-full h-full object-cover rounded-full" />
+                  <img src={p.image} alt={p.name} loading="lazy" decoding="async" className="w-full h-full object-cover rounded-full" />
                 </div>
                 <h4 className="font-serif font-bold text-slate-900 text-sm mt-3">{p.name}</h4>
                 <span className="text-[10px] text-amber-700 font-semibold bg-amber-50 px-2.5 py-0.5 rounded-full mt-1">
@@ -158,7 +158,7 @@ export const PerfumersCelebritiesManager: React.FC = () => {
           {celebrities.map((c, idx) => (
             <div key={c.id || idx} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-3.5 text-xs">
               <div className="flex items-center gap-3">
-                <img src={c.image} alt={c.name} className="w-14 h-16 object-cover rounded-xl shadow-xs bg-slate-100 border border-slate-200" />
+                <img src={c.image} alt={c.name} loading="lazy" decoding="async" className="w-14 h-16 object-cover rounded-xl shadow-xs bg-slate-100 border border-slate-200" />
                 <div className="flex-1 min-w-0">
                   <h4 className="font-serif font-bold text-slate-900 text-sm truncate">{c.name}</h4>
                   <span className="text-[10px] uppercase tracking-wider text-[#c59b48] font-bold block mt-0.5">{c.perfume}</span>

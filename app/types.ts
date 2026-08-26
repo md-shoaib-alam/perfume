@@ -34,6 +34,7 @@ export interface Product {
   badgeSubtext?: string;
   notes: FragranceNotes;
   description: string;
+  stock?: number;
   sizeOptions?: ProductSizeOption[];
 }
 
@@ -41,6 +42,7 @@ export interface CartItem {
   product: Product;
   quantity: number;
   selectedSize?: string;
+  unitPrice?: number;
 }
 
 export interface Review {
@@ -52,4 +54,13 @@ export interface Review {
   comment: string;
   verified: boolean;
   productName: string;
+  approved?: boolean;
+}
+
+export interface HeroSlide {
+  id: string;
+  name: string;
+  desktopImage: string;
+  mobileImage: string;
+  linkUrl: string;
 }

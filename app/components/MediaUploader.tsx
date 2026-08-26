@@ -52,14 +52,14 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
     <div className="space-y-1.5 text-xs font-sans">
       <label className="block font-semibold text-slate-800 tracking-wide text-xs">{label}</label>
 
-      <div className="flex gap-3 items-center bg-white p-3 rounded-xl border border-slate-200 shadow-2xs hover:border-slate-300 transition-colors">
+      <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs hover:border-slate-300 transition-colors w-full min-w-0">
         {/* Thumbnail Preview */}
         {value ? (
-          <div className="relative w-16 h-16 rounded-lg overflow-hidden border border-slate-200 bg-slate-100 shrink-0 group">
+          <div className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-lg overflow-hidden border border-slate-200 bg-slate-100 shrink-0 group">
             {previewType === 'video' || value.endsWith('.mp4') || value.endsWith('.webm') ? (
               <video src={value} className="w-full h-full object-cover" muted />
             ) : (
-              <img src={value} alt="Preview" className="w-full h-full object-cover" />
+              <img src={value} alt="Preview" loading="lazy" decoding="async" className="w-full h-full object-cover" />
             )}
             <button
               type="button"
@@ -73,7 +73,7 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
             </button>
           </div>
         ) : (
-          <div className="w-16 h-16 rounded-lg border border-dashed border-slate-300 bg-slate-50 flex flex-col items-center justify-center text-slate-400 shrink-0">
+          <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-lg border border-dashed border-slate-300 bg-slate-50 flex flex-col items-center justify-center text-slate-400 shrink-0">
             <svg className="w-5 h-5 text-slate-400 opacity-60" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
@@ -82,14 +82,14 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
         )}
 
         {/* Input & Upload Controls */}
-        <div className="flex-1 space-y-1.5 min-w-0">
-          <div className="flex items-center gap-2">
+        <div className="flex-1 w-full space-y-1.5 min-w-0">
+          <div className="flex items-center gap-2 w-full min-w-0">
             <input
               type="text"
               value={value}
               onChange={(e) => onChange(e.target.value)}
-              placeholder="Paste URL or upload image"
-              className="flex-1 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-[#d6a750] focus:bg-white transition-all font-mono text-[11px]"
+              placeholder="Paste URL or upload file"
+              className="flex-1 min-w-0 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-[#d6a750] focus:bg-white transition-all font-mono text-[11px]"
             />
 
             <input
@@ -98,12 +98,12 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
               accept={accept}
               onChange={handleFileChange}
               className="hidden"
-              id={`upload-${label.replace(/\s+/g, '-').toLowerCase()}`}
+              id={`upload-${label.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase()}`}
             />
 
             <label
-              htmlFor={`upload-${label.replace(/\s+/g, '-').toLowerCase()}`}
-              className={`px-3.5 py-2 rounded-lg text-xs font-semibold tracking-wider cursor-pointer shrink-0 transition-all flex items-center gap-1.5 ${
+              htmlFor={`upload-${label.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase()}`}
+              className={`px-3.5 py-2 rounded-lg text-xs font-semibold tracking-wider cursor-pointer shrink-0 transition-all flex items-center gap-1.5 whitespace-nowrap ${
                 uploading
                   ? 'bg-amber-50 border border-amber-200 text-amber-700 animate-pulse'
                   : 'bg-slate-900 hover:bg-slate-800 text-white shadow-2xs'

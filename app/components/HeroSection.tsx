@@ -15,8 +15,25 @@ interface HeroSectionProps {
   onShopNow: () => void;
 }
 
+const DEFAULT_HERO_SLIDES: HeroSlide[] = [
+  {
+    id: 'slide_1',
+    name: 'Haute Vetiver Campaign',
+    desktopImage: 'https://images.unsplash.com/photo-1594035910387-fea47794261f?auto=format&fit=crop&w=1920&q=80',
+    mobileImage: 'https://images.unsplash.com/photo-1594035910387-fea47794261f?auto=format&fit=crop&w=800&q=80',
+    linkUrl: '#bestsellers'
+  },
+  {
+    id: 'slide_2',
+    name: 'Vintage Harvest Edition',
+    desktopImage: 'https://images.unsplash.com/photo-1523293182086-7651a899d37f?auto=format&fit=crop&w=1920&q=80',
+    mobileImage: 'https://images.unsplash.com/photo-1523293182086-7651a899d37f?auto=format&fit=crop&w=800&q=80',
+    linkUrl: '#bestsellers'
+  }
+];
+
 export const HeroSection: React.FC<HeroSectionProps> = ({ onShopNow }) => {
-  const [slides, setSlides] = useState<HeroSlide[]>([]);
+  const [slides, setSlides] = useState<HeroSlide[]>(DEFAULT_HERO_SLIDES);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
   const touchStartX = useRef<number>(0);
@@ -26,7 +43,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onShopNow }) => {
     const loadSlides = async () => {
       try {
         const data = await api.getHeroSlides();
-        if (data) {
+        if (data && data.length > 0) {
           setSlides(data);
         }
       } catch (e) {}
@@ -77,7 +94,11 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onShopNow }) => {
   };
 
   const handleBannerClick = (e: React.MouseEvent, linkUrl?: string) => {
-    if (!linkUrl) return;
+    if (!linkUrl) {
+      e.preventDefault();
+      onShopNow();
+      return;
+    }
     if (linkUrl.startsWith('#')) {
       e.preventDefault();
       const el = document.querySelector(linkUrl);
@@ -104,27 +125,34 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onShopNow }) => {
           transform: `translate3d(-${currentIndex * 100}%, 0, 0)`
         }}
       >
-        {slides.map((slide) => (
-          <div key={slide.id} className="w-full shrink-0 min-w-full relative">
+        {slides.map((slide, index) => (
+          <div
+            key={slide.id}
+            className="w-full shrink-0 min-w-full relative bg-black aspect-[4/5] sm:aspect-[16/9] md:aspect-[21/9] lg:aspect-[2.35/1] max-h-[80vh] sm:max-h-[620px] overflow-hidden"
+          >
             <a
               href={slide.linkUrl || '#'}
               onClick={(e) => handleBannerClick(e, slide.linkUrl)}
-              className="block w-full h-full cursor-pointer group/banner focus:outline-none"
+              className="block w-full h-full cursor-pointer group/banner focus:outline-none relative"
             >
-              {/* Desktop Image Banner (Hidden on Mobile, Clean Fit & No Zoom) */}
+              {/* Desktop Image Banner (Hidden on Mobile, Clean Fitted & Cropped to Widescreen) */}
               <img
                 src={slide.desktopImage}
                 alt={slide.name || 'Hero Banner'}
+                loading={index === 0 ? 'eager' : 'lazy'}
+                fetchPriority={index === 0 ? 'high' : 'auto'}
                 decoding="async"
-                className="hidden md:block w-full h-auto object-contain select-none"
+                className="hidden md:block w-full h-full object-cover object-center select-none"
               />
 
-              {/* Mobile Image Banner (Hidden on Desktop, Clean Fit & No Zoom) */}
+              {/* Mobile Image Banner (Hidden on Desktop, Clean Fitted to Mobile Aspect) */}
               <img
                 src={slide.mobileImage || slide.desktopImage}
                 alt={slide.name || 'Hero Banner Mobile'}
+                loading={index === 0 ? 'eager' : 'lazy'}
+                fetchPriority={index === 0 ? 'high' : 'auto'}
                 decoding="async"
-                className="block md:hidden w-full h-auto object-contain select-none"
+                className="block md:hidden w-full h-full object-cover object-center select-none"
               />
             </a>
           </div>

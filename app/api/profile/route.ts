@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { auth } from '@clerk/nextjs/server';
 import fs from 'fs';
 import path from 'path';
 
@@ -17,44 +18,51 @@ function readProfiles(): Record<string, any> {
 }
 
 function writeProfiles(data: Record<string, any>) {
-  try {
-    fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2), 'utf-8');
-  } catch (e) {
-    console.error('Error writing data_profiles.json:', e);
-  }
+  fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2), 'utf-8');
 }
 
-export async function GET(req: Request) {
-  const { searchParams } = new URL(req.url);
-  const userId = searchParams.get('userId') || 'guest';
-  const profiles = readProfiles();
-  const userProfile = profiles[userId] || {
-    phone: '',
-    address: '',
-    city: '',
-    pincode: '',
-    wishlist: [],
-    recentViews: []
-  };
-  return NextResponse.json(userProfile);
+export async function GET() {
+  try {
+    const { userId } = await auth();
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const profiles = readProfiles();
+    const userProfile = profiles[userId] || {
+      phone: '',
+      address: '',
+      city: '',
+      pincode: '',
+      wishlist: [],
+      recentViews: []
+    };
+    return NextResponse.json(userProfile);
+  } catch (err: any) {
+    return NextResponse.json({ error: err?.message || 'Internal Server Error' }, { status: 500 });
+  }
 }
 
 export async function POST(req: Request) {
   try {
+    const { userId } = await auth();
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const body = await req.json();
-    const { userId, ...profileData } = body;
-    const key = userId || 'guest';
+    const { userId: _bodyUserId, ...profileData } = body;
 
     const profiles = readProfiles();
-    profiles[key] = {
-      ...(profiles[key] || {}),
+    profiles[userId] = {
+      ...(profiles[userId] || {}),
       ...profileData,
       updatedAt: new Date().toISOString()
     };
 
     writeProfiles(profiles);
-    return NextResponse.json({ success: true, profile: profiles[key] });
+    return NextResponse.json({ success: true, profile: profiles[userId] });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return NextResponse.json({ error: err?.message || 'Failed to save profile' }, { status: 500 });
   }
 }

@@ -205,8 +205,13 @@ export const Footer: React.FC = () => {
                       className="w-full bg-white text-slate-900 text-xs px-4 py-3 focus:outline-none focus:ring-1 focus:ring-[#d6a750] transition-all placeholder:text-slate-500 rounded-none shadow-sm"
                       required
                     />
-                  </form>
-                </div>
+                    <button
+                      type="submit"
+                      className="absolute right-0 top-0 h-full px-4 bg-[#d6a750] text-slate-950 text-xs font-bold uppercase tracking-wider hover:bg-[#c59843] transition-colors cursor-pointer"
+                    >
+                      Join
+                    </button>
+                  </form>                </div>
               </div>
             </div>
           </div>

@@ -57,17 +57,37 @@ export const ReelsPressManager: React.FC = () => {
   };
 
   const saveReelsToStorage = async (updated: ReelShort[]) => {
-    setReels(updated);
-    await api.saveReels(updated);
-    window.dispatchEvent(new Event('neesh_reels_updated'));
-    showToast('Reels updated successfully!');
+    try {
+      await api.saveReels(updated);
+      setReels(updated);
+      window.dispatchEvent(new Event('neesh_reels_updated'));
+      showToast('Reels updated successfully!');
+      return true;
+    } catch (err: any) {
+      await showAlert({
+        title: 'Error Saving Reels',
+        message: `Failed to save reels: ${err?.message || 'An unknown error occurred'}`,
+        variant: 'danger'
+      });
+      return false;
+    }
   };
 
   const saveLogosToStorage = async (updated: string[]) => {
-    setLogos(updated);
-    await api.savePressLogos(updated);
-    window.dispatchEvent(new Event('neesh_reels_updated'));
-    showToast('Press logos updated successfully!');
+    try {
+      await api.savePressLogos(updated);
+      setLogos(updated);
+      window.dispatchEvent(new Event('neesh_reels_updated'));
+      showToast('Press logos updated successfully!');
+      return true;
+    } catch (err: any) {
+      await showAlert({
+        title: 'Error Saving Press Logos',
+        message: `Failed to save press logos: ${err?.message || 'An unknown error occurred'}`,
+        variant: 'danger'
+      });
+      return false;
+    }
   };
 
   const handleOpenAddModal = () => {
@@ -75,7 +95,7 @@ export const ReelsPressManager: React.FC = () => {
     setTitle('');
     setSubtitle('By Midnight');
     setPrice('Rs. 8,500');
-    setImage('https://images.unsplash.com/photo-1594035910387-fea47794261f?auto=format&fit=crop&w=600&q=80');
+    setImage('');
     setIsModalOpen(true);
   };
 
@@ -90,13 +110,21 @@ export const ReelsPressManager: React.FC = () => {
 
   const handleSaveReel = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title || !image) return;
+    if (!title.trim() || !image.trim()) {
+      await showAlert({
+        title: 'Media Required',
+        message: 'Please provide a title and upload a cover media before saving.',
+        variant: 'warning'
+      });
+      return;
+    }
 
     if (editingReel) {
       const updated = reels.map((r) =>
         r.id === editingReel.id ? { ...r, title, subtitle, price, image } : r
       );
-      await saveReelsToStorage(updated);
+      const success = await saveReelsToStorage(updated);
+      if (success) setIsModalOpen(false);
     } else {
       const newReel: ReelShort = {
         id: `reel-${Date.now()}`,
@@ -105,9 +133,9 @@ export const ReelsPressManager: React.FC = () => {
         price,
         image
       };
-      await saveReelsToStorage([...reels, newReel]);
+      const success = await saveReelsToStorage([...reels, newReel]);
+      if (success) setIsModalOpen(false);
     }
-    setIsModalOpen(false);
   };
 
   const handleDeleteReel = async (id: string) => {
@@ -230,9 +258,10 @@ export const ReelsPressManager: React.FC = () => {
                 <img
                   src={reel.image}
                   alt={reel.title}
+                  loading="lazy"
+                  decoding="async"
                   className="w-full h-full object-cover"
-                />
-                
+                />                
                 {/* Top Subtitle Badge */}
                 <div className="absolute top-2.5 left-2.5 z-10">
                   <span className="inline-block bg-black/75 backdrop-blur-md text-[#d6a750] px-2 py-0.5 rounded-full text-[8px] sm:text-[9px] font-bold tracking-widest uppercase border border-[#d6a750]/30 shadow-xs">

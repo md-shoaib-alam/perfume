@@ -1,43 +1,89 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { api } from '../services/api';
+
+export interface FragranceNoteItem {
+  name: string;
+  origin: string;
+  desc: string;
+}
+
+export interface FragranceTier {
+  title: string;
+  time: string;
+  description: string;
+  notes: FragranceNoteItem[];
+}
+
+export interface FragranceTiersData {
+  top: FragranceTier;
+  heart: FragranceTier;
+  base: FragranceTier;
+}
+
+export const DEFAULT_FRAGRANCE_TIERS: FragranceTiersData = {
+  top: {
+    title: 'Top Notes (First Impressions)',
+    time: '0 - 30 Minutes',
+    description: 'The volatile top accords that dazzle your senses upon first spritz.',
+    notes: [
+      { name: 'Venetian Saffron', origin: 'Venice, Italy', desc: 'Warm, golden, leather-spiced undertones.' },
+      { name: 'Taif Damask Rose', origin: 'Taif, Saudi Arabia', desc: 'Dewy, opulent, nectarous floral majesty.' },
+      { name: 'Icy Mint & Bergamot', origin: 'Calabria, Italy', desc: 'Zesty sparkling citrus brightness.' }
+    ]
+  },
+  heart: {
+    title: 'Heart Notes (The Soul)',
+    time: '30 Mins - 4 Hours',
+    description: 'The core signature of the fragrance that unfolds gracefully on pulse points.',
+    notes: [
+      { name: 'Aged Royal Oud', origin: 'Assam, India', desc: 'Deep, resinous, dark woody grandeur.' },
+      { name: 'Smokey Incense', origin: 'Oman', desc: 'Mystical balsamic smoke and sacred resins.' },
+      { name: 'Cuban Tobacco Leaf', origin: 'Havana, Cuba', desc: 'Rich, cured tobacco leaf with spiced honey.' }
+    ]
+  },
+  base: {
+    title: 'Base Notes (The Memory)',
+    time: '4 Hours - 16+ Hours',
+    description: 'Rich, fixative resins and woods that cling to skin and garments for days.',
+    notes: [
+      { name: 'Golden Amber', origin: 'Grasse, France', desc: 'Warm, luminous, honeyed amber resin.' },
+      { name: 'Atlas Cedarwood', origin: 'Atlas Mountains', desc: 'Noble, dry, balsamic evergreen woodiness.' },
+      { name: 'Bourbon Vanilla', origin: 'Madagascar', desc: 'Smooth, creamy, intoxicating sweet vanilla.' }
+    ]
+  }
+};
 
 export const FragranceNotesSection: React.FC = () => {
   const [activeTier, setActiveTier] = useState<'top' | 'heart' | 'base'>('top');
+  const [tiers, setTiers] = useState<FragranceTiersData>(DEFAULT_FRAGRANCE_TIERS);
 
-  const TIERS = {
-    top: {
-      title: 'Top Notes (First Impressions)',
-      time: '0 - 30 Minutes',
-      description: 'The volatile top accords that dazzle your senses upon first spritz.',
-      notes: [
-        { name: 'Venetian Saffron', origin: 'Venice, Italy', desc: 'Warm, golden, leather-spiced undertones.' },
-        { name: 'Taif Damask Rose', origin: 'Taif, Saudi Arabia', desc: 'Dewy, opulent, nectarous floral majesty.' },
-        { name: 'Icy Mint & Bergamot', origin: 'Calabria, Italy', desc: 'Zesty sparkling citrus brightness.' }
-      ]
-    },
-    heart: {
-      title: 'Heart Notes (The Soul)',
-      time: '30 Mins - 4 Hours',
-      description: 'The core signature of the fragrance that unfolds gracefully on pulse points.',
-      notes: [
-        { name: 'Aged Royal Oud', origin: 'Assam, India', desc: 'Deep, resinous, dark woody grandeur.' },
-        { name: 'Smokey Incense', origin: 'Oman', desc: 'Mystical balsamic smoke and sacred resins.' },
-        { name: 'Cuban Tobacco Leaf', origin: 'Havana, Cuba', desc: 'Rich, cured tobacco leaf with spiced honey.' }
-      ]
-    },
-    base: {
-      title: 'Base Notes (The Memory)',
-      time: '4 Hours - 16+ Hours',
-      description: 'Rich, fixative resins and woods that cling to skin and garments for days.',
-      notes: [
-        { name: 'Golden Amber', origin: 'Grasse, France', desc: 'Warm, luminous, honeyed amber resin.' },
-        { name: 'Atlas Cedarwood', origin: 'Atlas Mountains', desc: 'Noble, dry, balsamic evergreen woodiness.' },
-        { name: 'Bourbon Vanilla', origin: 'Madagascar', desc: 'Smooth, creamy, intoxicating sweet vanilla.' }
-      ]
-    }
-  };
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const settings = await api.getSettings();
+        if (settings?.fragranceTiers) {
+          const parsed = typeof settings.fragranceTiers === 'string'
+            ? JSON.parse(settings.fragranceTiers)
+            : settings.fragranceTiers;
+          if (parsed && parsed.top && parsed.heart && parsed.base) {
+            setTiers(parsed);
+          }
+        }
+      } catch (e) {
+        console.warn('Could not load fragrance notes tiers from Appwrite:', e);
+      }
+    };
+    load();
+    window.addEventListener('focus', load);
+    window.addEventListener('neesh_settings_updated', load);
+    return () => {
+      window.removeEventListener('focus', load);
+      window.removeEventListener('neesh_settings_updated', load);
+    };
+  }, []);
 
-  const current = TIERS[activeTier];
+  const current = tiers[activeTier] || DEFAULT_FRAGRANCE_TIERS[activeTier];
 
   return (
     <section className="py-20 bg-slate-950 border-t border-amber-900/30 text-slate-100">
@@ -80,8 +126,20 @@ export const FragranceNotesSection: React.FC = () => {
               <h3 className="font-serif text-2xl md:text-3xl font-bold text-amber-200">{current.title}</h3>
               <p className="text-slate-400 text-sm mt-1">{current.description}</p>
             </div>
-            <div className="bg-amber-950/60 border border-amber-500/30 px-4 py-2 rounded-xl text-xs font-mono text-amber-300 font-semibold whitespace-nowrap">
-              ⏱ Projection Window: {current.time}
+            <div className="inline-flex items-center gap-2 bg-amber-950/60 border border-amber-500/30 px-4 py-2 rounded-xl text-xs font-mono text-amber-300 font-semibold whitespace-nowrap">
+              <svg
+                className="w-3.5 h-3.5 shrink-0 text-amber-300 stroke-current"
+                viewBox="0 0 24 24"
+                fill="none"
+                strokeWidth="1.75"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <circle cx="12" cy="12" r="9" />
+                <polyline points="12 6 12 12 16 14" />
+              </svg>
+              <span>Projection Window: {current.time}</span>
             </div>
           </div>
 

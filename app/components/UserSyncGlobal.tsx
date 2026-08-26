@@ -24,10 +24,10 @@ export const UserSyncGlobal: React.FC = () => {
       firstName: user.firstName || '',
       lastName: user.lastName || '',
       phone
-    }).then(() => {
-      console.log(`[UserSyncGlobal] User ${user.id} synced to Appwrite`);
-    }).catch((err) => {
-      console.warn('[UserSyncGlobal] Sync failed:', err);
+    }).then((ok) => {
+      if (!ok) syncedUserRef.current = null;
+    }).catch(() => {
+      syncedUserRef.current = null;
     });
   }, [user, isLoaded, isSignedIn]);
 

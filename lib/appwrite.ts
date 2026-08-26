@@ -18,26 +18,33 @@ const databases = new Databases(client);
 const storage = new Storage(client);
 
 /**
- * Uploads an image or video file directly to the Appwrite Storage bucket
+ * Uploads an image or video file directly to the Appwrite Storage bucket (perfume_media)
  * and returns the direct public URL for viewing/streaming.
  */
 export async function uploadMediaToAppwrite(file: File): Promise<string> {
-  try {
-    const formData = new FormData();
-    formData.append('file', file);
-    const res = await fetch('/api/upload', {
-      method: 'POST',
-      body: formData
-    });
-    if (res.ok) {
-      const data = await res.json();
-      if (data.url) return data.url;
+  // If running in browser environment, route through /api/upload
+  if (typeof window !== 'undefined') {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.url) return data.url;
+      }
+    } catch (err) {
+      console.warn('API /api/upload failed, trying direct SDK:', err);
     }
-  } catch (err) {
-    console.warn('API /api/upload failed, trying direct SDK:', err);
   }
 
+  // Server-side or direct SDK Appwrite Storage upload
   try {
+    if (!file) {
+      throw new Error('No file provided for upload');
+    }
     const fileId = ID.unique();
     const uploaded = await storage.createFile(
       APPWRITE_BUCKET_ID,

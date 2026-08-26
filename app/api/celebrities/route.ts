@@ -46,11 +46,7 @@ function readCelebrities() {
 }
 
 function writeCelebrities(data: any) {
-  try {
-    fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2), 'utf-8');
-  } catch (e) {
-    console.error('Error writing data_celebrities.json:', e);
-  }
+  fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2), 'utf-8');
 }
 
 export async function GET() {
@@ -64,6 +60,6 @@ export async function POST(req: Request) {
     writeCelebrities(body);
     return NextResponse.json({ success: true, data: body });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return NextResponse.json({ error: err.message || 'Failed to save celebrities data' }, { status: 500 });
   }
 }
