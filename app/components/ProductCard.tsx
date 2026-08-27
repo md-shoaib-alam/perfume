@@ -8,13 +8,11 @@ import type { Product } from '../types';
 interface ProductCardProps {
   product: Product;
   onAddToCart: (product: Product, size: string, unitPrice?: number) => void;
-  onSelectProduct?: (product: Product) => void;
 }
 
 export const ProductCard: React.FC<ProductCardProps> = ({
   product,
-  onAddToCart,
-  onSelectProduct
+  onAddToCart
 }) => {
   const productSlug = getProductSlug(product);
 
@@ -58,12 +56,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         {/* Product Image */}
         <Link 
           href={`/products/${productSlug}`}
-          onClick={(e) => {
-            if (onSelectProduct) {
-              // If parent handled it via custom handler
-            }
-          }}
-          className="relative w-full aspect-square max-h-[190px] sm:max-h-none overflow-hidden mb-2.5 sm:mb-4 cursor-pointer bg-slate-100 rounded-lg group block"
+          className="relative w-full aspect-square overflow-hidden mb-2.5 sm:mb-4 cursor-pointer bg-slate-100 rounded-lg group block"
         >
           {/* Skeleton shimmer before load */}
           {!imageLoaded && (

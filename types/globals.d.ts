@@ -10,4 +10,9 @@ declare global {
   interface UserPublicMetadata {
     role?: Role;
   }
+
+  interface Window {
+    Razorpay?: any;
+  }
 }
+

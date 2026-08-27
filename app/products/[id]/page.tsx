@@ -32,7 +32,8 @@ export default function ProductDetailPage() {
     setIsCartOpen,
     addToCart,
     updateQuantity,
-    removeItem
+    removeItem,
+    clearCart
   } = useCart();
 
   const [product, setProduct] = useState<Product | null>(null);
@@ -203,6 +204,10 @@ export default function ProductDetailPage() {
           onOpenAccount={() => setIsAccountOpen(true)}
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
+          onSearchSubmit={(q) => {
+            const query = (q || searchQuery).trim();
+            if (query) router.replace(`/collections/all?q=${encodeURIComponent(query)}`);
+          }}
         />
         <div className="py-32 text-center text-slate-400">
           <div className="inline-block w-8 h-8 border-2 border-[#d6a750] border-t-transparent rounded-full animate-spin mb-4" />
@@ -228,6 +233,10 @@ export default function ProductDetailPage() {
           onOpenAccount={() => setIsAccountOpen(true)}
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
+          onSearchSubmit={(q) => {
+            const query = (q || searchQuery).trim();
+            if (query) router.replace(`/collections/all?q=${encodeURIComponent(query)}`);
+          }}
         />
         <div className="py-24 max-w-lg mx-auto text-center px-4 space-y-4">
           <h2 className="font-serif text-3xl text-slate-900">Fragrance Not Found</h2>
@@ -263,9 +272,10 @@ export default function ProductDetailPage() {
         onOpenAccount={() => setIsAccountOpen(true)}
         isMenuOpen={isMenuOpen}
         searchQuery={searchQuery}
-        onSearchChange={(q) => {
-          setSearchQuery(q);
-          if (q.trim()) router.push(`/collections/all?q=${encodeURIComponent(q)}`);
+        onSearchChange={setSearchQuery}
+        onSearchSubmit={(q) => {
+          const query = (q || searchQuery).trim();
+          if (query) router.replace(`/collections/all?q=${encodeURIComponent(query)}`);
         }}
       />
 
@@ -547,74 +557,45 @@ export default function ProductDetailPage() {
         </div>
 
         {/* 3.5 Visual Storytelling & Craftsmanship Details (Full-Width Cinematic Showcase) */}
-        {(() => {
-          const displayStoryBlocks =
-            product.storyBlocks && product.storyBlocks.length > 0
-              ? product.storyBlocks
-              : [
-                  {
-                    image:
-                      product.image ||
-                      'https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?auto=format&fit=crop&w=1920&q=80',
-                    title: 'Lingers like a star trail',
-                    description: `For our Master Perfumers, ${product.name} is about being distinct without the need to be unorthodox. Thus, they masterfully employ the most beloved natural notes to craft a lusciously vibrant, deep, and invigorating opening with unmatched longevity.`
-                  },
-                  {
-                    image:
-                      product.hoverImage ||
-                      'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=1920&q=80',
-                    title: 'Sophistication that you can wear',
-                    description:
-                      'The vibrant opening is masterfully balanced with the gentlemanly notes of vintage patchouli, aged sandalwood, rich musk, and crisp amber, providing timeless elegance to the scent body.'
-                  },
-                  {
-                    image:
-                      'https://images.unsplash.com/photo-1523293182086-7651a899d37f?auto=format&fit=crop&w=1920&q=80',
-                    title: 'An unforgettable signature of distinction',
-                    description: `${product.name} is specifically blended for the modern connoisseur who is unwavering in the pursuit of excellence, poised in character, and unforgettable in presence.`
-                  }
-                ];
-
-          return (
-            <section className="my-16 sm:my-24 w-screen relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] overflow-x-hidden space-y-16 sm:space-y-24">
-              {displayStoryBlocks.map((block, idx) => (
-                <div key={idx} className="w-full space-y-8">
-                  {/* Full-Bleed Cinematic Showcase Banner (Hero Showcase Style) */}
-                  <div className="w-full relative aspect-[4/5] sm:aspect-[16/9] md:aspect-[21/9] lg:aspect-[2.35/1] max-h-[85vh] sm:max-h-[640px] overflow-hidden bg-[#faf9f6]">
-                    <img
-                      src={block.image}
-                      alt={block.title || product.name}
-                      loading="lazy"
-                      decoding="async"
-                      className="w-full h-full object-cover object-center"
-                    />
-                  </div>
-
-                  {/* Centered Editorial Subtitle, Title & Story Narrative */}
-                  {(block.title || block.subtitle || block.description) && (
-                    <div className="text-center space-y-2.5 px-4 max-w-3xl mx-auto">
-                      {block.subtitle && (
-                        <span className="text-[11px] uppercase tracking-[0.25em] text-[#b88f3e] font-bold block">
-                          {block.subtitle}
-                        </span>
-                      )}
-                      {block.title && (
-                        <h3 className="font-serif text-2xl sm:text-3xl md:text-4xl font-normal text-slate-900 tracking-tight">
-                          {block.title}
-                        </h3>
-                      )}
-                      {block.description && (
-                        <p className="text-xs sm:text-sm font-sans text-slate-600 leading-relaxed font-normal pt-1">
-                          {block.description}
-                        </p>
-                      )}
-                    </div>
-                  )}
+        {product.storyBlocks && product.storyBlocks.length > 0 && (
+          <section className="my-16 sm:my-24 w-screen relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] overflow-x-hidden space-y-16 sm:space-y-24">
+            {product.storyBlocks.map((block, idx) => (
+              <div key={idx} className="w-full space-y-8">
+                {/* Full-Bleed Cinematic Showcase Banner (Hero Showcase Style) */}
+                <div className="w-full relative aspect-[4/5] sm:aspect-[16/9] md:aspect-[21/9] lg:aspect-[2.35/1] max-h-[85vh] sm:max-h-[640px] overflow-hidden bg-[#faf9f6]">
+                  <img
+                    src={block.image}
+                    alt={block.title || product.name}
+                    loading="lazy"
+                    decoding="async"
+                    className="w-full h-full object-cover object-center"
+                  />
                 </div>
-              ))}
-            </section>
-          );
-        })()}
+
+                {/* Centered Editorial Subtitle, Title & Story Narrative */}
+                {(block.title || block.subtitle || block.description) && (
+                  <div className="text-center space-y-2.5 px-4 max-w-3xl mx-auto">
+                    {block.subtitle && (
+                      <span className="text-[11px] uppercase tracking-[0.25em] text-[#b88f3e] font-bold block">
+                        {block.subtitle}
+                      </span>
+                    )}
+                    {block.title && (
+                      <h3 className="font-serif text-2xl sm:text-3xl md:text-4xl font-normal text-slate-900 tracking-tight">
+                        {block.title}
+                      </h3>
+                    )}
+                    {block.description && (
+                      <p className="text-xs sm:text-sm font-sans text-slate-600 leading-relaxed font-normal pt-1">
+                        {block.description}
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+            ))}
+          </section>
+        )}
 
         {/* 4. Trust Banner Bar */}
         <div className="my-14">
@@ -639,7 +620,6 @@ export default function ProductDetailPage() {
                   <ProductCard
                     product={rec}
                     onAddToCart={(p, size, price) => addToCart(p, size, price)}
-                    onSelectProduct={(p) => router.push(`/products/${getProductSlug(p)}`)}
                   />
                 </div>
               ))}
@@ -791,6 +771,7 @@ export default function ProductDetailPage() {
         cartItems={cartItems}
         onUpdateQuantity={updateQuantity}
         onRemoveItem={removeItem}
+        onClearCart={clearCart}
       />
 
       <MenuDrawer

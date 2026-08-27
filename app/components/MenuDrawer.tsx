@@ -3,6 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useUser, useClerk } from '@clerk/nextjs';
+import { api } from '../services/api';
+import type { Product } from '../types';
 
 interface MenuDrawerProps {
   isOpen: boolean;
@@ -31,8 +33,38 @@ export const MenuDrawer: React.FC<MenuDrawerProps> = ({
 }) => {
   const [activeSubMenu, setActiveSubMenu] = useState<string | null>(null);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [collections, setCollections] = useState<any[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const { isSignedIn, isLoaded, user } = useUser();
   const { signOut } = useClerk();
+
+  // Dynamically fetch collection and product records from Appwrite Database (perfumedb)
+  useEffect(() => {
+    let isMounted = true;
+    const fetchNavigationData = async () => {
+      try {
+        const [collectionsData, productsData] = await Promise.all([
+          api.getCollections(),
+          api.getProducts()
+        ]);
+        if (isMounted) {
+          if (Array.isArray(collectionsData) && collectionsData.length > 0) {
+            setCollections(collectionsData);
+          }
+          if (Array.isArray(productsData) && productsData.length > 0) {
+            setProducts(productsData);
+          }
+        }
+      } catch (error) {
+        console.warn('Failed to load navigation data from Appwrite:', error);
+      }
+    };
+
+    fetchNavigationData();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   // Prevent background page scrolling when menu drawer is open
   useEffect(() => {
@@ -79,23 +111,99 @@ export const MenuDrawer: React.FC<MenuDrawerProps> = ({
     { name: 'Our Story', hasArrow: false, href: '/#heritage' },
   ];
 
-  const subMenus: Record<string, { label: string; href: string }[]> = {
-    'Shop by Collection': [
-      { label: 'Bureau Collection', href: '/collections/bureau' },
-      { label: 'Luxe Collection', href: '/collections/luxe' },
-      { label: 'Haute Collection', href: '/collections/haute' },
-      { label: 'Miss Neesh Collection', href: '/collections/miss_neesh' }
-    ],
-    'Collector\'s Edition': [
+  // 1. Derive dynamic 'Shop by Collection' links from Appwrite collections
+  const collectionSubMenuItems = (collections.length > 0
+    ? collections
+    : [
+        { slug: 'bureau', name: 'Bureau Collection' },
+        { slug: 'luxe', name: 'Luxe Collection' },
+        { slug: 'haute', name: 'Haute Collection' },
+        { slug: 'miss_neesh', name: 'Miss Neesh Collection' }
+      ]
+  )
+    .filter((col) => col.slug && col.slug !== 'for-him' && col.slug !== 'for-her')
+    .map((col) => {
+      const name = col.name || '';
+      const subname = col.subname || '';
+      const label =
+        name.toLowerCase().includes('collection') || subname.toLowerCase().includes('collection')
+          ? (subname ? `${name} ${subname}` : name)
+          : `${name} ${subname || 'Collection'}`.trim();
+      return {
+        label,
+        href: `/collections/${col.slug}`
+      };
+    });
+
+  // 2. Derive dynamic "Collector's Edition" links from Appwrite products
+  const collectorsEditionItems = (() => {
+    if (products.length > 0) {
+      const collectorProds = products.filter((p) => {
+        const pCollection = (p.collection || '').toLowerCase();
+        const pCategory = (p.category || '').toLowerCase();
+        const pName = (p.name || '').toLowerCase();
+        const pTagline = (p.tagline || '').toLowerCase();
+        return (
+          pCollection.includes('collector') ||
+          pCategory.includes('collector') ||
+          pName.includes('tsunara') ||
+          pName.includes('glazed') ||
+          pName.includes('oriental') ||
+          pTagline.includes('collector')
+        );
+      });
+
+      if (collectorProds.length > 0) {
+        return collectorProds.slice(0, 6).map((p) => ({
+          label: p.name,
+          href: `/products/${p.id}`
+        }));
+      }
+    }
+    return [
       { label: 'Tsunara Extrait De Parfum', href: '/collections/all?q=tsunara' },
       { label: 'Glazed Oud Special', href: '/collections/all?q=glazed' },
       { label: 'Oriental Leather', href: '/collections/all?q=oriental' }
-    ],
-    'Combo': [
+    ];
+  })();
+
+  // 3. Derive dynamic "Combo" / Gift Pack links from Appwrite products
+  const comboSubMenuItems = (() => {
+    if (products.length > 0) {
+      const comboProds = products.filter((p) => {
+        const pCategory = (p.category || '').toLowerCase();
+        const pGender = (p.gender || '').toLowerCase();
+        const pName = (p.name || '').toLowerCase();
+        return (
+          pCategory === 'gift-set' ||
+          pCategory === 'discovery-set' ||
+          pGender === 'gift sets' ||
+          pName.includes('combo') ||
+          pName.includes('pack') ||
+          pName.includes('duo') ||
+          pName.includes('trio') ||
+          pName.includes('set')
+        );
+      });
+
+      if (comboProds.length > 0) {
+        return comboProds.slice(0, 6).map((p) => ({
+          label: p.name,
+          href: `/products/${p.id}`
+        }));
+      }
+    }
+    return [
       { label: 'Luxury Duo Pack', href: '/collections/gift-set' },
       { label: 'Daily Wear Combo', href: '/collections/gift-set' },
       { label: 'Signature Trio Pack', href: '/collections/gift-set' }
-    ]
+    ];
+  })();
+
+  const subMenus: Record<string, { label: string; href: string }[]> = {
+    'Shop by Collection': collectionSubMenuItems,
+    'Collector\'s Edition': collectorsEditionItems,
+    'Combo': comboSubMenuItems
   };
 
   const topPositionClass = isScrolled ? 'top-[56px] sm:top-[64px]' : 'top-[88px] sm:top-[96px]';
@@ -273,7 +381,7 @@ export const MenuDrawer: React.FC<MenuDrawerProps> = ({
                 <nav className="space-y-5">
                   {(activeSubMenu ? subMenus[activeSubMenu] : [])?.map((subItem) => (
                     <Link
-                      key={subItem.label}
+                      key={`${subItem.label}-${subItem.href}`}
                       href={subItem.href}
                       onClick={onClose}
                       className="block text-base font-normal tracking-wide text-slate-800 hover:text-[#d6a13d] py-1.5 transition-colors"

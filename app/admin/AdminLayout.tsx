@@ -194,7 +194,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onBackToStore }) => {
           {/* Brand Header */}
           <div className="h-16 px-5 border-b border-slate-100 flex items-center justify-between bg-white">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center text-[#d6a750] font-serif font-bold text-xs tracking-wider shadow-xs shrink-0">
+              <div className="w-8 h-8 rounded-xl bg-[#d6a750] border border-[#caa04c] flex items-center justify-center text-white font-serif font-bold text-xs tracking-wider shadow-xs shrink-0">
                 N
               </div>
               <div className="leading-none">
@@ -381,7 +381,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onBackToStore }) => {
               {/* Brand & Close Header */}
               <div className="p-5 border-b border-slate-100 flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center text-[#d6a750] font-serif font-bold text-xs tracking-wider shadow-xs shrink-0">
+                  <div className="w-8 h-8 rounded-xl bg-[#d6a750] border border-[#caa04c] flex items-center justify-center text-white font-serif font-bold text-xs tracking-wider shadow-xs shrink-0">
                     N
                   </div>
                   <div className="leading-none">

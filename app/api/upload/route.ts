@@ -33,7 +33,14 @@ export async function DELETE(req: Request) {
     }
 
     const success = await deleteMediaFromAppwrite(fileId);
-    return NextResponse.json({ success });
+    if (!success) {
+      return NextResponse.json(
+        { success: false, error: 'Failed to delete file from Appwrite Storage' },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({ success: true });
   } catch (err: any) {
     console.error('Server delete error:', err);
     return NextResponse.json({ error: err.message || 'Delete failed' }, { status: 500 });

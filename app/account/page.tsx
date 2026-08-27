@@ -23,7 +23,8 @@ export default function AccountPage() {
     setIsCartOpen,
     addToCart,
     updateQuantity,
-    removeItem
+    removeItem,
+    clearCart
   } = useCart();
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -58,9 +59,9 @@ export default function AccountPage() {
         onOpenAccount={() => {}}
         isMenuOpen={isMenuOpen}
         searchQuery={searchQuery}
-        onSearchChange={(q) => {
-          setSearchQuery(q);
-          if (q.trim()) router.push(`/collections/all?q=${encodeURIComponent(q)}`);
+        onSearchChange={setSearchQuery}
+        onSearchSubmit={(q) => {
+          if (q.trim()) router.replace(`/collections/all?q=${encodeURIComponent(q.trim())}`);
         }}
       />
 
@@ -88,6 +89,7 @@ export default function AccountPage() {
         cartItems={cartItems}
         onUpdateQuantity={updateQuantity}
         onRemoveItem={removeItem}
+        onClearCart={clearCart}
       />
 
       {/* 5. Mobile Menu Drawer */}

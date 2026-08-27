@@ -43,7 +43,8 @@ export default function Page() {
     setIsCartOpen,
     addToCart,
     updateQuantity,
-    removeItem
+    removeItem,
+    clearCart
   } = useCart();
 
   // Load products & ping Appwrite
@@ -100,9 +101,9 @@ export default function Page() {
         }
       }
 
-      // 2. Filter by search query
-      const query = searchQuery.toLowerCase();
-      if (!query) return true;
+      // 2. Filter by search query (Minimum 3 characters)
+      const query = searchQuery.trim().toLowerCase();
+      if (!query || query.length < 3) return true;
       return (
         product.name.toLowerCase().includes(query) ||
         product.subtitle?.toLowerCase().includes(query)
@@ -128,9 +129,9 @@ export default function Page() {
         onOpenAccount={() => setIsAccountOpen(true)}
         isMenuOpen={isMenuOpen}
         searchQuery={searchQuery}
-        onSearchChange={(q) => {
-          setSearchQuery(q);
-          if (q.trim()) router.push(`/collections/all?q=${encodeURIComponent(q)}`);
+        onSearchChange={setSearchQuery}
+        onSearchSubmit={(q) => {
+          if (q.trim()) router.replace(`/collections/all?q=${encodeURIComponent(q.trim())}`);
         }}
       />
 
@@ -164,6 +165,18 @@ export default function Page() {
               </button>
             ))}
           </div>
+
+          {searchQuery && searchQuery.trim().length >= 3 && (
+            <div className="flex items-center justify-center gap-2 mt-4 text-xs font-sans text-slate-600 bg-amber-50/60 border border-amber-200/50 py-1.5 px-4 rounded-full max-w-fit mx-auto">
+              <span>Showing search results for <strong className="text-slate-900 font-semibold">"{searchQuery}"</strong></span>
+              <button
+                onClick={() => setSearchQuery('')}
+                className="text-[#b69254] hover:text-[#977638] font-bold ml-1 cursor-pointer"
+              >
+                Clear
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Product Cards Container */}
@@ -179,10 +192,22 @@ export default function Page() {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
               </svg>
             </div>
-            <h4 className="font-serif font-bold text-slate-800 text-base">No Perfumes Found</h4>
+            <h4 className="font-serif font-bold text-slate-800 text-base">
+              {searchQuery ? `No Fragrances Matching "${searchQuery}"` : 'No Perfumes Found'}
+            </h4>
             <p className="text-xs text-slate-500 max-w-sm mx-auto">
-              No products are currently available in this category. Add new perfumes from the Admin Panel.
+              {searchQuery
+                ? 'Try refining your search keyword or search all collections.'
+                : 'No products are currently available in this category.'}
             </p>
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="mt-2 px-4 py-2 bg-[#d6a750] text-white font-bold text-xs uppercase tracking-wider rounded-xl cursor-pointer hover:bg-[#c49640] transition-colors"
+              >
+                Clear Search
+              </button>
+            )}
           </div>
         ) : (
           <div className="flex flex-nowrap overflow-x-auto snap-x snap-mandatory gap-3 sm:gap-6 pb-4 no-scrollbar sm:grid sm:grid-cols-2 lg:grid-cols-4 sm:overflow-x-visible sm:pb-0">
@@ -191,7 +216,6 @@ export default function Page() {
                 <ProductCard
                   product={product}
                   onAddToCart={addToCart}
-                  onSelectProduct={(p) => router.push(`/products/${getProductSlug(p)}`)}
                 />
               </div>
             ))}
@@ -227,6 +251,7 @@ export default function Page() {
         cartItems={cartItems}
         onUpdateQuantity={updateQuantity}
         onRemoveItem={removeItem}
+        onClearCart={clearCart}
       />
 
       {/* 10.5 Sliding Hamburger Menu Drawer */}

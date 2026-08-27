@@ -3,12 +3,14 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
 import type { HeroSlide } from '../types';
+import { deleteMediaFromAppwrite } from '@/lib/appwrite';
 import { MediaUploader } from '../components/MediaUploader';
 import { useConfirm } from '../components/CustomConfirmModal';
 
 export const HeroManager: React.FC = () => {
   const { showConfirm, showAlert } = useConfirm();
   const [slides, setSlides] = useState<HeroSlide[]>([]);
+  const [initialSlides, setInitialSlides] = useState<HeroSlide[]>([]);
   const [activeSlideIdx, setActiveSlideIdx] = useState<number>(0);
   const [previewMode, setPreviewMode] = useState<'desktop' | 'mobile'>('desktop');
   const [saved, setSaved] = useState(false);
@@ -19,6 +21,7 @@ export const HeroManager: React.FC = () => {
       const data = await api.getHeroSlides();
       if (data && data.length > 0) {
         setSlides(data);
+        setInitialSlides(JSON.parse(JSON.stringify(data)));
         return;
       }
     } catch (e) {}
@@ -48,9 +51,24 @@ export const HeroManager: React.FC = () => {
     if (e) e.preventDefault();
     setLoading(true);
     try {
+      // 1. Perform database persistence first
       for (const slide of slides) {
         await api.saveHeroSlide(slide);
       }
+
+      // 2. Only after database persistence succeeds, clean up replaced images from Appwrite Storage
+      initialSlides.forEach((orig) => {
+        const matchingCurrent = slides.find((s) => (orig.id && s.id === orig.id) || s.name === orig.name);
+        if (matchingCurrent) {
+          if (orig.desktopImage && orig.desktopImage !== matchingCurrent.desktopImage) {
+            deleteMediaFromAppwrite(orig.desktopImage).catch(() => {});
+          }
+          if (orig.mobileImage && orig.mobileImage !== matchingCurrent.mobileImage) {
+            deleteMediaFromAppwrite(orig.mobileImage).catch(() => {});
+          }
+        }
+      });
+
       await loadSlides();
       window.dispatchEvent(new Event('neesh_hero_updated'));
       setSaved(true);
@@ -105,11 +123,24 @@ export const HeroManager: React.FC = () => {
     if (!confirmed) return;
 
     const slideToDelete = slides[idx];
-    if (slideToDelete?.id) {
-      await api.deleteHeroSlide(slideToDelete.id);
+    try {
+      if (slideToDelete?.id) {
+        await api.deleteHeroSlide(slideToDelete.id);
+      }
+      
+      // Clean up orphaned storage media only AFTER persistence succeeds
+      if (slideToDelete?.desktopImage) deleteMediaFromAppwrite(slideToDelete.desktopImage).catch(() => {});
+      if (slideToDelete?.mobileImage) deleteMediaFromAppwrite(slideToDelete.mobileImage).catch(() => {});
+
+      await loadSlides();
+      setActiveSlideIdx(Math.max(0, idx - 1));
+    } catch (err: any) {
+      await showAlert({
+        title: 'Error Deleting Slide',
+        message: `Failed to delete slide: ${err.message}`,
+        variant: 'danger'
+      });
     }
-    await loadSlides();
-    setActiveSlideIdx(Math.max(0, idx - 1));
   };
 
   return (

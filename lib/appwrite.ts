@@ -45,7 +45,12 @@ export async function deleteMediaFromAppwrite(urlOrFileId: string): Promise<bool
       const res = await fetch(`/api/upload?fileId=${encodeURIComponent(fileId)}`, {
         method: 'DELETE'
       });
-      if (res.ok) return true;
+      if (res.ok) {
+        const data = await res.json().catch(() => null);
+        if (data && data.success) {
+          return true;
+        }
+      }
     } catch (err) {
       console.warn('API DELETE /api/upload failed, trying direct SDK:', err);
     }

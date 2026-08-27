@@ -1,21 +1,10 @@
 'use client';
-import React, { useState } from 'react';
 
-interface NoteItem {
-  name: string;
-  role: string;
-  source: string;
-  image: string;
-}
+import React, { useState, useEffect } from 'react';
+import { api } from '../services/api';
+import type { FragrancePyramidData, PyramidTier } from '../types';
 
-interface PyramidTier {
-  title: string;
-  duration: string;
-  description: string;
-  notes: NoteItem[];
-}
-
-const PYRAMID_DATA: Record<'top' | 'heart' | 'base', PyramidTier> = {
+const INITIAL_FALLBACK_TIERS: FragrancePyramidData = {
   top: {
     title: 'Top Notes — The Initial Spark',
     duration: '0 to 30 Minutes',
@@ -98,7 +87,50 @@ const PYRAMID_DATA: Record<'top' | 'heart' | 'base', PyramidTier> = {
 
 export const FragranceNotesSection: React.FC = () => {
   const [activeTier, setActiveTier] = useState<'top' | 'heart' | 'base'>('top');
-  const current = PYRAMID_DATA[activeTier];
+  const [pyramidData, setPyramidData] = useState<FragrancePyramidData>(INITIAL_FALLBACK_TIERS);
+
+  const loadDataFromAppwrite = async () => {
+    try {
+      const settings = await api.getSettings();
+      if (settings && settings.fragranceTiers) {
+        let parsed: FragrancePyramidData | null = null;
+        if (typeof settings.fragranceTiers === 'string') {
+          try {
+            parsed = JSON.parse(settings.fragranceTiers);
+          } catch (e) {
+            console.error('Failed to parse fragranceTiers JSON:', e);
+          }
+        } else if (typeof settings.fragranceTiers === 'object') {
+          parsed = settings.fragranceTiers;
+        }
+
+        if (parsed && (parsed.top || parsed.heart || parsed.base)) {
+          setPyramidData({
+            top: parsed.top || INITIAL_FALLBACK_TIERS.top,
+            heart: parsed.heart || INITIAL_FALLBACK_TIERS.heart,
+            base: parsed.base || INITIAL_FALLBACK_TIERS.base
+          });
+        }
+      }
+    } catch (err) {
+      console.warn('Could not fetch dynamic fragrance notes from Appwrite:', err);
+    }
+  };
+
+  useEffect(() => {
+    loadDataFromAppwrite();
+
+    const handleSettingsUpdated = () => {
+      loadDataFromAppwrite();
+    };
+
+    window.addEventListener('neesh_settings_updated', handleSettingsUpdated);
+    return () => {
+      window.removeEventListener('neesh_settings_updated', handleSettingsUpdated);
+    };
+  }, []);
+
+  const current: PyramidTier = pyramidData[activeTier] || INITIAL_FALLBACK_TIERS[activeTier];
 
   return (
     <section className="py-20 bg-white border-t border-slate-200">
@@ -125,7 +157,7 @@ export const FragranceNotesSection: React.FC = () => {
               onClick={() => setActiveTier(tier)}
               className={`px-6 py-3 rounded-full text-xs uppercase tracking-widest font-bold transition-all duration-300 cursor-pointer ${
                 activeTier === tier
-                  ? 'bg-[#c59b48] text-white shadow-md shadow-[#c59b48]/20 scale-105'
+                  ? 'bg-[#c59b48] text-white shadow-md shadow-[#c59b48]/20'
                   : 'bg-slate-50 border border-slate-200 text-slate-700 hover:bg-slate-100 hover:border-slate-300'
               }`}
             >
@@ -162,7 +194,7 @@ export const FragranceNotesSection: React.FC = () => {
 
           {/* Cards Grid */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {current.notes.map((note, idx) => (
+            {current.notes && current.notes.map((note, idx) => (
               <div
                 key={idx}
                 className="bg-white border border-slate-200 rounded-2xl p-5 hover:border-[#caa04c]/60 hover:shadow-md transition-all flex flex-col justify-between"
@@ -170,7 +202,7 @@ export const FragranceNotesSection: React.FC = () => {
                 <div>
                   <div className="aspect-[4/3] rounded-xl overflow-hidden mb-4 bg-slate-100 border border-slate-100">
                     <img
-                      src={note.image}
+                      src={note.image || 'https://images.unsplash.com/photo-1594035910387-fea47794261f?auto=format&fit=crop&w=400&q=80'}
                       alt={note.name}
                       loading="lazy"
                       decoding="async"

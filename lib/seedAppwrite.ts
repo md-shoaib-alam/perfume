@@ -82,33 +82,78 @@ const DEFAULT_SETTINGS = {
   heritageCtaLink: '#bestsellers',
   fragranceTiers: JSON.stringify({
     top: {
-      title: 'Top Notes (First Impressions)',
-      time: '0 - 30 Minutes',
-      description: 'The volatile top accords that dazzle your senses upon first spritz.',
+      title: 'Top Notes — The Initial Spark',
+      duration: '0 to 30 Minutes',
+      description: 'The first olfactory impression perceived immediately upon atomization. Crisp, effervescent botanical isolates designed to captivate the senses.',
       notes: [
-        { name: 'Venetian Saffron', origin: 'Venice, Italy', desc: 'Warm, golden, leather-spiced undertones.' },
-        { name: 'Taif Damask Rose', origin: 'Taif, Saudi Arabia', desc: 'Dewy, opulent, nectarous floral majesty.' },
-        { name: 'Icy Mint & Bergamot', origin: 'Calabria, Italy', desc: 'Zesty sparkling citrus brightness.' }
+        {
+          name: 'Calabrian Bergamot',
+          role: 'Luminous Citrus Spark',
+          source: 'Hand-pressed in Calabria, Southern Italy',
+          image: 'https://images.unsplash.com/photo-1594035910387-fea47794261f?auto=format&fit=crop&w=400&q=80'
+        },
+        {
+          name: 'Saffron Absolute',
+          role: 'Regal Golden Spice Accord',
+          source: 'Harvested at dawn in Pampore, Kashmir',
+          image: 'https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?auto=format&fit=crop&w=400&q=80'
+        },
+        {
+          name: 'Taif Rose Petals',
+          role: 'Crisp Velvet Blossom',
+          source: 'Hydro-distilled in Taif Mountain Valleys',
+          image: 'https://images.unsplash.com/photo-1547887537-6158d64c35b3?auto=format&fit=crop&w=400&q=80'
+        }
       ]
     },
     heart: {
-      title: 'Heart Notes (The Soul)',
-      time: '30 Mins - 4 Hours',
-      description: 'The core signature of the fragrance that unfolds gracefully on pulse points.',
+      title: 'Heart Notes — The Scent Soul',
+      duration: '30 Minutes to 4 Hours',
+      description: 'The core architectural body of the perfume that unfolds as the top notes subside. Rich floral and aromatic resins defining character.',
       notes: [
-        { name: 'Aged Royal Oud', origin: 'Assam, India', desc: 'Deep, resinous, dark woody grandeur.' },
-        { name: 'Smokey Incense', origin: 'Oman', desc: 'Mystical balsamic smoke and sacred resins.' },
-        { name: 'Cuban Tobacco Leaf', origin: 'Havana, Cuba', desc: 'Rich, cured tobacco leaf with spiced honey.' }
+        {
+          name: 'Bourbon Vanilla Pods',
+          role: 'Creamy Warmth & Depth',
+          source: 'Sun-cured in Madagascar',
+          image: 'https://images.unsplash.com/photo-1523293182086-7651a899d37f?auto=format&fit=crop&w=400&q=80'
+        },
+        {
+          name: 'Orris Butter',
+          role: 'Silky Powdery Richness',
+          source: 'Aged 3 Years in Florence, Italy',
+          image: 'https://images.unsplash.com/photo-1616949755610-8c9bbc08f138?auto=format&fit=crop&w=400&q=80'
+        },
+        {
+          name: 'Cardamom Co-Extract',
+          role: 'Green Warm Spicy Spark',
+          source: 'Wild-harvested in Guatemala Rainforests',
+          image: 'https://images.unsplash.com/photo-1594035910387-fea47794261f?auto=format&fit=crop&w=400&q=80'
+        }
       ]
     },
     base: {
-      title: 'Base Notes (The Memory)',
-      time: '4 Hours - 16+ Hours',
-      description: 'Rich, fixative resins and woods that cling to skin and garments for days.',
+      title: 'Base Notes — The Lingering Sillage',
+      duration: '4 to 12+ Hours',
+      description: 'The foundation of high-concentration extraits. Heavy molecular resins and vintage woods that anchor the fragrance and bond with skin chemistry.',
       notes: [
-        { name: 'Golden Amber', origin: 'Grasse, France', desc: 'Warm, luminous, honeyed amber resin.' },
-        { name: 'Atlas Cedarwood', origin: 'Atlas Mountains', desc: 'Noble, dry, balsamic evergreen woodiness.' },
-        { name: 'Bourbon Vanilla', origin: 'Madagascar', desc: 'Smooth, creamy, intoxicating sweet vanilla.' }
+        {
+          name: 'Aged Assam Agarwood (Oud)',
+          role: 'Smoky Balsamic Power',
+          source: 'Naturally aged wild Aquilaria from Assam',
+          image: 'https://images.unsplash.com/photo-1523293182086-7651a899d37f?auto=format&fit=crop&w=400&q=80'
+        },
+        {
+          name: 'Golden Ambergris Resin',
+          role: 'Oceanic Salty Warmth',
+          source: 'Sustainably ethically foraged coastal amber',
+          image: 'https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?auto=format&fit=crop&w=400&q=80'
+        },
+        {
+          name: 'Mysore Sandalwood',
+          role: 'Buttery Sacred Cream Wood',
+          source: 'Government-certified Santalum Album, India',
+          image: 'https://images.unsplash.com/photo-1547887537-6158d64c35b3?auto=format&fit=crop&w=400&q=80'
+        }
       ]
     }
   })

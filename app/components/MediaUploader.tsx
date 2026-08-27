@@ -1,6 +1,6 @@
 'use client';
 import React, { useState, useRef } from 'react';
-import { uploadMediaToAppwrite, deleteMediaFromAppwrite } from '@/lib/appwrite';
+import { uploadMediaToAppwrite } from '@/lib/appwrite';
 import { compressImageToWebP } from '@/lib/imageCompressor';
 
 interface MediaUploaderProps {
@@ -33,7 +33,6 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
     if (!files || files.length === 0) return;
 
     const file = files[0];
-    const previousUrl = value;
     setUploading(true);
     setUploadProgress(0);
     setError(null);
@@ -50,11 +49,7 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
         setUploadProgress(Math.max(20, pct));
       });
 
-      // 3. Delete old replaced Appwrite file to prevent wasted storage resources
-      if (autoDeleteOldOnReplace && previousUrl && previousUrl !== directUrl) {
-        deleteMediaFromAppwrite(previousUrl).catch(() => {});
-      }
-
+      // 3. Notify parent component with new URL (cleanup of old media occurs only after successful parent document save)
       onChange(directUrl);
       setStatusText('Done');
     } catch (err: any) {
@@ -73,11 +68,7 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
   };
 
   const handleRemove = async () => {
-    const currentUrl = value;
-    if (currentUrl) {
-      // Delete old file from Appwrite storage bucket immediately
-      deleteMediaFromAppwrite(currentUrl).catch(() => {});
-    }
+    // Notify parent component with empty string (cleanup of old media occurs only after successful parent document save)
     onChange('');
   };
 

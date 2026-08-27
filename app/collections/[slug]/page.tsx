@@ -170,7 +170,8 @@ export default function CollectionPage() {
     setIsCartOpen,
     addToCart,
     updateQuantity,
-    removeItem
+    removeItem,
+    clearCart
   } = useCart();
 
   const [productsList, setProductsList] = useState<Product[]>([]);
@@ -335,6 +336,10 @@ export default function CollectionPage() {
         isMenuOpen={isMenuOpen}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
+        onSearchSubmit={(q) => {
+          const query = (q || searchQuery).trim();
+          if (query) router.replace(`/collections/all?q=${encodeURIComponent(query)}`);
+        }}
       />
 
       {/* 3. Hero Visual Lifestyle Banner (Increased Height & Luxury Proportion) */}
@@ -408,7 +413,6 @@ export default function CollectionPage() {
                 <ProductCard
                   product={product}
                   onAddToCart={(p, size, price) => addToCart(p, size, price)}
-                  onSelectProduct={(p) => router.push(`/products/${getProductSlug(p)}`)}
                 />
               </div>
             ))}
@@ -426,26 +430,26 @@ export default function CollectionPage() {
                 key={col.id}
                 className="grid grid-cols-1 md:grid-cols-12 gap-8 items-center"
               >
-                {/* Image Col (Left on Even, Right on Odd) */}
+                {/* Image Col (Left on Even, Right on Odd) - Clean Luxury Photography Without Text Overlay */}
                 <div className={`md:col-span-6 ${isEven ? 'md:order-1' : 'md:order-2'}`}>
-                  <Link href={col.href} className="group relative block aspect-[16/9] md:aspect-[4/3] rounded-md overflow-hidden bg-slate-900 shadow-md">
+                  <Link href={col.href} className="group relative block aspect-[16/9] md:aspect-[4/3] rounded-md overflow-hidden bg-slate-100 shadow-md">
                     <img
                       src={col.image}
                       alt={col.title}
                       loading="lazy"
                       decoding="async"
-                      className="w-full h-full object-cover opacity-90"
+                      className="w-full h-full object-cover"
                     />
-                    <div className="absolute inset-0 bg-black/25 flex items-center justify-center">
-                      <span className="font-serif text-white tracking-[0.2em] text-xs sm:text-sm font-bold uppercase drop-shadow-md">
-                        {col.badge}
-                      </span>
-                    </div>
                   </Link>
                 </div>
 
                 {/* Text Content Col */}
                 <div className={`md:col-span-6 space-y-4 ${isEven ? 'md:order-2 md:pl-6' : 'md:order-1 md:pr-6'}`}>
+                  {col.badge && (
+                    <span className="text-[11px] font-sans font-bold text-[#b69254] tracking-[0.2em] uppercase block">
+                      {col.badge}
+                    </span>
+                  )}
                   <h3 className="font-serif text-2xl sm:text-3xl font-normal text-slate-900">
                     {col.title}
                   </h3>
@@ -480,6 +484,7 @@ export default function CollectionPage() {
         cartItems={cartItems}
         onUpdateQuantity={updateQuantity}
         onRemoveItem={removeItem}
+        onClearCart={clearCart}
       />
 
       <MenuDrawer

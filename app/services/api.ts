@@ -363,6 +363,37 @@ export const api = {
     }
   },
 
+  async createRazorpayOrder(payload: { items: any[]; customer: any; couponCode?: string }): Promise<any> {
+    const res = await fetch('/api/razorpay/order', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'Failed to initialize payment session');
+    }
+    return await res.json();
+  },
+
+  async verifyRazorpayPayment(payload: {
+    razorpay_order_id: string;
+    razorpay_payment_id: string;
+    razorpay_signature?: string;
+    orderId: string;
+  }): Promise<any> {
+    const res = await fetch('/api/razorpay/verify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'Payment verification failed');
+    }
+    return await res.json();
+  },
+
   async updateOrderStatus(id: string, status: string, trackingNumber?: string): Promise<any> {
     try {
       const res = await fetch('/api/orders', {

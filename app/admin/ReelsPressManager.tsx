@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
+import { deleteMediaFromAppwrite } from '@/lib/appwrite';
 import { MediaUploader } from '../components/MediaUploader';
 import { useConfirm } from '../components/CustomConfirmModal';
 
@@ -120,11 +121,17 @@ export const ReelsPressManager: React.FC = () => {
     }
 
     if (editingReel) {
+      const oldImage = editingReel.image;
       const updated = reels.map((r) =>
         r.id === editingReel.id ? { ...r, title, subtitle, price, image } : r
       );
       const success = await saveReelsToStorage(updated);
-      if (success) setIsModalOpen(false);
+      if (success) {
+        if (oldImage && oldImage !== image) {
+          deleteMediaFromAppwrite(oldImage).catch(() => {});
+        }
+        setIsModalOpen(false);
+      }
     } else {
       const newReel: ReelShort = {
         id: `reel-${Date.now()}`,
@@ -146,8 +153,12 @@ export const ReelsPressManager: React.FC = () => {
       variant: 'danger'
     });
     if (confirmed) {
+      const target = reels.find((r) => r.id === id);
       const updated = reels.filter((r) => r.id !== id);
-      await saveReelsToStorage(updated);
+      const success = await saveReelsToStorage(updated);
+      if (success && target?.image) {
+        deleteMediaFromAppwrite(target.image).catch(() => {});
+      }
     }
   };
 

@@ -74,3 +74,35 @@ export interface HeroSlide {
   linkUrl: string;
   position?: number;
 }
+
+export interface NoteItem {
+  name: string;
+  role: string;
+  source: string;
+  image: string;
+}
+
+export interface PyramidTier {
+  title: string;
+  duration: string;
+  description: string;
+  notes: NoteItem[];
+}
+
+export type FragrancePyramidData = Record<'top' | 'heart' | 'base', PyramidTier>;
+
+export interface StoreSettings {
+  announcementText: string;
+  announcementCode: string;
+  freeGiftThreshold: number;
+  contactEmail: string;
+  contactPhone: string;
+  returnsBadgeText?: string;
+  returnsTitle?: string;
+  returnsDescription?: string;
+  deliveryTitle?: string;
+  deliveryDescription?: string;
+  guaranteeTitle?: string;
+  guaranteeDescription?: string;
+  fragranceTiers?: string | FragrancePyramidData;
+}

@@ -129,31 +129,31 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onShopNow }) => {
         {slides.map((slide, index) => (
           <div
             key={slide.id}
-            className="w-full shrink-0 min-w-full relative bg-black aspect-[4/5] sm:aspect-[16/9] md:aspect-[21/9] lg:aspect-[2.35/1] max-h-[80vh] sm:max-h-[620px] overflow-hidden"
+            className="w-full shrink-0 min-w-full relative bg-black overflow-hidden flex items-center justify-center"
           >
             <a
               href={slide.linkUrl || '#'}
               onClick={(e) => handleBannerClick(e, slide.linkUrl)}
-              className="block w-full h-full cursor-pointer group/banner focus:outline-none relative"
+              className="block w-full cursor-pointer group/banner focus:outline-none relative"
             >
-              {/* Desktop Image Banner (Hidden on Mobile, Clean Fitted & Cropped to Widescreen) */}
+              {/* Desktop Image Banner (Full intrinsic ratio - Never crops the bottle cap or text) */}
               <img
                 src={slide.desktopImage}
                 alt={slide.name || 'Hero Banner'}
                 loading={index === 0 ? 'eager' : 'lazy'}
                 fetchPriority={index === 0 ? 'high' : 'auto'}
                 decoding="async"
-                className="hidden md:block w-full h-full object-cover object-center select-none"
+                className="hidden md:block w-full h-auto max-h-[92vh] object-contain select-none mx-auto"
               />
 
-              {/* Mobile Image Banner (Hidden on Desktop, Clean Fitted to Mobile Aspect) */}
+              {/* Mobile Image Banner (Preserved for small devices) */}
               <img
                 src={slide.mobileImage || slide.desktopImage}
                 alt={slide.name || 'Hero Banner Mobile'}
                 loading={index === 0 ? 'eager' : 'lazy'}
                 fetchPriority={index === 0 ? 'high' : 'auto'}
                 decoding="async"
-                className="block md:hidden w-full h-full object-cover object-center select-none"
+                className="block md:hidden w-full h-auto aspect-[4/5] object-cover object-center select-none"
               />
             </a>
           </div>

@@ -1,7 +1,7 @@
 'use client';
-import React, { useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { CartItem } from '../types';
-import { useConfirm } from './CustomConfirmModal';
+import { CheckoutModal } from './CheckoutModal';
 
 interface CartDrawerProps {
   isOpen: boolean;
@@ -9,6 +9,7 @@ interface CartDrawerProps {
   cartItems: CartItem[];
   onUpdateQuantity: (productId: string, delta: number, size?: string) => void;
   onRemoveItem: (productId: string, size?: string) => void;
+  onClearCart?: () => void;
 }
 
 const FREE_GIFT_THRESHOLD = 5000;
@@ -18,9 +19,11 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
   onClose,
   cartItems,
   onUpdateQuantity,
-  onRemoveItem
+  onRemoveItem,
+  onClearCart
 }) => {
-  const { showAlert } = useConfirm();
+  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+
   // Prevent background page scrolling when cart drawer is open
   useEffect(() => {
     if (isOpen) {
@@ -54,7 +57,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
           {/* Header */}
           <div className="p-6 border-b border-slate-200 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <span className="font-serif text-xl font-bold text-slate-900">Your Shopping Bag</span>
+              <span className="font-sans text-xl font-bold text-slate-900">Your Shopping Bag</span>
               <span className="bg-[#d6a750] text-black font-bold text-xs px-2.5 py-0.5 rounded-full">
                 {cartItems.reduce((acc, item) => acc + item.quantity, 0)} items
               </span>
@@ -122,7 +125,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                   <div className="flex-1 flex flex-col justify-between">
                     <div>
                       <div className="flex justify-between items-start">
-                        <h4 className="font-serif text-sm font-bold text-slate-900 line-clamp-1">{item.product.name}</h4>
+                        <h4 className="font-sans text-sm font-bold text-slate-900 line-clamp-1">{item.product.name}</h4>
                         <button
                           onClick={() => onRemoveItem(item.product.id, item.selectedSize)}
                           aria-label={`Remove ${item.product.name}`}
@@ -182,20 +185,30 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
               </div>
 
               <button
-                onClick={() => showAlert({
-                  title: 'Express Checkout',
-                  message: 'Proceeding to Gokwik Luxury One-Click Checkout with Instant Discounts & Free Shipping.',
-                  variant: 'info'
-                })}
-                className="w-full py-3.5 bg-[#d6a750] hover:bg-[#c59843] text-white font-bold uppercase tracking-widest text-xs rounded-md shadow-md transition-colors cursor-pointer"
+                onClick={() => setIsCheckoutOpen(true)}
+                className="w-full py-3.5 bg-[#d6a750] hover:bg-[#c59843] text-white font-bold uppercase tracking-widest text-xs rounded-md shadow-md transition-colors cursor-pointer flex items-center justify-center gap-2"
               >
-                PROCEED TO CHECKOUT &rarr;
+                <span>PROCEED TO CHECKOUT</span>
+                <span>&rarr;</span>
               </button>
             </div>
           )}
 
         </div>
       </div>
+
+      {/* Luxury Razorpay & COD Checkout Modal */}
+      <CheckoutModal
+        isOpen={isCheckoutOpen}
+        onClose={() => setIsCheckoutOpen(false)}
+        cartItems={cartItems}
+        onClearCart={() => {
+          onClearCart?.();
+          setIsCheckoutOpen(false);
+          onClose();
+        }}
+      />
     </div>
   );
 };
+
