@@ -32,6 +32,10 @@ export default function AccountPage() {
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
+    document.title = 'My Account – BakhoorBliss';
+  }, []);
+
+  useEffect(() => {
     if (isLoaded && !isSignedIn) {
       router.push('/auth/sign-in?redirect_url=/account');
     }
@@ -46,8 +50,10 @@ export default function AccountPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#fafafa] text-slate-900 font-sans flex flex-col justify-between selection:bg-[#d6a13d] selection:text-black">
-      {/* 1. Gold Announcement Offer Bar */}
+    <>
+      <title>My Account – BakhoorBliss</title>
+      <div className="min-h-screen bg-[#fafafa] text-slate-900 font-sans flex flex-col justify-between selection:bg-[#d6a13d] selection:text-black">
+        {/* 1. Gold Announcement Offer Bar */}
       <AnnouncementBar />
 
       {/* 2. Top Header / Navbar */}
@@ -111,5 +117,6 @@ export default function AccountPage() {
       {/* 7. Footer */}
       <Footer />
     </div>
+    </>
   );
 }

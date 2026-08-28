@@ -1,8 +1,13 @@
 import React from 'react';
+import type { Metadata } from 'next';
 import { checkRole } from '@/lib/roles';
 import { redirect } from 'next/navigation';
 import { auth } from '@clerk/nextjs/server';
 import { AdminShell } from './AdminShell';
+
+export const metadata: Metadata = {
+  title: 'Admin Console – BakhoorBliss',
+};
 
 export default async function AdminRootLayout({
   children

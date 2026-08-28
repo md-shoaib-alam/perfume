@@ -98,6 +98,9 @@ export default function ProductDetailPage() {
             // Record into recently viewed local storage
             addRecentlyViewed(resolved);
 
+            // Update browser tab title
+            document.title = `${resolved.name} – BakhoorBliss`;
+
             // Fetch reviews
             const fetchedReviews = await api.getReviews(resolved.name).catch(() => []);
             setReviews(fetchedReviews);
@@ -274,9 +277,11 @@ export default function ProductDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white text-slate-900 font-sans selection:bg-[#d6a13d] selection:text-black">
-      {/* 1. Header & Navigation */}
-      <AnnouncementBar />
+    <>
+      <title>{product ? `${product.name} – BakhoorBliss` : 'BakhoorBliss | Luxury Fragrance'}</title>
+      <div className="min-h-screen bg-white text-slate-900 font-sans selection:bg-[#d6a13d] selection:text-black">
+        {/* 1. Header & Navigation */}
+        <AnnouncementBar />
       <Navbar
         cartCount={totalCartCount}
         onOpenCart={() => setIsCartOpen(true)}
@@ -802,5 +807,6 @@ export default function ProductDetailPage() {
         onAddToCart={addToCart}
       />
     </div>
+    </>
   );
 }

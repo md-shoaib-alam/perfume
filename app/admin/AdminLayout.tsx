@@ -1,5 +1,5 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Show, UserButton } from '@clerk/nextjs';
 import { AuthModal } from '../auth/AuthModal';
 import { client as appwriteClient } from '@/lib/appwrite';
@@ -26,6 +26,22 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onBackToStore }) => {
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [pingStatus, setPingStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [pingMessage, setPingMessage] = useState<string>('');
+
+  useEffect(() => {
+    const tabLabels: Record<TabType, string> = {
+      overview: 'Overview',
+      products: 'Products',
+      orders: 'Orders',
+      hero: 'Hero Banners',
+      reels: 'Reels & Press',
+      collections: 'Collections',
+      perfumers: 'Perfumers',
+      coupons: 'Coupons',
+      reviews: 'Reviews',
+      settings: 'Settings'
+    };
+    document.title = `Admin ${tabLabels[activeTab] || 'Dashboard'} – BakhoorBliss`;
+  }, [activeTab]);
 
   const handlePingAppwrite = async () => {
     setPingStatus('loading');

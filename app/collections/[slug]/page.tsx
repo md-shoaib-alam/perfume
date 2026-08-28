@@ -248,6 +248,12 @@ export default function CollectionPage() {
     };
   }, [dbCollections, slug, defaultMeta]);
 
+  useEffect(() => {
+    if (meta?.title) {
+      document.title = `${meta.title} – BakhoorBliss`;
+    }
+  }, [meta?.title]);
+
   const filteredProducts = useMemo(() => {
     let list = [...productsList];
 
@@ -330,8 +336,10 @@ export default function CollectionPage() {
   }, [dbCollections, slug, productsList]);
 
   return (
-    <div className="min-h-screen bg-white text-slate-900 font-sans selection:bg-[#d6a13d] selection:text-black">
-      {/* 1. Top Announcement Bar */}
+    <>
+      <title>{`${meta.title} – BakhoorBliss`}</title>
+      <div className="min-h-screen bg-white text-slate-900 font-sans selection:bg-[#d6a13d] selection:text-black">
+        {/* 1. Top Announcement Bar */}
       <AnnouncementBar />
 
       {/* 2. Header / Navbar */}
@@ -531,5 +539,6 @@ export default function CollectionPage() {
         onAddToCart={addToCart}
       />
     </div>
+    </>
   );
 }

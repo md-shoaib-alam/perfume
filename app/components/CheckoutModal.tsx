@@ -62,6 +62,16 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   // Success Confirmation State
   const [confirmedOrder, setConfirmedOrder] = useState<any | null>(null);
 
+  useEffect(() => {
+    if (isOpen) {
+      const prevTitle = document.title;
+      document.title = confirmedOrder ? 'Order Confirmation – BakhoorBliss' : 'Express Checkout – BakhoorBliss';
+      return () => {
+        document.title = prevTitle;
+      };
+    }
+  }, [isOpen, confirmedOrder]);
+
   // Pre-fill user data from Clerk authentication, Appwrite profile, and LocalStorage
   useEffect(() => {
     if (!isOpen) return;

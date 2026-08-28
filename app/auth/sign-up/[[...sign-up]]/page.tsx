@@ -29,6 +29,10 @@ export default function CustomSignUpPage() {
 
   const clerk = useClerk();
 
+  useEffect(() => {
+    document.title = 'Sign Up – BakhoorBliss';
+  }, []);
+
   // Safely determine redirect target
   const rawRedirect = searchParams?.get('redirect_url');
   let targetUrl = '/account';
@@ -420,8 +424,10 @@ export default function CustomSignUpPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#faf9f6] text-slate-900 flex flex-col justify-between selection:bg-[#d6a750] selection:text-white relative">
-      <header className="px-6 py-6 max-w-7xl mx-auto w-full flex items-center justify-between z-10">
+    <>
+      <title>Sign Up – BakhoorBliss</title>
+      <div className="min-h-screen bg-[#faf9f6] text-slate-900 flex flex-col justify-between selection:bg-[#d6a750] selection:text-white relative">
+        <header className="px-6 py-6 max-w-7xl mx-auto w-full flex items-center justify-between z-10">
         <Link href="/" className="flex items-center gap-2 group cursor-pointer">
           <img 
             src="/assets/bakhoorbliss.avif" 
@@ -699,5 +705,6 @@ export default function CustomSignUpPage() {
         &copy; {new Date().getFullYear()} BakhoorBliss Perfumes. Encrypted & Secured by Clerk Auth.
       </footer>
     </div>
+    </>
   );
 }

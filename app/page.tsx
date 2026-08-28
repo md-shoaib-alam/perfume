@@ -49,6 +49,11 @@ export default function Page() {
     clearCart
   } = useCart();
 
+  // Set Home page title
+  useEffect(() => {
+    document.title = 'BakhoorBliss | Luxury Extrait De Parfum & Attars';
+  }, []);
+
   // Load products dynamically in background with 3-second presentation
   useEffect(() => {
     let isMounted = true;
