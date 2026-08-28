@@ -11,8 +11,6 @@ export type TabKey =
   | 'profile'
   | 'wishlist'
   | 'recently_viewed'
-  | 'points'
-  | 'memberships'
   | 'password';
 
 export function useAccountData(onLogoutCallback?: () => void) {
@@ -105,6 +103,19 @@ export function useAccountData(onLogoutCallback?: () => void) {
           city,
           pincode
         });
+
+        // Also update local storage cache for instant checkout prefill
+        try {
+          localStorage.setItem('neesh_saved_address', JSON.stringify({
+            name: `${firstName} ${lastName}`.trim(),
+            email: user.primaryEmailAddress?.emailAddress || '',
+            phone,
+            address,
+            city,
+            pincode,
+            state: 'Maharashtra'
+          }));
+        } catch (e) {}
       }
       setSaveSuccess(true);
       setIsEditingProfile(false);

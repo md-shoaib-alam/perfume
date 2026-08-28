@@ -24,8 +24,8 @@ export default clerkMiddleware(async (auth, req) => {
       (sessionClaims as any)?.publicMetadata?.role ||
       (sessionClaims as any)?.role;
 
-    // If role claim is present and explicitly not admin, redirect to home
-    if (role && role !== 'admin') {
+    // Deny unless role is explicitly 'admin' — undefined/null role is NOT admin
+    if (role !== 'admin') {
       return NextResponse.redirect(new URL('/', req.url));
     }
   }

@@ -3,6 +3,7 @@ import Razorpay from 'razorpay';
 import { databases, APPWRITE_DATABASE_ID } from '@/lib/appwrite';
 import { ID, Query } from 'appwrite';
 import { auth } from '@clerk/nextjs/server';
+import { calculateOrderBreakdown } from '@/lib/pricing';
 
 export async function POST(req: Request) {
   try {
@@ -27,9 +28,8 @@ export async function POST(req: Request) {
       );
     }
 
-    // 3. Calculate verified totals from trusted Appwrite product records
-    let serverSubtotal = 0;
-    const verifiedItems: any[] = [];
+    // 3. Fetch trusted Appwrite product documents
+    const itemsWithDocs: Array<{ productDoc: any; selectedSize?: string; quantity?: number }> = [];
 
     for (const item of rawItems) {
       const productId = item.productId || item.id || item.product?.id;
@@ -44,47 +44,22 @@ export async function POST(req: Request) {
 
       if (!productDoc) continue;
 
-      const selectedSize = item.selectedSize || item.size || productDoc.volume || '100ml';
-      const quantity = Math.max(1, Math.min(100, Math.floor(Number(item.quantity) || 1)));
-
-      let unitPrice = Number(productDoc.price || 0);
-      if (productDoc.sizeOptions) {
-        try {
-          const sizeOpts = typeof productDoc.sizeOptions === 'string'
-            ? JSON.parse(productDoc.sizeOptions)
-            : productDoc.sizeOptions;
-
-          if (Array.isArray(sizeOpts)) {
-            const match = sizeOpts.find((opt: any) => opt.size === selectedSize);
-            if (match && typeof match.price === 'number') {
-              unitPrice = Number(match.price);
-            }
-          }
-        } catch (e) {}
-      }
-
-      const itemTotal = unitPrice * quantity;
-      serverSubtotal += itemTotal;
-
-      verifiedItems.push({
-        productId: productDoc.$id,
-        name: productDoc.name,
-        size: selectedSize,
-        price: unitPrice,
-        quantity,
-        image: productDoc.image || ''
+      itemsWithDocs.push({
+        productDoc,
+        selectedSize: item.selectedSize || item.size || productDoc.volume || '100ml',
+        quantity: Math.max(1, Math.min(100, Math.floor(Number(item.quantity) || 1)))
       });
     }
 
-    if (verifiedItems.length === 0) {
+    if (itemsWithDocs.length === 0) {
       return NextResponse.json(
         { error: 'No catalog products could be validated for this checkout' },
         { status: 400 }
       );
     }
 
-    // 4. Calculate Verified Coupon Discount
-    let discountAmount = 0;
+    // 4. Verify Coupon if provided
+    let verifiedCoupon: any = null;
     const cleanCoupon = String(couponCode || '').trim().toUpperCase();
     if (cleanCoupon) {
       try {
@@ -95,24 +70,18 @@ export async function POST(req: Request) {
         ]);
 
         if (couponRes.documents && couponRes.documents.length > 0) {
-          const couponDoc: any = couponRes.documents[0];
-          const minOrder = Number(couponDoc.minOrderAmount || 0);
-
-          if (serverSubtotal >= minOrder) {
-            if (Number(couponDoc.discountPercentage) > 0) {
-              discountAmount = Math.round(serverSubtotal * (Number(couponDoc.discountPercentage) / 100));
-            } else if (Number(couponDoc.discountAmount) > 0) {
-              discountAmount = Number(couponDoc.discountAmount);
-            }
-          }
+          verifiedCoupon = couponRes.documents[0];
         }
       } catch (err) {
-        console.warn('Coupon verification failed in Razorpay order route:', err);
+        console.warn('Coupon verification warning in Razorpay order route:', err);
       }
     }
 
-    const calculatedTotal = Math.max(0, serverSubtotal - discountAmount);
-    const amountInPaise = Math.round(calculatedTotal * 100);
+    // 5. Calculate Order Totals through central pricing engine
+    const breakdown = calculateOrderBreakdown(itemsWithDocs, verifiedCoupon);
+    const verifiedItems = breakdown.items;
+    const calculatedTotal = breakdown.finalTotal;
+    const amountInPaise = breakdown.amountInPaise;
 
     // 5. Create Pending Appwrite Order record
     const shippingDetails = {
@@ -122,7 +91,8 @@ export async function POST(req: Request) {
       address: customer.address || '',
       city: customer.city || '',
       state: customer.state || '',
-      pincode: customer.pincode || customer.postalCode || ''
+      pincode: customer.pincode || customer.postalCode || '',
+      paymentMethod: 'razorpay'
     };
 
     const appwriteOrderData = {
@@ -133,7 +103,6 @@ export async function POST(req: Request) {
       shippingAddress: JSON.stringify(shippingDetails),
       items: JSON.stringify(verifiedItems),
       totalAmount: calculatedTotal,
-      paymentMethod: 'razorpay',
       paymentStatus: 'pending',
       status: 'pending'
     };
@@ -146,6 +115,43 @@ export async function POST(req: Request) {
     );
 
     const orderNumber = `NSH-${orderDoc.$id.slice(-5).toUpperCase()}`;
+
+    // Auto-save/update user's shipping address in Appwrite users collection
+    if (resolvedUserId && resolvedUserId !== 'guest' && APPWRITE_DATABASE_ID) {
+      try {
+        const userDocs = await databases.listDocuments(APPWRITE_DATABASE_ID, 'users', [
+          Query.equal('userId', resolvedUserId),
+          Query.limit(1)
+        ]);
+        const userPayload = {
+          userId: resolvedUserId,
+          name: shippingDetails.name,
+          email: shippingDetails.email,
+          phone: shippingDetails.phone,
+          address: shippingDetails.address,
+          city: shippingDetails.city,
+          pincode: shippingDetails.pincode,
+          lastLoginAt: new Date().toISOString()
+        };
+        if (userDocs.documents && userDocs.documents.length > 0) {
+          await databases.updateDocument(
+            APPWRITE_DATABASE_ID,
+            'users',
+            userDocs.documents[0].$id,
+            userPayload
+          );
+        } else {
+          await databases.createDocument(
+            APPWRITE_DATABASE_ID,
+            'users',
+            ID.unique(),
+            userPayload
+          );
+        }
+      } catch (userSyncErr) {
+        console.warn('[order] Non-blocking user address sync notice:', userSyncErr);
+      }
+    }
 
     // 6. Initialize Razorpay Client & Generate Gateway Order
     const keyId = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || '';
@@ -178,6 +184,20 @@ export async function POST(req: Request) {
       }
     } else {
       razorpayOrderId = `order_test_${orderDoc.$id.slice(0, 16)}`;
+    }
+
+    // Persist razorpayOrderId into shippingAddress so /verify can cross-validate
+    // and prevent order-ID substitution attacks.
+    try {
+      const updatedShipping = { ...shippingDetails, razorpayOrderId };
+      await databases.updateDocument(
+        APPWRITE_DATABASE_ID,
+        'orders',
+        orderDoc.$id,
+        { shippingAddress: JSON.stringify(updatedShipping) }
+      );
+    } catch (updateErr: any) {
+      console.warn('[order] Could not persist razorpayOrderId to order record:', updateErr?.message);
     }
 
     return NextResponse.json({

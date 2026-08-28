@@ -228,6 +228,7 @@ export async function seedAppwriteDatabase() {
           hoverImage: p.hoverImage || p.image,
           description: p.description || '',
           notes: JSON.stringify(p.notes || {}),
+          sizeOptions: JSON.stringify(p.sizeOptions || []),
           isBestseller: Boolean(p.isBestseller),
           isNew: Boolean(p.isNew),
           stock: 100

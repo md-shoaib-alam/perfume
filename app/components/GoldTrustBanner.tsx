@@ -35,10 +35,8 @@ export const GoldTrustBanner: React.FC = () => {
     };
 
     loadSettings();
-    window.addEventListener('focus', loadSettings);
     window.addEventListener('neesh_settings_updated', loadSettings);
     return () => {
-      window.removeEventListener('focus', loadSettings);
       window.removeEventListener('neesh_settings_updated', loadSettings);
     };
   }, []);

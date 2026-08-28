@@ -17,6 +17,7 @@ import { useCart } from '../../hooks/useCart';
 import { useConfirm } from '../../components/CustomConfirmModal';
 import { getProductSlug, slugify } from '../../utils/slug';
 import type { Product, Review } from '../../types';
+import { resolveProductSizeOptions, resolveProductUnitPrice } from '@/lib/pricing';
 
 export default function ProductDetailPage() {
   const params = useParams();
@@ -89,10 +90,8 @@ export default function ProductDetailPage() {
 
           if (resolved) {
             setSelectedImage(resolved.image);
-            const defaultSize =
-              resolved.sizeOptions && resolved.sizeOptions.length > 0
-                ? resolved.sizeOptions[0].size
-                : resolved.volume || '100ml';
+            const sizeOpts = resolveProductSizeOptions(resolved);
+            const defaultSize = sizeOpts.length > 0 ? sizeOpts[0].size : resolved.volume || '100ml';
             setSelectedSize(defaultSize);
 
             // Fetch reviews
@@ -114,20 +113,22 @@ export default function ProductDetailPage() {
     };
   }, [productId]);
 
+  const sizeOptions = useMemo(() => {
+    return product ? resolveProductSizeOptions(product) : [];
+  }, [product]);
+
   // Derived price & size option
   const currentOption = useMemo(() => {
     if (!product) return null;
-    if (product.sizeOptions && product.sizeOptions.length > 0) {
-      const match = product.sizeOptions.find((opt) => opt.size === selectedSize);
-      if (match) return match;
-    }
+    const match = sizeOptions.find((opt) => opt.size === selectedSize);
+    if (match) return match;
     return {
-      size: product.volume || '100ml',
-      price: product.price,
-      originalPrice: product.originalPrice,
+      size: selectedSize || product.volume || '100ml',
+      price: resolveProductUnitPrice(product, selectedSize),
+      originalPrice: product.originalPrice || product.price,
       isSoldOut: false
     };
-  }, [product, selectedSize]);
+  }, [product, sizeOptions, selectedSize]);
 
   const currentPrice = currentOption?.price ?? product?.price ?? 0;
   const originalPrice = currentOption?.originalPrice ?? product?.originalPrice ?? 0;
@@ -211,7 +212,7 @@ export default function ProductDetailPage() {
         />
         <div className="py-32 text-center text-slate-400">
           <div className="inline-block w-8 h-8 border-2 border-[#d6a750] border-t-transparent rounded-full animate-spin mb-4" />
-          <p className="font-serif text-sm">Presenting Haute Perfumery formulation...</p>
+          <p className="font-sans text-sm">Loading fragrance details...</p>
         </div>
         <Footer />
       </div>
@@ -239,7 +240,7 @@ export default function ProductDetailPage() {
           }}
         />
         <div className="py-24 max-w-lg mx-auto text-center px-4 space-y-4">
-          <h2 className="font-serif text-3xl text-slate-900">Fragrance Not Found</h2>
+          <h2 className="font-sans text-2xl sm:text-3xl font-bold text-slate-900">Fragrance Not Found</h2>
           <p className="text-sm text-slate-500">
             The requested extrait formulation or collection item could not be found.
           </p>
@@ -255,7 +256,18 @@ export default function ProductDetailPage() {
     );
   }
 
-  const imagesList = [product.image, product.hoverImage].filter(Boolean) as string[];
+  const imagesList = useMemo(() => {
+    if (!product) return [];
+    const set = new Set<string>();
+    if (product.image) set.add(product.image);
+    if (product.hoverImage) set.add(product.hoverImage);
+    if (Array.isArray(product.storyBlocks)) {
+      product.storyBlocks.forEach((b) => {
+        if (b.image) set.add(b.image);
+      });
+    }
+    return Array.from(set);
+  }, [product]);
 
   return (
     <div className="min-h-screen bg-white text-slate-900 font-sans selection:bg-[#d6a13d] selection:text-black">
@@ -279,30 +291,44 @@ export default function ProductDetailPage() {
         }}
       />
 
-      {/* 2. Breadcrumbs */}
-      <div className="max-w-[1680px] mx-auto px-4 sm:px-6 lg:px-8 py-4 text-xs text-slate-400 font-sans border-b border-slate-100 flex items-center gap-2">
-        <Link href="/" className="hover:text-slate-900 transition-colors">Home</Link>
-        <span>/</span>
-        <Link
-          href={product.gender ? `/collections/${product.gender.toLowerCase().replace(/\s+/g, '-')}` : '/collections/all'}
-          className="hover:text-slate-900 transition-colors"
-        >
-          {product.gender || 'Collections'}
-        </Link>
-        <span>/</span>
-        <span className="text-slate-800 font-semibold truncate">{product.name}</span>
-      </div>
-
-      {/* 3. Main Product Section */}
-      <main className="max-w-[1680px] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+      {/* 2. Main Product Section */}
+      <main className="max-w-[1680px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-14 items-start">
           
-          <div className="lg:col-span-6 space-y-4">
-            <div className="relative aspect-square w-full rounded-2xl overflow-hidden bg-slate-50 border border-slate-200/80 shadow-xs">
+          {/* Product Gallery: Vertical Left Thumbnail Rail on Desktop, Main Image on Right */}
+          <div className="lg:col-span-6 flex flex-col-reverse md:flex-row gap-4 items-start">
+            {/* Desktop Vertical Thumbnails / Mobile Horizontal Rail */}
+            {imagesList.length > 1 && (
+              <div className="flex md:flex-col gap-2.5 overflow-x-auto md:overflow-y-auto w-full md:w-20 md:shrink-0 md:max-h-[580px] pb-2 md:pb-0 scrollbar-thin">
+                {imagesList.map((img, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => setSelectedImage(img)}
+                    className={`w-16 h-16 sm:w-18 sm:h-18 md:w-20 md:h-20 rounded-xl overflow-hidden border-2 transition-all cursor-pointer shrink-0 bg-slate-50 ${
+                      (selectedImage || product.image) === img
+                        ? 'border-[#c59b48] shadow-sm ring-1 ring-[#c59b48]'
+                        : 'border-slate-200 opacity-70 hover:opacity-100 hover:border-slate-300'
+                    }`}
+                  >
+                    <img
+                      src={img}
+                      alt={`${product.name} view ${idx + 1}`}
+                      loading="lazy"
+                      decoding="async"
+                      className="w-full h-full object-cover"
+                    />
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Main Featured Image Display */}
+            <div className="relative aspect-square w-full flex-1 rounded-2xl overflow-hidden bg-slate-50 border border-slate-200/80 shadow-xs">
               <img
                 src={selectedImage || product.image}
                 alt={product.name}
-                loading="lazy"
+                loading="eager"
                 decoding="async"
                 className="w-full h-full object-cover"
               />
@@ -319,32 +345,6 @@ export default function ProductDetailPage() {
                 </div>
               )}
             </div>
-
-            {/* Thumbnail selector */}
-            {imagesList.length > 1 && (
-              <div className="flex gap-3 overflow-x-auto pb-2">
-                {imagesList.map((img, idx) => (
-                  <button
-                    key={idx}
-                    type="button"
-                    onClick={() => setSelectedImage(img)}
-                    className={`w-20 h-20 rounded-xl overflow-hidden border-2 transition-all cursor-pointer shrink-0 ${
-                      (selectedImage || product.image) === img
-                        ? 'border-[#c59b48] shadow-sm'
-                        : 'border-slate-200 opacity-70 hover:opacity-100'
-                    }`}
-                  >
-                    <img
-                      src={img}
-                      alt=""
-                      loading="lazy"
-                      decoding="async"
-                      className="w-full h-full object-cover"
-                    />
-                  </button>
-                ))}
-              </div>
-            )}
           </div>
 
           {/* Right: Product Details & Purchase Controls (6-7 cols) */}
@@ -361,7 +361,7 @@ export default function ProductDetailPage() {
                 )}
               </div>
 
-              <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-normal text-slate-900 leading-tight">
+              <h1 className="font-sans text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-slate-900 leading-tight">
                 {product.name}
               </h1>
 
@@ -389,7 +389,7 @@ export default function ProductDetailPage() {
 
             {/* Price Box */}
             <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200/80 flex items-baseline gap-4">
-              <span className="font-serif text-3xl font-bold text-slate-900">
+              <span className="font-sans text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">
                 Rs.{currentPrice.toLocaleString('en-IN')}.00
               </span>
               {originalPrice > currentPrice && (
@@ -490,7 +490,7 @@ export default function ProductDetailPage() {
             {/* Olfactory Pyramid (Fragrance Notes) - Light Luxury Theme */}
             {product.notes && (
               <div className="p-5 sm:p-6 bg-[#faf9f6] text-slate-900 rounded-2xl border border-amber-200/50 space-y-4 shadow-2xs">
-                <h3 className="font-serif text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2">
+                <h3 className="font-sans text-sm sm:text-base font-bold text-slate-900 flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-[#d6a750]" />
                   <span>Olfactory Notes Pyramid</span>
                 </h3>
@@ -547,7 +547,7 @@ export default function ProductDetailPage() {
             {/* Description Text */}
             {product.description && (
               <div className="space-y-2 pt-2 text-xs text-slate-600 leading-relaxed">
-                <h4 className="font-serif text-sm font-bold text-slate-900">About this Formulation</h4>
+                <h4 className="font-sans text-xs sm:text-sm font-bold text-slate-900 uppercase tracking-wider">About this Formulation</h4>
                 <p>{product.description}</p>
               </div>
             )}
@@ -581,7 +581,7 @@ export default function ProductDetailPage() {
                       </span>
                     )}
                     {block.title && (
-                      <h3 className="font-serif text-2xl sm:text-3xl md:text-4xl font-normal text-slate-900 tracking-tight">
+                      <h3 className="font-sans text-xl sm:text-2xl md:text-3xl font-bold text-slate-900 tracking-tight">
                         {block.title}
                       </h3>
                     )}
@@ -605,11 +605,11 @@ export default function ProductDetailPage() {
         {/* 5. Recommended Fragrances / You May Also Like */}
         {recommendedProducts.length > 0 && (
           <section className="my-16">
-            <div className="text-center mb-8 font-serif">
+            <div className="text-center mb-8 font-sans">
               <span className="text-xs uppercase tracking-widest text-[#caa04c] font-bold block mb-1">
                 Curated Recommendations
               </span>
-              <h2 className="text-2xl sm:text-3xl font-normal text-slate-900">
+              <h2 className="text-xl sm:text-2xl font-bold text-slate-900 font-sans">
                 You May Also Admire
               </h2>
             </div>
@@ -631,7 +631,7 @@ export default function ProductDetailPage() {
         <section className="my-16 pt-10 border-t border-slate-200">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
             <div>
-              <h2 className="font-serif text-2xl sm:text-3xl text-slate-900">
+              <h2 className="font-sans text-xl sm:text-2xl font-bold text-slate-900">
                 Customer Impressions & Reviews
               </h2>
               <p className="text-xs text-slate-500 mt-1">
@@ -651,7 +651,7 @@ export default function ProductDetailPage() {
           {/* Write a Review Form */}
           {isWritingReview && (
             <form onSubmit={handleReviewSubmit} className="p-6 bg-slate-50 border border-slate-200 rounded-2xl max-w-2xl mx-auto mb-10 space-y-4 text-xs animate-fade-in-up">
-              <h3 className="font-serif text-base font-bold text-slate-900">Share Your Fragrance Experience</h3>
+              <h3 className="font-sans text-sm sm:text-base font-bold text-slate-900">Share Your Fragrance Experience</h3>
 
               <div>
                 <label className="block font-semibold text-slate-700 mb-1">Rating</label>
@@ -739,7 +739,7 @@ export default function ProductDetailPage() {
                     <span className="text-[11px] text-slate-400 font-sans">{rev.date}</span>
                   </div>
 
-                  <h4 className="font-serif font-bold text-slate-900 text-sm">{rev.title}</h4>
+                  <h4 className="font-sans font-bold text-slate-900 text-sm">{rev.title}</h4>
                   <p className="text-xs text-slate-600 leading-relaxed font-sans">{rev.comment}</p>
 
                   <div className="flex items-center gap-2 pt-2 border-t border-slate-100 text-[11px]">

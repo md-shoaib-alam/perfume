@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import { databases, APPWRITE_DATABASE_ID } from '@/lib/appwrite';
 import { ID, Query } from 'appwrite';
 import { auth } from '@clerk/nextjs/server';
+import { checkRole } from '@/lib/roles';
+import { calculateOrderBreakdown } from '@/lib/pricing';
+
 
 const formatOrderDoc = (doc: any) => {
   let parsedItems = [];
@@ -9,6 +12,13 @@ const formatOrderDoc = (doc: any) => {
     parsedItems = typeof doc.items === 'string' ? JSON.parse(doc.items) : doc.items;
   } catch (e) {
     parsedItems = [];
+  }
+
+  let parsedShipping: any = {};
+  try {
+    parsedShipping = typeof doc.shippingAddress === 'string' ? JSON.parse(doc.shippingAddress) : (doc.shippingAddress || {});
+  } catch (e) {
+    parsedShipping = {};
   }
 
   return {
@@ -23,7 +33,7 @@ const formatOrderDoc = (doc: any) => {
     items: parsedItems,
     total: Number(doc.totalAmount || 0),
     totalAmount: Number(doc.totalAmount || 0),
-    paymentMethod: doc.paymentMethod || 'cod',
+    paymentMethod: doc.paymentMethod || parsedShipping?.paymentMethod || (doc.paymentStatus === 'paid' ? 'razorpay' : 'cod'),
     paymentStatus: doc.paymentStatus || 'pending',
     status: doc.status || 'pending',
     trackingNumber: doc.trackingNumber || '',
@@ -75,9 +85,8 @@ export async function POST(req: Request) {
       );
     }
 
-    // 3. Calculate verified totals from trusted Appwrite product records
-    let serverSubtotal = 0;
-    const verifiedItems: any[] = [];
+    // 3. Fetch trusted Appwrite product records
+    const itemsWithDocs: Array<{ productDoc: any; selectedSize?: string; quantity?: number }> = [];
 
     for (const item of rawItems) {
       const productId = item.productId || item.id || item.product?.id;
@@ -94,41 +103,14 @@ export async function POST(req: Request) {
         continue;
       }
 
-      const selectedSize = item.selectedSize || item.size || productDoc.volume || '100ml';
-      const quantity = Math.max(1, Math.min(100, Math.floor(Number(item.quantity) || 1)));
-
-      // Determine unit price from stored product sizeOptions or base price
-      let unitPrice = Number(productDoc.price || 0);
-
-      if (productDoc.sizeOptions) {
-        try {
-          const sizeOpts = typeof productDoc.sizeOptions === 'string'
-            ? JSON.parse(productDoc.sizeOptions)
-            : productDoc.sizeOptions;
-
-          if (Array.isArray(sizeOpts)) {
-            const match = sizeOpts.find((opt: any) => opt.size === selectedSize);
-            if (match && typeof match.price === 'number') {
-              unitPrice = Number(match.price);
-            }
-          }
-        } catch (e) {}
-      }
-
-      const itemTotal = unitPrice * quantity;
-      serverSubtotal += itemTotal;
-
-      verifiedItems.push({
-        productId: productDoc.$id,
-        name: productDoc.name,
-        size: selectedSize,
-        price: unitPrice,
-        quantity,
-        image: productDoc.image || ''
+      itemsWithDocs.push({
+        productDoc,
+        selectedSize: item.selectedSize || item.size || productDoc.volume || '100ml',
+        quantity: Math.max(1, Math.min(100, Math.floor(Number(item.quantity) || 1)))
       });
     }
 
-    if (verifiedItems.length === 0) {
+    if (itemsWithDocs.length === 0) {
       return NextResponse.json(
         { error: 'No valid catalog products found in order request' },
         { status: 400 }
@@ -136,7 +118,7 @@ export async function POST(req: Request) {
     }
 
     // 4. Calculate discounts if coupon code is provided
-    let discountAmount = 0;
+    let verifiedCoupon: any = null;
     const couponCode = (body.couponCode || body.coupon || '').trim().toUpperCase();
     if (couponCode) {
       try {
@@ -147,41 +129,36 @@ export async function POST(req: Request) {
         ]);
 
         if (couponRes.documents && couponRes.documents.length > 0) {
-          const couponDoc: any = couponRes.documents[0];
-          const minOrder = Number(couponDoc.minOrderAmount || 0);
-
-          if (serverSubtotal >= minOrder) {
-            if (Number(couponDoc.discountPercentage) > 0) {
-              discountAmount = Math.round(serverSubtotal * (Number(couponDoc.discountPercentage) / 100));
-            } else if (Number(couponDoc.discountAmount) > 0) {
-              discountAmount = Number(couponDoc.discountAmount);
-            }
-          }
+          verifiedCoupon = couponRes.documents[0];
         }
       } catch (err) {
         console.warn('Coupon verification failed:', err);
       }
     }
 
-    const calculatedTotalAmount = Math.max(0, serverSubtotal - discountAmount);
+    // 5. Calculate Order Totals through central pricing engine
+    const breakdown = calculateOrderBreakdown(itemsWithDocs, verifiedCoupon);
+    const verifiedItems = breakdown.items;
+    const calculatedTotalAmount = breakdown.finalTotal;
 
     // 5. Initialize payment and status state from server workflow (never trust client values)
-    const allowedPaymentMethods = ['cod', 'card', 'upi', 'netbanking', 'wallet', 'prepaid'];
+    const allowedPaymentMethods = ['cod', 'card', 'upi', 'netbanking', 'wallet', 'prepaid', 'razorpay'];
     const paymentMethod = allowedPaymentMethods.includes(body.paymentMethod) ? body.paymentMethod : 'cod';
     const paymentStatus = 'pending';
     const orderStatus = 'pending';
+
+    const shippingDetails = typeof body.shippingAddress === 'object' && body.shippingAddress !== null
+      ? { ...body.shippingAddress, paymentMethod }
+      : { address: String(body.shippingAddress || '').trim(), paymentMethod };
 
     const docData = {
       userId: resolvedUserId,
       customerName: String(body.customerName || body.name || 'Anonymous Customer').trim(),
       customerEmail: String(body.customerEmail || body.email || '').trim(),
       customerPhone: String(body.customerPhone || body.phone || '').trim(),
-      shippingAddress: typeof body.shippingAddress === 'object'
-        ? JSON.stringify(body.shippingAddress)
-        : String(body.shippingAddress || '').trim(),
+      shippingAddress: JSON.stringify(shippingDetails),
       items: JSON.stringify(verifiedItems),
       totalAmount: calculatedTotalAmount,
-      paymentMethod,
       paymentStatus,
       status: orderStatus
     };
@@ -193,6 +170,43 @@ export async function POST(req: Request) {
       docData
     );
 
+    // Auto-save/update user's shipping address in Appwrite users collection
+    if (resolvedUserId && resolvedUserId !== 'guest' && APPWRITE_DATABASE_ID) {
+      try {
+        const userDocs = await databases.listDocuments(APPWRITE_DATABASE_ID, 'users', [
+          Query.equal('userId', resolvedUserId),
+          Query.limit(1)
+        ]);
+        const userPayload = {
+          userId: resolvedUserId,
+          name: docData.customerName,
+          email: docData.customerEmail,
+          phone: docData.customerPhone,
+          address: typeof shippingDetails.address === 'string' ? shippingDetails.address : (shippingDetails.address || ''),
+          city: shippingDetails.city || '',
+          pincode: shippingDetails.pincode || shippingDetails.postalCode || '',
+          lastLoginAt: new Date().toISOString()
+        };
+        if (userDocs.documents && userDocs.documents.length > 0) {
+          await databases.updateDocument(
+            APPWRITE_DATABASE_ID,
+            'users',
+            userDocs.documents[0].$id,
+            userPayload
+          );
+        } else {
+          await databases.createDocument(
+            APPWRITE_DATABASE_ID,
+            'users',
+            ID.unique(),
+            userPayload
+          );
+        }
+      } catch (userSyncErr) {
+        console.warn('[orders] Non-blocking user address sync notice:', userSyncErr);
+      }
+    }
+
     return NextResponse.json(formatOrderDoc(doc));
   } catch (err: any) {
     console.error('API /api/orders POST error:', err);
@@ -201,8 +215,20 @@ export async function POST(req: Request) {
 }
 
 export async function PUT(req: Request) {
+  // Only admins may update order status / tracking
+  const { userId } = await auth();
+  if (!userId) {
+    return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+  }
+  const isAdmin = await checkRole('admin');
+  if (!isAdmin) {
+    return NextResponse.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
+  }
+
   try {
     const { id, status, trackingNumber } = await req.json();
+    if (!id) return NextResponse.json({ error: 'Missing order id' }, { status: 400 });
+
     const cleanUpdates: any = {};
     if (status !== undefined) cleanUpdates.status = status;
     if (trackingNumber !== undefined) cleanUpdates.trackingNumber = trackingNumber;

@@ -1,68 +1,125 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
-import fs from 'fs';
-import path from 'path';
+import { databases, APPWRITE_DATABASE_ID } from '@/lib/appwrite';
+import { ID, Query } from 'appwrite';
 
-const DATA_FILE = path.join(process.cwd(), 'data_profiles.json');
-
-function readProfiles(): Record<string, any> {
+export async function GET(req: Request) {
   try {
-    if (fs.existsSync(DATA_FILE)) {
-      const raw = fs.readFileSync(DATA_FILE, 'utf-8');
-      return JSON.parse(raw);
+    const { searchParams } = new URL(req.url);
+    const queryUserId = searchParams.get('userId');
+
+    let resolvedUserId = queryUserId;
+    if (!resolvedUserId) {
+      const { userId: authUserId } = await auth();
+      resolvedUserId = authUserId;
     }
-  } catch (e) {
-    console.error('Error reading data_profiles.json:', e);
-  }
-  return {};
-}
 
-function writeProfiles(data: Record<string, any>) {
-  fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2), 'utf-8');
-}
-
-export async function GET() {
-  try {
-    const { userId } = await auth();
-    if (!userId) {
+    if (!resolvedUserId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const profiles = readProfiles();
-    const userProfile = profiles[userId] || {
+    if (!APPWRITE_DATABASE_ID) {
+      return NextResponse.json({
+        phone: '',
+        address: '',
+        city: '',
+        pincode: '',
+        wishlist: [],
+        recentViews: []
+      });
+    }
+
+    const res = await databases.listDocuments(APPWRITE_DATABASE_ID, 'users', [
+      Query.equal('userId', resolvedUserId),
+      Query.limit(1)
+    ]);
+
+    if (res.documents && res.documents.length > 0) {
+      const doc = res.documents[0];
+      return NextResponse.json({
+        name: doc.name || '',
+        email: doc.email || '',
+        phone: doc.phone || '',
+        address: doc.address || '',
+        city: doc.city || '',
+        pincode: doc.pincode || '',
+        wishlist: [],
+        recentViews: []
+      });
+    }
+
+    return NextResponse.json({
       phone: '',
       address: '',
       city: '',
       pincode: '',
       wishlist: [],
       recentViews: []
-    };
-    return NextResponse.json(userProfile);
+    });
   } catch (err: any) {
-    return NextResponse.json({ error: err?.message || 'Internal Server Error' }, { status: 500 });
+    console.warn('API /api/profile GET error:', err);
+    return NextResponse.json({
+      phone: '',
+      address: '',
+      city: '',
+      pincode: '',
+      wishlist: [],
+      recentViews: []
+    });
   }
 }
 
 export async function POST(req: Request) {
   try {
-    const { userId } = await auth();
-    if (!userId) {
+    const { userId: authUserId } = await auth();
+    const body = await req.json();
+    const resolvedUserId = authUserId || body.userId;
+
+    if (!resolvedUserId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const body = await req.json();
-    const { userId: _bodyUserId, ...profileData } = body;
+    if (!APPWRITE_DATABASE_ID) {
+      throw new Error('APPWRITE_DATABASE_ID is not configured');
+    }
 
-    const profiles = readProfiles();
-    profiles[userId] = {
-      ...(profiles[userId] || {}),
-      ...profileData,
-      updatedAt: new Date().toISOString()
+    const payload = {
+      userId: resolvedUserId,
+      name: body.name || '',
+      email: body.email || '',
+      phone: body.phone || '',
+      address: body.address || '',
+      city: body.city || '',
+      pincode: body.pincode || '',
+      lastLoginAt: new Date().toISOString()
     };
 
-    writeProfiles(profiles);
-    return NextResponse.json({ success: true, profile: profiles[userId] });
+    const existing = await databases.listDocuments(APPWRITE_DATABASE_ID, 'users', [
+      Query.equal('userId', resolvedUserId),
+      Query.limit(1)
+    ]);
+
+    let savedDoc;
+    if (existing.documents && existing.documents.length > 0) {
+      savedDoc = await databases.updateDocument(
+        APPWRITE_DATABASE_ID,
+        'users',
+        existing.documents[0].$id,
+        payload
+      );
+    } else {
+      savedDoc = await databases.createDocument(
+        APPWRITE_DATABASE_ID,
+        'users',
+        ID.unique(),
+        payload
+      );
+    }
+
+    return NextResponse.json({ success: true, profile: savedDoc });
   } catch (err: any) {
+    console.error('API /api/profile POST error:', err);
     return NextResponse.json({ error: err?.message || 'Failed to save profile' }, { status: 500 });
   }
 }
+

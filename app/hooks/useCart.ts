@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import type { Product, CartItem } from '../types';
+import { resolveProductUnitPrice, resolveProductSizeOptions } from '@/lib/pricing';
 
 const CART_STORAGE_KEY = 'neesh_cart_items_v1';
 
@@ -51,17 +52,11 @@ export function useCart() {
   }, []);
 
   const addToCart = useCallback((product: Product, size?: string, unitPrice?: number, quantity: number = 1) => {
-    const resolvedSize =
-      size ||
-      (product.sizeOptions && product.sizeOptions.length > 0
-        ? product.sizeOptions[0].size
-        : product.volume || '100ml');
-
-    const resolvedPrice =
-      unitPrice ??
-      (product.sizeOptions && product.sizeOptions.length > 0
-        ? product.sizeOptions.find((opt) => opt.size === resolvedSize)?.price ?? product.price
-        : product.price);
+    const sizeOpts = resolveProductSizeOptions(product);
+    const resolvedSize = size || (sizeOpts.length > 0 ? sizeOpts[0].size : product.volume || '100ml');
+    const resolvedPrice = unitPrice != null && unitPrice > 0 
+      ? unitPrice 
+      : resolveProductUnitPrice(product, resolvedSize);
 
     setCartItems((prev) => {
       const existing = prev.find(

@@ -14,7 +14,11 @@ export async function GET() {
   try {
     const res = await databases.listDocuments(APPWRITE_DATABASE_ID, 'hero_slides', [Query.limit(50)]);
     const slides = (res.documents || []).map(formatHeroDoc);
-    return NextResponse.json(slides);
+    return NextResponse.json(slides, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300'
+      }
+    });
   } catch (err: any) {
     console.error('API /api/hero error:', err);
     return NextResponse.json([]);

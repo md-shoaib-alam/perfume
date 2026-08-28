@@ -6,28 +6,28 @@ import type { FragrancePyramidData, PyramidTier } from '../types';
 
 const INITIAL_FALLBACK_TIERS: FragrancePyramidData = {
   top: {
-    title: 'Top Notes — The Initial Spark',
+    title: 'Top Notes — The Initial Aura',
     duration: '0 to 30 Minutes',
     description:
-      'The first olfactory impression perceived immediately upon atomization. Crisp, effervescent botanical isolates designed to captivate the senses.',
+      'The initial sensory impression upon opening and spray. Highly volatile citrus, aromatic, and rare floral accords crafted for instant radiance.',
     notes: [
       {
         name: 'Calabrian Bergamot',
         role: 'Luminous Citrus Spark',
         source: 'Hand-pressed in Calabria, Southern Italy',
-        image: 'https://images.unsplash.com/photo-1594035910387-fea47794261f?auto=format&fit=crop&w=400&q=80'
+        image: ''
       },
       {
         name: 'Saffron Absolute',
         role: 'Regal Golden Spice Accord',
         source: 'Harvested at dawn in Pampore, Kashmir',
-        image: 'https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?auto=format&fit=crop&w=400&q=80'
+        image: ''
       },
       {
         name: 'Taif Rose Petals',
         role: 'Crisp Velvet Blossom',
         source: 'Hydro-distilled in Taif Mountain Valleys',
-        image: 'https://images.unsplash.com/photo-1547887537-6158d64c35b3?auto=format&fit=crop&w=400&q=80'
+        image: ''
       }
     ]
   },
@@ -41,19 +41,19 @@ const INITIAL_FALLBACK_TIERS: FragrancePyramidData = {
         name: 'Bourbon Vanilla Pods',
         role: 'Creamy Warmth & Depth',
         source: 'Sun-cured in Madagascar',
-        image: 'https://images.unsplash.com/photo-1523293182086-7651a899d37f?auto=format&fit=crop&w=400&q=80'
+        image: ''
       },
       {
         name: 'Orris Butter',
         role: 'Silky Powdery Richness',
         source: 'Aged 3 Years in Florence, Italy',
-        image: 'https://images.unsplash.com/photo-1616949755610-8c9bbc08f138?auto=format&fit=crop&w=400&q=80'
+        image: ''
       },
       {
         name: 'Cardamom Co-Extract',
         role: 'Green Warm Spicy Spark',
         source: 'Wild-harvested in Guatemala Rainforests',
-        image: 'https://images.unsplash.com/photo-1594035910387-fea47794261f?auto=format&fit=crop&w=400&q=80'
+        image: ''
       }
     ]
   },
@@ -67,19 +67,19 @@ const INITIAL_FALLBACK_TIERS: FragrancePyramidData = {
         name: 'Aged Assam Agarwood (Oud)',
         role: 'Smoky Balsamic Power',
         source: 'Naturally aged wild Aquilaria from Assam',
-        image: 'https://images.unsplash.com/photo-1523293182086-7651a899d37f?auto=format&fit=crop&w=400&q=80'
+        image: ''
       },
       {
         name: 'Golden Ambergris Resin',
         role: 'Oceanic Salty Warmth',
         source: 'Sustainably ethically foraged coastal amber',
-        image: 'https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?auto=format&fit=crop&w=400&q=80'
+        image: ''
       },
       {
         name: 'Mysore Sandalwood',
         role: 'Buttery Sacred Cream Wood',
         source: 'Government-certified Santalum Album, India',
-        image: 'https://images.unsplash.com/photo-1547887537-6158d64c35b3?auto=format&fit=crop&w=400&q=80'
+        image: ''
       }
     ]
   }
@@ -200,15 +200,23 @@ export const FragranceNotesSection: React.FC = () => {
                 className="bg-white border border-slate-200 rounded-2xl p-5 hover:border-[#caa04c]/60 hover:shadow-md transition-all flex flex-col justify-between"
               >
                 <div>
-                  <div className="aspect-[4/3] rounded-xl overflow-hidden mb-4 bg-slate-100 border border-slate-100">
-                    <img
-                      src={note.image || 'https://images.unsplash.com/photo-1594035910387-fea47794261f?auto=format&fit=crop&w=400&q=80'}
-                      alt={note.name}
-                      loading="lazy"
-                      decoding="async"
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
+                  {note.image ? (
+                    <div className="aspect-[4/3] rounded-xl overflow-hidden mb-4 bg-slate-100 border border-slate-100">
+                      <img
+                        src={note.image}
+                        alt={note.name}
+                        loading="lazy"
+                        decoding="async"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  ) : (
+                    <div className="aspect-[4/3] rounded-xl mb-4 bg-amber-50/60 border border-amber-200/50 flex items-center justify-center text-[#caa04c]">
+                      <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+                      </svg>
+                    </div>
+                  )}
                   <span className="text-[10px] uppercase tracking-wider text-[#b88f3e] font-bold block mb-1">
                     {note.role}
                   </span>

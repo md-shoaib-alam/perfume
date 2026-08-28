@@ -1,6 +1,7 @@
 import { databases, APPWRITE_DATABASE_ID } from '@/lib/appwrite';
 import { ID, Query } from 'appwrite';
 import type { Product, Review } from '../types';
+import { resolveProductSizeOptions } from '@/lib/pricing';
 
 // Helper to format Appwrite Product document to Product interface
 const formatProductDoc = (doc: any): Product => {
@@ -13,16 +14,7 @@ const formatProductDoc = (doc: any): Product => {
     }
   }
 
-  let parsedSizeOptions = [
-    { size: '15ml', price: Math.round(Number(doc.price) * 0.25), originalPrice: Math.round(Number(doc.originalPrice || doc.price) * 0.25), isSoldOut: false },
-    { size: '50ml', price: Math.round(Number(doc.price) * 0.65), originalPrice: Math.round(Number(doc.originalPrice || doc.price) * 0.65), isSoldOut: false },
-    { size: '100ml', price: Number(doc.price) || 0, originalPrice: Number(doc.originalPrice || doc.price) || 0, isSoldOut: false }
-  ];
-  if (doc.sizeOptions) {
-    try {
-      parsedSizeOptions = typeof doc.sizeOptions === 'string' ? JSON.parse(doc.sizeOptions) : doc.sizeOptions;
-    } catch (e) {}
-  }
+  const parsedSizeOptions = resolveProductSizeOptions(doc);
 
   let parsedStoryBlocks = [];
   if (doc.storyBlocks) {
@@ -63,20 +55,44 @@ const formatProductDoc = (doc: any): Product => {
   };
 };
 
+// Client in-memory cache for ultra-fast instant rendering
+const productsMemoryCache = new Map<string, { data: Product[]; timestamp: number }>();
+let heroSlidesMemoryCache: { data: any[]; timestamp: number } | null = null;
+const CACHE_TTL_MS = 60 * 1000; // 60 seconds
+
 export const api = {
+  // Clear cache helper
+  invalidateProductsCache() {
+    productsMemoryCache.clear();
+  },
+  invalidateHeroCache() {
+    heroSlidesMemoryCache = null;
+  },
+
   // =========================================================================
   // 1. PRODUCTS
   // =========================================================================
   async getProducts(category?: string, gender?: string): Promise<Product[]> {
+    const cacheKey = `${category || ''}_${gender || ''}`;
+    const cached = productsMemoryCache.get(cacheKey);
+    const now = Date.now();
+
+    if (cached && now - cached.timestamp < CACHE_TTL_MS && cached.data.length > 0) {
+      return cached.data;
+    }
+
     try {
       const params = new URLSearchParams();
       if (category) params.set('category', category);
       if (gender && gender !== 'All') params.set('gender', gender);
       
-      const res = await fetch(`/api/products?${params.toString()}`, { cache: 'no-store' });
+      const res = await fetch(`/api/products?${params.toString()}`);
       if (res.ok) {
         const data = await res.json();
-        if (Array.isArray(data) && data.length > 0) return data;
+        if (Array.isArray(data) && data.length > 0) {
+          productsMemoryCache.set(cacheKey, { data, timestamp: Date.now() });
+          return data;
+        }
       }
     } catch (err) {
       console.warn('API /api/products proxy error, trying direct SDK:', err);
@@ -89,11 +105,20 @@ export const api = {
 
       const res = await databases.listDocuments(APPWRITE_DATABASE_ID, 'products', queries);
       if (res && res.documents) {
-        return res.documents.map(formatProductDoc);
+        const formatted = res.documents.map(formatProductDoc);
+        if (formatted.length > 0) {
+          productsMemoryCache.set(cacheKey, { data: formatted, timestamp: Date.now() });
+        }
+        return formatted;
       }
     } catch (err) {
       console.warn('Appwrite getProducts query error:', err);
     }
+
+    if (cached && cached.data.length > 0) {
+      return cached.data;
+    }
+
     return [];
   },
 
@@ -183,6 +208,7 @@ export const api = {
         ID.unique(),
         docData
       );
+      this.invalidateProductsCache();
       return formatProductDoc(doc);
     } catch (err: any) {
       console.error('Appwrite createProduct error:', err);
@@ -198,6 +224,7 @@ export const api = {
         body: JSON.stringify({ id, updates })
       });
       if (res.ok) {
+        this.invalidateProductsCache();
         return await res.json();
       }
     } catch (err) {
@@ -238,6 +265,7 @@ export const api = {
         id,
         cleanData
       );
+      this.invalidateProductsCache();
       return formatProductDoc(doc);
     } catch (err: any) {
       console.error('Appwrite updateProduct error:', err);
@@ -248,13 +276,17 @@ export const api = {
   async deleteProduct(id: string): Promise<boolean> {
     try {
       const res = await fetch(`/api/products?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
-      if (res.ok) return true;
+      if (res.ok) {
+        this.invalidateProductsCache();
+        return true;
+      }
     } catch (err) {
       console.warn('API deleteProduct failed, fallback to SDK:', err);
     }
 
     try {
       await databases.deleteDocument(APPWRITE_DATABASE_ID, 'products', id);
+      this.invalidateProductsCache();
       return true;
     } catch (err: any) {
       console.error('Appwrite deleteProduct error:', err);
@@ -285,12 +317,18 @@ export const api = {
 
       const res = await databases.listDocuments(APPWRITE_DATABASE_ID, 'orders', queries);
       if (res && res.documents) {
-        return res.documents.map((doc) => {
+        return res.documents.map((doc: any) => {
           let parsedItems = [];
           try {
             parsedItems = typeof doc.items === 'string' ? JSON.parse(doc.items) : doc.items;
           } catch (e) {
             parsedItems = [];
+          }
+          let parsedShipping: any = {};
+          try {
+            parsedShipping = typeof doc.shippingAddress === 'string' ? JSON.parse(doc.shippingAddress) : (doc.shippingAddress || {});
+          } catch (e) {
+            parsedShipping = {};
           }
           return {
             _id: doc.$id,
@@ -306,6 +344,7 @@ export const api = {
             status: doc.status || 'pending',
             orderStatus: doc.status || 'pending',
             paymentStatus: doc.paymentStatus || 'pending',
+            paymentMethod: doc.paymentMethod || parsedShipping?.paymentMethod || (doc.paymentStatus === 'paid' ? 'razorpay' : 'cod'),
             items: parsedItems,
             createdAt: doc.$createdAt
           };
@@ -332,6 +371,10 @@ export const api = {
     }
 
     try {
+      const shippingObj = typeof orderData.shippingAddress === 'object' && orderData.shippingAddress !== null
+        ? { ...orderData.shippingAddress, paymentMethod: orderData.paymentMethod || 'cod' }
+        : { address: String(orderData.shippingAddress || '').trim(), paymentMethod: orderData.paymentMethod || 'cod' };
+
       const doc = await databases.createDocument(
         APPWRITE_DATABASE_ID,
         'orders',
@@ -341,9 +384,7 @@ export const api = {
           customerName: orderData.customerName || orderData.name || 'Customer',
           customerEmail: orderData.customerEmail || orderData.email || '',
           customerPhone: orderData.customerPhone || orderData.phone || '',
-          shippingAddress: typeof orderData.shippingAddress === 'string' 
-            ? orderData.shippingAddress 
-            : JSON.stringify(orderData.shippingAddress || {}),
+          shippingAddress: JSON.stringify(shippingObj),
           totalAmount: Number(orderData.total || orderData.totalAmount || 0),
           status: orderData.status || 'pending',
           paymentStatus: orderData.paymentStatus || 'pending',
@@ -584,11 +625,19 @@ export const api = {
   // 5. HERO SLIDES
   // =========================================================================
   async getHeroSlides(): Promise<any[]> {
+    const now = Date.now();
+    if (heroSlidesMemoryCache && now - heroSlidesMemoryCache.timestamp < CACHE_TTL_MS && heroSlidesMemoryCache.data.length > 0) {
+      return heroSlidesMemoryCache.data;
+    }
+
     try {
-      const res = await fetch('/api/hero', { cache: 'no-store' });
+      const res = await fetch('/api/hero');
       if (res.ok) {
         const data = await res.json();
-        if (Array.isArray(data) && data.length > 0) return data;
+        if (Array.isArray(data) && data.length > 0) {
+          heroSlidesMemoryCache = { data, timestamp: Date.now() };
+          return data;
+        }
       }
     } catch (err) {
       console.warn('API /api/hero error, trying direct SDK:', err);
@@ -597,24 +646,34 @@ export const api = {
     try {
       const res = await databases.listDocuments(APPWRITE_DATABASE_ID, 'hero_slides', [Query.limit(10)]);
       if (res && res.documents) {
-        return res.documents.map(d => ({
+        const formatted = res.documents.map(d => ({
           id: d.$id,
           name: d.name,
           desktopImage: d.desktopImage,
           mobileImage: d.mobileImage,
           linkUrl: d.linkUrl
         }));
+        if (formatted.length > 0) {
+          heroSlidesMemoryCache = { data: formatted, timestamp: Date.now() };
+        }
+        return formatted;
       }
     } catch (err) {
       console.warn('Appwrite getHeroSlides error:', err);
     }
+
+    if (heroSlidesMemoryCache && heroSlidesMemoryCache.data.length > 0) {
+      return heroSlidesMemoryCache.data;
+    }
+
     return [];
   },
 
   async saveHeroSlide(slide: any): Promise<any> {
     try {
+      let res;
       if (slide.id && !slide.id.startsWith('slide-')) {
-        return await databases.updateDocument(
+        res = await databases.updateDocument(
           APPWRITE_DATABASE_ID,
           'hero_slides',
           slide.id,
@@ -626,7 +685,7 @@ export const api = {
           }
         );
       } else {
-        return await databases.createDocument(
+        res = await databases.createDocument(
           APPWRITE_DATABASE_ID,
           'hero_slides',
           ID.unique(),
@@ -638,6 +697,8 @@ export const api = {
           }
         );
       }
+      this.invalidateHeroCache();
+      return res;
     } catch (err: any) {
       console.error('Appwrite saveHeroSlide error:', err);
       throw err;
@@ -647,6 +708,7 @@ export const api = {
   async deleteHeroSlide(id: string): Promise<boolean> {
     try {
       await databases.deleteDocument(APPWRITE_DATABASE_ID, 'hero_slides', id);
+      this.invalidateHeroCache();
       return true;
     } catch (err) {
       console.error('Appwrite deleteHeroSlide error:', err);

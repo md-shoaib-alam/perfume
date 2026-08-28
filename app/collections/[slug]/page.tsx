@@ -33,7 +33,7 @@ const COLLECTION_INFO_MAP: Record<string, CollectionMetadata> = {
     title: 'Pour Femme',
     subtitle: 'Sensual floral extraits, golden ambers, and velvety nectar compositions.',
     editorial: 'The Pour Femme Collection showcases a range of sensual and lasting aromas for the modern woman who embodies and exudes elegance, charisma, and grace. Each fragrance of floral extracts steeped in pristine oils is handcrafted to invoke the essence of sophisticated haute perfumery from the opulent palaces of the Mediterranean to the royal courts of the East.',
-    bannerImage: 'https://images.unsplash.com/photo-1547887537-6158d64c35b3?auto=format&fit=crop&w=1920&q=80',
+    bannerImage: '',
     genderFilter: 'For Her'
   },
   'for-him': {
@@ -41,7 +41,7 @@ const COLLECTION_INFO_MAP: Record<string, CollectionMetadata> = {
     title: 'Pour Homme',
     subtitle: 'Commanding agarwoods, spicy aromatics, and crisp architectural woods.',
     editorial: 'The Pour Homme Collection captures unyielding presence, refined power, and magnetic depth. Formulated with high-concentration aged agarwood, Venetian saffron, and crisp Calabrian bergamot, each extrait creates an authoritative sillage tailored for the distinguished gentleman.',
-    bannerImage: 'https://images.unsplash.com/photo-1523293182086-7651a899d37f?auto=format&fit=crop&w=1920&q=80',
+    bannerImage: '',
     genderFilter: 'For Him'
   },
   'unisex': {
@@ -49,7 +49,7 @@ const COLLECTION_INFO_MAP: Record<string, CollectionMetadata> = {
     title: 'Unisex Haute Parfumerie',
     subtitle: 'Genderless liquid architecture blending rare resins, spices, and exotic florals.',
     editorial: 'Transcend conventional fragrance boundaries with our unisex compositions. Formulated with vintage resins, smoky incense, and rare floral absolutes that evolve uniquely on pulse points throughout the day.',
-    bannerImage: 'https://images.unsplash.com/photo-1594035910387-fea47794261f?auto=format&fit=crop&w=1920&q=80',
+    bannerImage: '',
     genderFilter: 'Unisex'
   },
   'extrait-de-parfum': {
@@ -57,7 +57,7 @@ const COLLECTION_INFO_MAP: Record<string, CollectionMetadata> = {
     title: 'Extrait De Parfum',
     subtitle: 'Ultra-concentrated 30%+ pure oil perfume formulations guaranteeing 10+ hours of lingering sillage.',
     editorial: 'Crafted with master perfumers from Grasse and Dubai, our Extrait De Parfum line is macerated for 90 days in dark oak casks, ensuring unparalleled projection, complexity, and longevity.',
-    bannerImage: 'https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?auto=format&fit=crop&w=1920&q=80',
+    bannerImage: '',
     categoryFilter: 'extrait-de-parfum'
   },
   'attar': {
@@ -65,7 +65,7 @@ const COLLECTION_INFO_MAP: Record<string, CollectionMetadata> = {
     title: 'Imperial Attars',
     subtitle: 'Distilled aged agarwoods, Taif roses, and precious musks in non-alcoholic pure oil concentrations.',
     editorial: 'Centuries of heritage preserved in artisanal flacons. Each drop of our non-alcoholic Imperial Attars represents pure hydro-distilled botanicals and wild-harvested resins.',
-    bannerImage: 'https://images.unsplash.com/photo-1616949755610-8c9bbc08f138?auto=format&fit=crop&w=1920&q=80',
+    bannerImage: '',
     categoryFilter: 'attar'
   },
   'discovery-set': {
@@ -73,7 +73,7 @@ const COLLECTION_INFO_MAP: Record<string, CollectionMetadata> = {
     title: 'Discovery Sets',
     subtitle: 'Explore the complete olfactive spectrum with complimentary voucher redeemable on your full bottle.',
     editorial: 'Experience the entire collection before selecting your signature scent. Each discovery coffret includes travel-ready atomizers accompanied by an exclusive full-bottle redemption voucher.',
-    bannerImage: 'https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?auto=format&fit=crop&w=1920&q=80',
+    bannerImage: '',
     categoryFilter: 'discovery-set'
   },
   'gift-set': {
@@ -81,7 +81,7 @@ const COLLECTION_INFO_MAP: Record<string, CollectionMetadata> = {
     title: 'Gifting Collections',
     subtitle: 'Handcrafted presentation boxes for special celebrations, anniversaries, and distinguished milestones.',
     editorial: 'Unwrap the magic of haute perfumery. Encased in velvet-lined champagne gold presentation coffrets, our gifting sets represent the ultimate expression of gratitude and luxury.',
-    bannerImage: 'https://images.unsplash.com/photo-1547887537-6158d64c35b3?auto=format&fit=crop&w=1920&q=80',
+    bannerImage: '',
     categoryFilter: 'gift-set'
   },
   'travel-set': {
@@ -89,42 +89,42 @@ const COLLECTION_INFO_MAP: Record<string, CollectionMetadata> = {
     title: 'My Closet & Travel Sets',
     subtitle: 'Portable 4x10ml atomizers and pocket extraits for global jetsetters and connoisseurs on the go.',
     editorial: 'Never compromise on your olfactory presence wherever your travels lead. Precision engineered leak-proof pocket atomizers loaded with concentrated Extrait formulations.',
-    bannerImage: 'https://images.unsplash.com/photo-1594035910387-fea47794261f?auto=format&fit=crop&w=1920&q=80'
+    bannerImage: ''
   },
   'bureau': {
     badge: 'BUREAU COLLECTION',
     title: 'Bureau Collection',
     subtitle: 'Refined, versatile office and boardroom extraits designed for authoritative yet unobtrusive elegance.',
     editorial: 'The Bureau Collection presents a range of therapy perfumes crafted for business meetings and day-to-day work experience. Light yet commanding scents with crisp bergamot, fresh lavender, and warm cedarwood.',
-    bannerImage: 'https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?auto=format&fit=crop&w=1920&q=80'
+    bannerImage: ''
   },
   'luxe': {
     badge: 'LUXE COLLECTION',
     title: 'Luxe Collection',
     subtitle: 'Rare vintage agarwoods, golden ambers, and regal spice accords crafted for black-tie soirees.',
     editorial: 'The Luxe Collection is built around the most precious raw natural agarwoods, bourbon vanilla, and golden ambers in high extrait concentrations for evening galas and unforgettable moments.',
-    bannerImage: 'https://images.unsplash.com/photo-1523293182086-7651a899d37f?auto=format&fit=crop&w=1920&q=80'
+    bannerImage: ''
   },
   'haute': {
     badge: 'HAUTE COLLECTION',
     title: 'Haute Collection',
     subtitle: 'Avant-garde artisan compositions created by world-renowned Master Perfumers.',
     editorial: 'The artisanal crown jewel of the House of NEESH. Formulated in Grasse with ultra-rare natural resins and distilled botanical isolates for the true connoisseur.',
-    bannerImage: 'https://images.unsplash.com/photo-1594035910387-fea47794261f?auto=format&fit=crop&w=1920&q=80'
+    bannerImage: ''
   },
   'miss_neesh': {
     badge: 'MISS NEESH COLLECTION',
     title: 'Miss NEESH Collection',
     subtitle: 'Radiant, youthful floral bouquets and shimmering gourmand nectar formulations.',
     editorial: 'Youthful vivacity meets haute elegance. Sparkling fruity-floral accords blended with white musks and pink peonies for an uplifting, luminous daytime aura.',
-    bannerImage: 'https://images.unsplash.com/photo-1547887537-6158d64c35b3?auto=format&fit=crop&w=1920&q=80'
+    bannerImage: ''
   },
   'all': {
     badge: 'HOUSE OF NEESH™',
     title: 'All Haute Fragrances',
     subtitle: 'Explore the complete universe of NEESH™ Extrait de Parfums, Imperial Attars, and Discovery Sets.',
     editorial: 'Discover the entire compendium of luxury perfumes, discovery sets, and pure oils formulated with Royal Indian traditions and Parisian fine perfumery finesse.',
-    bannerImage: 'https://images.unsplash.com/photo-1594035910387-fea47794261f?auto=format&fit=crop&w=1920&q=80'
+    bannerImage: ''
   }
 };
 
@@ -134,7 +134,7 @@ const CROSS_COLLECTIONS = [
     title: 'Haute Collection',
     badge: 'HAUTE COLLECTION',
     description: 'The crowning achievement in artisan perfumery. Created in collaboration with legendary Master Perfumers, featuring rare aged natural agarwood, Taif rose, and bourbon vanilla.',
-    image: 'https://images.unsplash.com/photo-1594035910387-fea47794261f?auto=format&fit=crop&w=1000&q=80',
+    image: '',
     href: '/collections/haute'
   },
   {
@@ -142,7 +142,7 @@ const CROSS_COLLECTIONS = [
     title: 'Bureau Collection',
     badge: 'BUREAU COLLECTION',
     description: 'The Bureau Collection presents a range of therapeutic office perfumes suited for boardroom meetings, everyday focus, and versatile elegance with crisp aromatic accords.',
-    image: 'https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?auto=format&fit=crop&w=1000&q=80',
+    image: '',
     href: '/collections/bureau'
   },
   {
@@ -150,7 +150,7 @@ const CROSS_COLLECTIONS = [
     title: 'Miss Neesh Collection',
     badge: 'MISS NEESH COLLECTION',
     description: 'Pure femininity meets modern luxury. Radiant floral bouquets, luscious nectar notes, and shimmering musks tailored for effortless daily poise.',
-    image: 'https://images.unsplash.com/photo-1547887537-6158d64c35b3?auto=format&fit=crop&w=1000&q=80',
+    image: '',
     href: '/collections/miss_neesh'
   }
 ];
@@ -226,7 +226,7 @@ export default function CollectionPage() {
     title: `${slug.replace(/[-_]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())} Collection`,
     subtitle: 'Handcrafted luxury extraits and rare botanical blends from the House of NEESH™.',
     editorial: 'Each perfume in this curation is blended with the highest concentration of fragrance oils to guarantee lingering longevity and sublime presence.',
-    bannerImage: 'https://images.unsplash.com/photo-1594035910387-fea47794261f?auto=format&fit=crop&w=1920&q=80'
+    bannerImage: ''
   };
 
   // Merge live Appwrite collection data if configured by admin
@@ -342,16 +342,18 @@ export default function CollectionPage() {
         }}
       />
 
-      {/* 3. Hero Visual Lifestyle Banner (Increased Height & Luxury Proportion) */}
-      <div className="relative w-full min-h-[380px] sm:min-h-[500px] md:min-h-[600px] lg:min-h-[660px] max-h-[740px] overflow-hidden bg-slate-100">
-        <img
-          src={meta.bannerImage}
-          alt={meta.title}
-          loading="lazy"
-          decoding="async"
-          className="w-full h-full object-cover object-center"
-        />
-      </div>
+      {/* 3. Hero Visual Lifestyle Banner (Only when bannerImage is configured) */}
+      {meta.bannerImage && (
+        <div className="relative w-full min-h-[380px] sm:min-h-[500px] md:min-h-[600px] lg:min-h-[660px] max-h-[740px] overflow-hidden bg-slate-100">
+          <img
+            src={meta.bannerImage}
+            alt={meta.title}
+            loading="lazy"
+            decoding="async"
+            className="w-full h-full object-cover object-center"
+          />
+        </div>
+      )}
 
       {/* 4. Collection Title & Centered Editorial Story */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 pt-10 pb-6 text-center space-y-3">

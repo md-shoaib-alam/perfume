@@ -4,6 +4,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { getProductSlug } from '../utils/slug';
 import type { Product } from '../types';
+import { resolveProductSizeOptions, resolveProductUnitPrice } from '@/lib/pricing';
 
 interface ProductCardProps {
   product: Product;
@@ -15,13 +16,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   onAddToCart
 }) => {
   const productSlug = getProductSlug(product);
-
-  const sizes = useMemo(() => {
-    if (product.sizeOptions && product.sizeOptions.length > 0) {
-      return product.sizeOptions.map((opt) => opt.size);
-    }
-    return [product.volume || '100ml'];
-  }, [product.sizeOptions, product.volume]);
+  const sizeOptions = useMemo(() => resolveProductSizeOptions(product), [product]);
+  const sizes = useMemo(() => sizeOptions.map((opt) => opt.size), [sizeOptions]);
 
   const [selectedSize, setSelectedSize] = useState<string>(sizes[0] || product.volume || '100ml');
 
@@ -34,16 +30,15 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
   // Resolve active size option directly from database record
   const currentOption = useMemo(() => {
-    if (product.sizeOptions && product.sizeOptions.length > 0) {
-      const match = product.sizeOptions.find((opt) => opt.size === selectedSize);
-      if (match) return match;
-    }
+    const match = sizeOptions.find((opt) => opt.size === selectedSize);
+    if (match) return match;
     return {
-      size: product.volume || '100ml',
-      price: product.price,
+      size: selectedSize || product.volume || '100ml',
+      price: resolveProductUnitPrice(product, selectedSize),
+      originalPrice: product.originalPrice || product.price,
       isSoldOut: false
     };
-  }, [product.sizeOptions, product.volume, product.price, selectedSize]);
+  }, [sizeOptions, product, selectedSize]);
 
   const currentPrice = currentOption.price;
   const isCurrentlySoldOut = !!currentOption.isSoldOut;

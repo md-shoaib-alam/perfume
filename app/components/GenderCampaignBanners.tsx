@@ -23,23 +23,8 @@ const buildAppwriteMediaUrl = (fileId: string): string => {
   return '';
 };
 
-const DEFAULT_CAMPAIGNS: CampaignItem[] = [
-  {
-    id: 'for-him',
-    title: 'For Him',
-    gender: 'For Him',
-    image: buildAppwriteMediaUrl('campaign_for_him')
-  },
-  {
-    id: 'for-her',
-    title: 'For Her',
-    gender: 'For Her',
-    image: buildAppwriteMediaUrl('campaign_for_her')
-  }
-];
-
 export const GenderCampaignBanners: React.FC<GenderCampaignBannersProps> = () => {
-  const [campaigns, setCampaigns] = useState<CampaignItem[]>(DEFAULT_CAMPAIGNS);
+  const [campaigns, setCampaigns] = useState<CampaignItem[]>([]);
 
   useEffect(() => {
     const loadCampaignMedia = async () => {
@@ -54,26 +39,29 @@ export const GenderCampaignBanners: React.FC<GenderCampaignBannersProps> = () =>
         const himCollection = collections.find((c) => c.name?.toLowerCase().includes('him') && c.image);
         const herCollection = collections.find((c) => c.name?.toLowerCase().includes('her') && c.image);
 
-        setCampaigns([
-          {
+        const items: CampaignItem[] = [];
+        const himImg = himCollection?.image || himProduct?.image;
+        const herImg = herCollection?.image || herProduct?.image;
+
+        if (himImg) {
+          items.push({
             id: 'for-him',
             title: 'For Him',
             gender: 'For Him',
-            image:
-              himCollection?.image ||
-              himProduct?.image ||
-              buildAppwriteMediaUrl('campaign_for_him')
-          },
-          {
+            image: himImg
+          });
+        }
+
+        if (herImg) {
+          items.push({
             id: 'for-her',
             title: 'For Her',
             gender: 'For Her',
-            image:
-              herCollection?.image ||
-              herProduct?.image ||
-              buildAppwriteMediaUrl('campaign_for_her')
-          }
-        ]);
+            image: herImg
+          });
+        }
+
+        setCampaigns(items);
       } catch (err) {
         console.warn('Failed to load campaign media from Appwrite:', err);
       }
@@ -81,6 +69,8 @@ export const GenderCampaignBanners: React.FC<GenderCampaignBannersProps> = () =>
 
     loadCampaignMedia();
   }, []);
+
+  if (campaigns.length === 0) return null;
 
   return (
     <section className="py-6 sm:py-10 bg-white">

@@ -1,6 +1,18 @@
 import { NextResponse } from 'next/server';
 import { databases, APPWRITE_DATABASE_ID } from '@/lib/appwrite';
 import { ID, Query } from 'appwrite';
+import { auth } from '@clerk/nextjs/server';
+import { checkRole } from '@/lib/roles';
+import { resolveProductSizeOptions } from '@/lib/pricing';
+
+/** Reusable admin guard — returns a 401/403 Response or null on success */
+async function requireAdmin(): Promise<NextResponse | null> {
+  const { userId } = await auth();
+  if (!userId) return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+  if (!(await checkRole('admin'))) return NextResponse.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
+  return null;
+}
+
 
 const formatProductDoc = (doc: any) => {
   let parsedNotes: { top: string[]; heart: string[]; base: string[] } = { top: [], heart: [], base: [] };
@@ -12,16 +24,7 @@ const formatProductDoc = (doc: any) => {
     }
   }
 
-  let parsedSizeOptions = [
-    { size: '15ml', price: Math.round(Number(doc.price) * 0.25), originalPrice: Math.round(Number(doc.originalPrice || doc.price) * 0.25), isSoldOut: false },
-    { size: '50ml', price: Math.round(Number(doc.price) * 0.65), originalPrice: Math.round(Number(doc.originalPrice || doc.price) * 0.65), isSoldOut: false },
-    { size: '100ml', price: Number(doc.price) || 0, originalPrice: Number(doc.originalPrice || doc.price) || 0, isSoldOut: false }
-  ];
-  if (doc.sizeOptions) {
-    try {
-      parsedSizeOptions = typeof doc.sizeOptions === 'string' ? JSON.parse(doc.sizeOptions) : doc.sizeOptions;
-    } catch (e) {}
-  }
+  const parsedSizeOptions = resolveProductSizeOptions(doc);
 
   let parsedStoryBlocks: any[] = [];
   if (doc.storyBlocks) {
@@ -102,7 +105,11 @@ export async function GET(req: Request) {
 
     const res = await databases.listDocuments(APPWRITE_DATABASE_ID, 'products', queries);
     const products = (res.documents || []).map(formatProductDoc);
-    return NextResponse.json(products);
+    return NextResponse.json(products, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300'
+      }
+    });
   } catch (err: any) {
     console.error('API /api/products error:', err);
     return NextResponse.json([], { status: 200 });
@@ -110,6 +117,9 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
+  const authError = await requireAdmin();
+  if (authError) return authError;
+
   try {
     const product = await req.json();
     const docData: any = {
@@ -153,6 +163,9 @@ export async function POST(req: Request) {
 }
 
 export async function PUT(req: Request) {
+  const authError = await requireAdmin();
+  if (authError) return authError;
+
   try {
     const { id, updates } = await req.json();
     const cleanData: any = {};
@@ -195,6 +208,9 @@ export async function PUT(req: Request) {
 }
 
 export async function DELETE(req: Request) {
+  const authError = await requireAdmin();
+  if (authError) return authError;
+
   try {
     const { searchParams } = new URL(req.url);
     const id = searchParams.get('id');
@@ -206,3 +222,4 @@ export async function DELETE(req: Request) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
+

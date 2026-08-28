@@ -22,8 +22,7 @@ const DEFAULT_HERITAGE: HeritageContent = {
   titleHighlight: 'ROYAL HERITAGE & PARISIAN FINESSE',
   narrative:
     'NEESH brings together centuries of Royal Indian Attar-making traditions and modern French haute perfumery. Every fragrance is macerated for 90 days in dark oak barrels to achieve unprecedented longevity and depth.',
-  image:
-    'https://images.unsplash.com/photo-1616949755610-8c9bbc08f138?auto=format&fit=crop&w=1200&q=80',
+  image: '',
   concentrationValue: '30%',
   concentrationLabel: 'Oil Concentration (Extrait)',
   macerationValue: '90 Days',

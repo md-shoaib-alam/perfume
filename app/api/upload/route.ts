@@ -1,7 +1,25 @@
 import { NextResponse } from 'next/server';
 import { uploadMediaToAppwrite, deleteMediaFromAppwrite } from '@/lib/appwrite';
+import { auth } from '@clerk/nextjs/server';
+import { checkRole } from '@/lib/roles';
+
+/** Only admins may upload or delete media files */
+async function requireAdmin(): Promise<NextResponse | null> {
+  const { userId } = await auth();
+  if (!userId) {
+    return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+  }
+  const isAdmin = await checkRole('admin');
+  if (!isAdmin) {
+    return NextResponse.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
+  }
+  return null;
+}
 
 export async function POST(req: Request) {
+  const authError = await requireAdmin();
+  if (authError) return authError;
+
   try {
     const formData = await req.formData();
     const file = formData.get('file') as File | null;
@@ -24,6 +42,9 @@ export async function POST(req: Request) {
 }
 
 export async function DELETE(req: Request) {
+  const authError = await requireAdmin();
+  if (authError) return authError;
+
   try {
     const { searchParams } = new URL(req.url);
     const fileId = searchParams.get('fileId') || searchParams.get('url');
@@ -46,3 +67,4 @@ export async function DELETE(req: Request) {
     return NextResponse.json({ error: err.message || 'Delete failed' }, { status: 500 });
   }
 }
+

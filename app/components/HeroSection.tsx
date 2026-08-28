@@ -16,25 +16,8 @@ interface HeroSectionProps {
   onShopNow: () => void;
 }
 
-const DEFAULT_HERO_SLIDES: HeroSlide[] = [
-  {
-    id: 'slide_1',
-    name: 'Haute Vetiver Campaign',
-    desktopImage: 'https://images.unsplash.com/photo-1594035910387-fea47794261f?auto=format&fit=crop&w=1920&q=80',
-    mobileImage: 'https://images.unsplash.com/photo-1594035910387-fea47794261f?auto=format&fit=crop&w=800&q=80',
-    linkUrl: '#bestsellers'
-  },
-  {
-    id: 'slide_2',
-    name: 'Vintage Harvest Edition',
-    desktopImage: 'https://images.unsplash.com/photo-1523293182086-7651a899d37f?auto=format&fit=crop&w=1920&q=80',
-    mobileImage: 'https://images.unsplash.com/photo-1523293182086-7651a899d37f?auto=format&fit=crop&w=800&q=80',
-    linkUrl: '#bestsellers'
-  }
-];
-
 export const HeroSection: React.FC<HeroSectionProps> = ({ onShopNow }) => {
-  const [slides, setSlides] = useState<HeroSlide[]>(DEFAULT_HERO_SLIDES);
+  const [slides, setSlides] = useState<HeroSlide[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
   const touchStartX = useRef<number>(0);
@@ -51,10 +34,8 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onShopNow }) => {
     };
     loadSlides();
     window.addEventListener('neesh_hero_updated', loadSlides);
-    window.addEventListener('focus', loadSlides);
     return () => {
       window.removeEventListener('neesh_hero_updated', loadSlides);
-      window.removeEventListener('focus', loadSlides);
     };
   }, []);
 
@@ -69,7 +50,13 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onShopNow }) => {
     return () => clearInterval(timer);
   }, [slides.length, isHovered]);
 
-  if (slides.length === 0) return null;
+  if (slides.length === 0) {
+    return (
+      <div className="w-full bg-black/95 aspect-[4/5] sm:aspect-[16/7] md:aspect-[21/9] flex items-center justify-center border-b border-[#b69254]/30 relative overflow-hidden">
+        <div className="w-full h-full bg-gradient-to-r from-black via-zinc-900 to-black animate-pulse" />
+      </div>
+    );
+  }
 
   const handleNext = () => {
     setCurrentIndex((prev) => (prev + 1) % slides.length);

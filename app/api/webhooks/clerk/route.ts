@@ -1,10 +1,44 @@
 import { NextResponse } from 'next/server';
 import { databases, APPWRITE_DATABASE_ID } from '@/lib/appwrite';
 import { ID, Query } from 'appwrite';
+import { Webhook } from 'svix';
+
+// Clerk signs every webhook with CLERK_WEBHOOK_SECRET.
+// Verify with svix before trusting any payload.
+const WEBHOOK_SECRET = process.env.CLERK_WEBHOOK_SECRET || '';
 
 export async function POST(req: Request) {
+  // ── 1. Verify Clerk webhook signature (svix) ────────────────────────────
+  if (!WEBHOOK_SECRET) {
+    console.error('[clerk-webhook] CLERK_WEBHOOK_SECRET is not set — rejecting all webhook calls');
+    return NextResponse.json({ error: 'Webhook not configured' }, { status: 500 });
+  }
+
+  const svixId        = req.headers.get('svix-id') ?? '';
+  const svixTimestamp = req.headers.get('svix-timestamp') ?? '';
+  const svixSignature = req.headers.get('svix-signature') ?? '';
+
+  if (!svixId || !svixTimestamp || !svixSignature) {
+    return NextResponse.json({ error: 'Missing svix verification headers' }, { status: 400 });
+  }
+
+  const rawBody = await req.text();
+
+  let payload: any;
   try {
-    const payload = await req.json();
+    const wh = new Webhook(WEBHOOK_SECRET);
+    payload = wh.verify(rawBody, {
+      'svix-id': svixId,
+      'svix-timestamp': svixTimestamp,
+      'svix-signature': svixSignature,
+    });
+  } catch (err: any) {
+    console.warn('[clerk-webhook] Signature verification failed:', err?.message);
+    return NextResponse.json({ error: 'Invalid webhook signature' }, { status: 400 });
+  }
+
+  // ── 2. Process verified event ───────────────────────────────────────────
+  try {
     const { type, data } = payload;
 
     if (!data || !data.id) {
@@ -12,9 +46,9 @@ export async function POST(req: Request) {
     }
 
     const userId = data.id;
-    const email = data.email_addresses?.[0]?.email_address || '';
-    const phone = data.phone_numbers?.[0]?.phone_number || '';
-    const name = `${data.first_name || ''} ${data.last_name || ''}`.trim() || email.split('@')[0] || 'Customer';
+    const email  = data.email_addresses?.[0]?.email_address || '';
+    const phone  = data.phone_numbers?.[0]?.phone_number || '';
+    const name   = `${data.first_name || ''} ${data.last_name || ''}`.trim() || email.split('@')[0] || 'Customer';
 
     if (type === 'user.created' || type === 'user.updated') {
       const userData = {
@@ -22,7 +56,9 @@ export async function POST(req: Request) {
         email,
         name,
         phone,
-        lastLoginAt: data.last_sign_in_at ? new Date(data.last_sign_in_at).toISOString() : new Date().toISOString()
+        lastLoginAt: data.last_sign_in_at
+          ? new Date(data.last_sign_in_at).toISOString()
+          : new Date().toISOString()
       };
 
       if (APPWRITE_DATABASE_ID) {
@@ -34,17 +70,11 @@ export async function POST(req: Request) {
 
         if (existing.documents && existing.documents.length > 0) {
           await databases.updateDocument(
-            APPWRITE_DATABASE_ID,
-            'users',
-            existing.documents[0].$id,
-            userData
+            APPWRITE_DATABASE_ID, 'users', existing.documents[0].$id, userData
           );
         } else {
           await databases.createDocument(
-            APPWRITE_DATABASE_ID,
-            'users',
-            ID.unique(),
-            userData
+            APPWRITE_DATABASE_ID, 'users', ID.unique(), userData
           );
         }
       }
@@ -57,9 +87,7 @@ export async function POST(req: Request) {
         );
         if (existing.documents && existing.documents.length > 0) {
           await databases.deleteDocument(
-            APPWRITE_DATABASE_ID,
-            'users',
-            existing.documents[0].$id
+            APPWRITE_DATABASE_ID, 'users', existing.documents[0].$id
           );
         }
       }
@@ -69,4 +97,6 @@ export async function POST(req: Request) {
   } catch (err: any) {
     console.error('Clerk webhook error:', err);
     return NextResponse.json({ error: 'Webhook processing failed' }, { status: 500 });
-  }}
+  }
+}
+

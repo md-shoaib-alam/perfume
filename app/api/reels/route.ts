@@ -9,27 +9,13 @@ function readReels() {
   try {
     if (fs.existsSync(DATA_FILE)) {
       const raw = fs.readFileSync(DATA_FILE, 'utf-8');
-      return JSON.parse(raw);
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed;
     }
   } catch (e) {
     console.error('Error reading data_reels.json:', e);
   }
-  return [
-    {
-      id: 'reel-1',
-      title: 'Dark Cacao',
-      price: 'Rs. 8,500',
-      subtitle: 'By Midnight',
-      image: 'https://images.unsplash.com/photo-1594035910387-fea47794261f?auto=format&fit=crop&w=600&q=80'
-    },
-    {
-      id: 'reel-2',
-      title: 'Haute Vetiver',
-      price: 'Rs. 8,500',
-      subtitle: 'Master Perfumer Gloves',
-      image: 'https://images.unsplash.com/photo-1547887537-6158d64c35b3?auto=format&fit=crop&w=600&q=80'
-    }
-  ];
+  return [];
 }
 
 // Helper to write data

@@ -62,17 +62,63 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   // Success Confirmation State
   const [confirmedOrder, setConfirmedOrder] = useState<any | null>(null);
 
-  // Pre-fill user data from Clerk authentication if present
+  // Pre-fill user data from Clerk authentication, Appwrite profile, and LocalStorage
   useEffect(() => {
+    if (!isOpen) return;
+
+    // 1. First attempt to load cached shipping address for instantaneous pre-fill
+    try {
+      const cached = localStorage.getItem('neesh_saved_address');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (parsed && typeof parsed === 'object') {
+          setFormData((prev) => ({
+            ...prev,
+            name: prev.name || parsed.name || '',
+            email: prev.email || parsed.email || '',
+            phone: prev.phone || parsed.phone || '',
+            address: prev.address || parsed.address || '',
+            city: prev.city || parsed.city || '',
+            state: prev.state || parsed.state || 'Maharashtra',
+            pincode: prev.pincode || parsed.pincode || ''
+          }));
+        }
+      }
+    } catch (e) {
+      // Ignore local storage error
+    }
+
+    // 2. If user is logged in, fetch authoritative address from Appwrite Cloud profile
     if (user) {
+      const clerkName = user.fullName || `${user.firstName || ''} ${user.lastName || ''}`.trim();
+      const clerkEmail = user.primaryEmailAddress?.emailAddress || '';
+      const clerkPhone = user.primaryPhoneNumber?.phoneNumber || '';
+
       setFormData((prev) => ({
         ...prev,
-        name: prev.name || user.fullName || `${user.firstName || ''} ${user.lastName || ''}`.trim() || '',
-        email: prev.email || user.primaryEmailAddress?.emailAddress || '',
-        phone: prev.phone || user.primaryPhoneNumber?.phoneNumber || ''
+        name: prev.name || clerkName || '',
+        email: prev.email || clerkEmail || '',
+        phone: prev.phone || clerkPhone || ''
       }));
+
+      api.getUserProfile(user.id).then((profile) => {
+        if (profile) {
+          setFormData((prev) => ({
+            ...prev,
+            name: prev.name || profile.name || clerkName || '',
+            email: prev.email || profile.email || clerkEmail || '',
+            phone: profile.phone || prev.phone || clerkPhone || '',
+            address: profile.address || prev.address || '',
+            city: profile.city || prev.city || '',
+            state: profile.state || prev.state || 'Maharashtra',
+            pincode: profile.pincode || prev.pincode || ''
+          }));
+        }
+      }).catch((err) => {
+        console.warn('Could not load user profile for checkout:', err);
+      });
     }
-  }, [user]);
+  }, [isOpen, user]);
 
   // Lock scroll when open
   useEffect(() => {
@@ -166,6 +212,24 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
       return;
     }
 
+    // Auto-save address locally & to Appwrite profile
+    try {
+      localStorage.setItem('neesh_saved_address', JSON.stringify(formData));
+    } catch (e) {}
+
+    if (user?.id) {
+      api.syncUserWithAppwrite({
+        userId: user.id,
+        email: formData.email,
+        firstName: formData.name.split(' ')[0] || formData.name,
+        lastName: formData.name.split(' ').slice(1).join(' ') || '',
+        phone: formData.phone,
+        address: formData.address,
+        city: formData.city,
+        pincode: formData.pincode
+      }).catch((e) => console.warn('Non-blocking user address sync error:', e));
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -181,7 +245,8 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
           items: cartItems.map((item) => ({
             productId: item.product.id,
             quantity: item.quantity,
-            selectedSize: item.selectedSize || item.product.volume || '100ml'
+            selectedSize: item.selectedSize || item.product.volume || '100ml',
+            unitPrice: item.unitPrice ?? item.product.price
           })),
           customer: formData,
           couponCode: appliedCoupon || undefined
@@ -192,8 +257,13 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
         }
 
         // 3. Configure Razorpay Standard Checkout Options
-        const rzpKey = orderRes.keyId || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_51NQ89aH9Kneee';
-        
+        // keyId comes exclusively from the server response (NEXT_PUBLIC_ env var is
+        // set server-side on /api/razorpay/order). Never fall back to a hardcoded key.
+        const rzpKey = orderRes.keyId;
+        if (!rzpKey) {
+          throw new Error('Razorpay is not configured. Please contact support.');
+        }
+
         const options = {
           key: rzpKey,
           amount: orderRes.amount,
@@ -201,8 +271,8 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
           name: 'NEESH™ Luxury Perfumery',
           description: `Order ${orderRes.orderNumber} - Fine Fragrance`,
           image: 'https://images.unsplash.com/photo-1594035910387-fea47794261f?auto=format&fit=crop&w=200&q=80',
-          order_id: orderRes.razorpayOrderId.startsWith('order_sim_') || orderRes.razorpayOrderId.startsWith('order_test_') 
-            ? undefined 
+          order_id: orderRes.razorpayOrderId.startsWith('order_sim_') || orderRes.razorpayOrderId.startsWith('order_test_')
+            ? undefined
             : orderRes.razorpayOrderId,
           prefill: {
             name: formData.name,
@@ -219,10 +289,11 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
           },
           handler: async (response: any) => {
             try {
-              // 4. Verify payment signature on backend
+              // 4. Verify payment signature on backend.
+              // Always send exactly what Razorpay returned — never fabricate IDs.
               const verifyRes = await api.verifyRazorpayPayment({
                 razorpay_order_id: response.razorpay_order_id || orderRes.razorpayOrderId,
-                razorpay_payment_id: response.razorpay_payment_id || `pay_${Date.now()}`,
+                razorpay_payment_id: response.razorpay_payment_id, // must be real Razorpay ID
                 razorpay_signature: response.razorpay_signature,
                 orderId: orderRes.orderId
               });

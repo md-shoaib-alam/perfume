@@ -7,6 +7,7 @@ import { AnnouncementBar } from './components/AnnouncementBar';
 import { Navbar } from './components/Navbar';
 import { HeroSection } from './components/HeroSection';
 import { ProductCard } from './components/ProductCard';
+import { LoadingScreen } from './components/LoadingScreen';
 import { MasterPerfumersSection } from './components/MasterPerfumersSection';
 import { ReelShortsSection } from './components/ReelShortsSection';
 import { GoldTrustBanner } from './components/GoldTrustBanner';
@@ -21,13 +22,14 @@ import { AccountDashboard } from './components/AccountDashboard';
 import { api } from './services/api';
 import { useCart } from './hooks/useCart';
 import { getProductSlug } from './utils/slug';
-import { client as appwriteClient } from '../lib/appwrite';
 import type { Product } from './types';
+import { resolveProductSizeOptions, resolveProductUnitPrice } from '@/lib/pricing';
 
 export default function Page() {
   const router = useRouter();
   const [productsList, setProductsList] = useState<Product[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [initialLoading, setInitialLoading] = useState<boolean>(true);
   const [activeTab, setActiveTab] = useState<'For Him' | 'For Her' | 'Gift Sets'>('For Him');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
@@ -47,39 +49,32 @@ export default function Page() {
     clearCart
   } = useCart();
 
-  // Load products & ping Appwrite
+  // Load products dynamically in background
   useEffect(() => {
-    if (typeof (appwriteClient as any).ping === 'function') {
-      (appwriteClient as any).ping()
-        .then((res: any) => console.log('Appwrite connected successfully:', res))
-        .catch((err: any) => console.warn('Appwrite ping status:', err));
-    }
-
+    let isMounted = true;
     const load = async () => {
       try {
         const data = await api.getProducts();
-        if (data) {
+        if (isMounted && data) {
           setProductsList(data);
         }
       } catch (err) {
         console.warn('Failed to fetch live products:', err);
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+          // Smooth transition once initial data is ready
+          setTimeout(() => {
+            if (isMounted) setInitialLoading(false);
+          }, 350);
+        }
       }
     };
 
     load();
 
-    const handleFocus = () => load();
-    const handleVisibility = () => {
-      if (document.visibilityState === 'visible') load();
-    };
-    window.addEventListener('focus', handleFocus);
-    document.addEventListener('visibilitychange', handleVisibility);
-
     return () => {
-      window.removeEventListener('focus', handleFocus);
-      document.removeEventListener('visibilitychange', handleVisibility);
+      isMounted = false;
     };
   }, []);
 
@@ -113,6 +108,8 @@ export default function Page() {
 
   return (
     <div className="min-h-screen bg-white text-slate-900 font-sans selection:bg-[#d6a13d] selection:text-black relative">
+      {/* Dedicated Luxury Brand Loading Screen Component */}
+      <LoadingScreen isLoading={initialLoading} />
       
       {/* 1. Gold Announcement Offer Bar */}
       <AnnouncementBar />
@@ -181,9 +178,35 @@ export default function Page() {
 
         {/* Product Cards Container */}
         {loading ? (
-          <div className="py-16 text-center text-slate-400 font-sans text-xs">
-            <div className="inline-block w-6 h-6 border-2 border-[#d6a750] border-t-transparent rounded-full animate-spin mb-3" />
-            <p>Loading luxury collection from Appwrite...</p>
+          <div className="flex flex-nowrap overflow-x-auto snap-x snap-mandatory gap-3 sm:gap-6 pb-4 no-scrollbar sm:grid sm:grid-cols-2 lg:grid-cols-4 sm:overflow-x-visible sm:pb-0">
+            {[1, 2, 3, 4].map((item) => (
+              <div
+                key={item}
+                className="w-[72vw] max-w-[260px] flex-shrink-0 snap-center sm:w-auto sm:max-w-none bg-white p-1 sm:p-2 rounded-xl flex flex-col justify-between"
+              >
+                <div className="w-full flex flex-col items-center">
+                  {/* Square Image Skeleton */}
+                  <div className="w-full aspect-square bg-slate-100 rounded-lg animate-pulse mb-3 sm:mb-4" />
+                  {/* Title Skeleton */}
+                  <div className="h-6 w-3/4 bg-slate-100 rounded-md animate-pulse mb-2" />
+                  {/* Subtitle Skeleton */}
+                  <div className="h-3.5 w-1/2 bg-slate-100 rounded-md animate-pulse mb-2" />
+                  {/* Note/Description Lines Skeleton */}
+                  <div className="h-2.5 w-5/6 bg-slate-100 rounded-md animate-pulse mb-1.5" />
+                  <div className="h-2.5 w-4/6 bg-slate-100 rounded-md animate-pulse mb-3" />
+                  {/* Price Skeleton */}
+                  <div className="h-4 w-1/3 bg-slate-100 rounded-md animate-pulse mb-3 sm:mb-4" />
+                  {/* Size Options Pills Skeleton */}
+                  <div className="flex items-center justify-center gap-2 mb-3 sm:mb-4">
+                    <div className="h-6 w-12 bg-slate-100 rounded-full animate-pulse" />
+                    <div className="h-6 w-12 bg-slate-100 rounded-full animate-pulse" />
+                    <div className="h-6 w-12 bg-slate-100 rounded-full animate-pulse" />
+                  </div>
+                </div>
+                {/* Add to Bag Button Skeleton */}
+                <div className="w-full h-11 bg-slate-100 rounded-lg animate-pulse mt-auto" />
+              </div>
+            ))}
           </div>
         ) : filteredProducts.length === 0 ? (
           <div className="py-16 text-center bg-slate-50/80 rounded-2xl border border-slate-200 p-8 space-y-3">
@@ -312,9 +335,10 @@ export default function Page() {
                 <div className="pt-2">
                   <span className="text-xl font-bold text-slate-900">
                     Rs.{(
-                      selectedProductModal.sizeOptions && selectedProductModal.sizeOptions.length > 0
-                        ? selectedProductModal.sizeOptions[0].price
-                        : selectedProductModal.price
+                      resolveProductUnitPrice(
+                        selectedProductModal,
+                        resolveProductSizeOptions(selectedProductModal)[0]?.size
+                      )
                     ).toLocaleString('en-IN')}.00
                   </span>
                 </div>
@@ -322,12 +346,10 @@ export default function Page() {
                 <div className="flex gap-2">
                   <button
                     onClick={() => {
-                      const defaultOption =
-                        selectedProductModal.sizeOptions && selectedProductModal.sizeOptions.length > 0
-                          ? selectedProductModal.sizeOptions[0]
-                          : null;
+                      const sizeOpts = resolveProductSizeOptions(selectedProductModal);
+                      const defaultOption = sizeOpts.length > 0 ? sizeOpts[0] : null;
                       const defaultSize = defaultOption?.size || selectedProductModal.volume || '100ml';
-                      const defaultPrice = defaultOption?.price ?? selectedProductModal.price;
+                      const defaultPrice = defaultOption?.price ?? resolveProductUnitPrice(selectedProductModal, defaultSize);
 
                       addToCart(selectedProductModal, defaultSize, defaultPrice);
                       setSelectedProductModal(null);

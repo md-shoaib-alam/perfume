@@ -48,9 +48,7 @@ export const TravelSetSection: React.FC<TravelSetSectionProps> = ({
     'Choose any 3 or 5 pocket-sized 10ml travel spray atomizers in gold-embossed cases. Perfect for flight carry-ons, evening galas, and on-the-go touchups.';
   const priceFormatted = product?.price ? `₹${product.price.toLocaleString('en-IN')}` : '₹2,499';
   const buttonLabel = product?.buttonText || `Create Custom Travel Box (${priceFormatted})`;
-  const imageUrl =
-    product?.image ||
-    'https://images.unsplash.com/photo-1541643600914-78b084683601?auto=format&fit=crop&w=800&q=80';
+  const imageUrl = product?.image || '';
 
   return (
     <section className="py-20 bg-[#fafafa] border-t border-slate-200">
