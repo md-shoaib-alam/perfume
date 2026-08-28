@@ -150,11 +150,11 @@ export function AdminShell({ children }: AdminShellProps) {
           <div className="h-20 flex items-center justify-between px-6 border-b border-slate-100 bg-white">
             <Link href="/admin" className="flex items-center gap-2.5 group">
               <img 
-                src="/assets/neesh_logo_130x40.avif" 
-                alt="NEESH PERFUMES" 
+                src="/assets/bakhoorbliss.avif" 
+                alt="Bakhoor Bliss" 
                 loading="lazy"
                 decoding="async"
-                className="h-8.5 w-auto object-contain" 
+                className="h-10 w-auto object-contain" 
               />
             </Link>
             <span className="px-2 py-0.5 bg-slate-100 text-slate-600 border border-slate-200/80 rounded-md text-[9.5px] font-bold font-mono tracking-wider shadow-2xs">
@@ -276,11 +276,11 @@ export function AdminShell({ children }: AdminShellProps) {
                 <div className="flex items-center justify-between pb-4 border-b border-slate-100 mb-4">
                   <Link href="/admin" className="flex items-center gap-2">
                     <img 
-                      src="/assets/neesh_logo_130x40.avif" 
-                      alt="NEESH PERFUMES" 
+                      src="/assets/bakhoorbliss.avif" 
+                      alt="Bakhoor Bliss" 
                       loading="lazy"
                       decoding="async"
-                      className="h-7 w-auto object-contain" 
+                      className="h-9 w-auto object-contain" 
                     />
                   </Link>
                   <button

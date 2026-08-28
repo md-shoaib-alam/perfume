@@ -281,7 +281,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         const result = await client.signUp.attemptEmailAddressVerification({ code });
         if (result.status === 'complete' && clerk.setActive) {
           await clerk.setActive({ session: result.createdSessionId });
-          setSuccessMsg('Account created & verified! Welcome to NEESH.');
+          setSuccessMsg('Account created & verified! Welcome to BakhoorBliss.');
           setTimeout(() => {
             setIsLoading(false);
             onClose();
@@ -296,7 +296,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
         if (result.status === 'complete' && clerk.setActive) {
           await clerk.setActive({ session: result.createdSessionId });
-          setSuccessMsg('Signed in successfully! Welcome to NEESH.');
+          setSuccessMsg('Signed in successfully! Welcome to BakhoorBliss.');
           setTimeout(() => {
             setIsLoading(false);
             onClose();

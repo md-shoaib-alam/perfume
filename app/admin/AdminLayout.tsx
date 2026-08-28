@@ -195,11 +195,11 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onBackToStore }) => {
           <div className="h-16 px-5 border-b border-slate-100 flex items-center justify-between bg-white">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-xl bg-[#d6a750] border border-[#caa04c] flex items-center justify-center text-white font-serif font-bold text-xs tracking-wider shadow-xs shrink-0">
-                N
+                BB
               </div>
               <div className="leading-none">
-                <span className="font-serif font-bold text-sm tracking-[0.18em] text-slate-900 block">
-                  NEESH<span className="text-[10px] text-[#caa04c] font-sans font-normal ml-0.5">™</span>
+                <span className="font-serif font-bold text-sm tracking-wide text-slate-900 block">
+                  BakhoorBliss
                 </span>
                 <span className="text-[8.5px] font-sans font-semibold tracking-[0.16em] text-slate-400 uppercase block mt-1">
                   Admin Console
@@ -382,11 +382,11 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onBackToStore }) => {
               <div className="p-5 border-b border-slate-100 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-xl bg-[#d6a750] border border-[#caa04c] flex items-center justify-center text-white font-serif font-bold text-xs tracking-wider shadow-xs shrink-0">
-                    N
+                    BB
                   </div>
                   <div className="leading-none">
-                    <span className="font-serif font-bold text-sm tracking-[0.18em] text-slate-900 block">
-                      NEESH<span className="text-[10px] text-[#caa04c] font-sans font-normal ml-0.5">™</span>
+                    <span className="font-serif font-bold text-sm tracking-wide text-slate-900 block">
+                      BakhoorBliss
                     </span>
                     <span className="text-[8.5px] font-sans font-semibold tracking-[0.16em] text-slate-400 uppercase block mt-1">
                       Admin Console

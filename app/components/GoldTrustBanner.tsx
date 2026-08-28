@@ -11,7 +11,7 @@ export const GoldTrustBanner: React.FC = () => {
     deliveryTitle: 'Free & Fast Delivery',
     deliveryDescription: 'on your doorsteps in 3-5 days, with a surprise',
     guaranteeTitle: 'The Lingering Effect You Want',
-    guaranteeDescription: 'NEESH™ perfumes are blended with proven ingredients to last 10+ hours (Guaranteed)'
+    guaranteeDescription: 'BakhoorBliss perfumes are blended with proven ingredients to last 10+ hours (Guaranteed)'
   });
 
   useEffect(() => {

@@ -23,7 +23,7 @@ export const AccountDashboard: React.FC<AccountDashboardProps> = ({
         {/* Top Header Bar */}
         <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-white shrink-0">
           <div className="flex items-center gap-2">
-            <span className="font-serif text-lg font-bold tracking-widest text-[#b69254]">NEESH™</span>
+            <span className="font-serif text-lg font-bold tracking-widest text-[#b69254]">BakhoorBliss</span>
             <span className="text-slate-300">|</span>
             <span className="text-xs uppercase tracking-wider font-semibold text-slate-500">Customer Account</span>
           </div>

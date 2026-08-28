@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { getProductSlug } from '../utils/slug';
+import { addRecentlyViewed } from '../utils/recentlyViewed';
 import type { Product } from '../types';
 import { resolveProductSizeOptions, resolveProductUnitPrice } from '@/lib/pricing';
 
@@ -51,6 +52,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         {/* Product Image */}
         <Link 
           href={`/products/${productSlug}`}
+          onClick={() => addRecentlyViewed(product)}
           className="relative w-full aspect-square overflow-hidden mb-2.5 sm:mb-4 cursor-pointer bg-slate-100 rounded-lg group block"
         >
           {/* Skeleton shimmer before load */}
@@ -83,6 +85,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         {/* Product Name */}
         <Link 
           href={`/products/${productSlug}`}
+          onClick={() => addRecentlyViewed(product)}
           className="font-serif text-lg sm:text-2xl font-normal text-slate-800 cursor-pointer hover:text-[#d6a750] transition-colors leading-tight mb-1 block"
         >
           {product.name}

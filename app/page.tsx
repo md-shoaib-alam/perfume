@@ -49,9 +49,12 @@ export default function Page() {
     clearCart
   } = useCart();
 
-  // Load products dynamically in background
+  // Load products dynamically in background with 3-second presentation
   useEffect(() => {
     let isMounted = true;
+    const startTime = Date.now();
+    const MIN_LOAD_TIME_MS = 3000; // 3 seconds minimum display
+
     const load = async () => {
       try {
         const data = await api.getProducts();
@@ -61,13 +64,14 @@ export default function Page() {
       } catch (err) {
         console.warn('Failed to fetch live products:', err);
       } finally {
-        if (isMounted) {
-          setLoading(false);
-          // Smooth transition once initial data is ready
-          setTimeout(() => {
-            if (isMounted) setInitialLoading(false);
-          }, 350);
-        }
+        const elapsed = Date.now() - startTime;
+        const remaining = Math.max(0, MIN_LOAD_TIME_MS - elapsed);
+        setTimeout(() => {
+          if (isMounted) {
+            setLoading(false);
+            setInitialLoading(false);
+          }
+        }, remaining);
       }
     };
 
@@ -108,7 +112,6 @@ export default function Page() {
 
   return (
     <div className="min-h-screen bg-white text-slate-900 font-sans selection:bg-[#d6a13d] selection:text-black relative">
-      {/* Dedicated Luxury Brand Loading Screen Component */}
       <LoadingScreen isLoading={initialLoading} />
       
       {/* 1. Gold Announcement Offer Bar */}

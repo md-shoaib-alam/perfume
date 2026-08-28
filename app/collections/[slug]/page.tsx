@@ -109,20 +109,20 @@ const COLLECTION_INFO_MAP: Record<string, CollectionMetadata> = {
     badge: 'HAUTE COLLECTION',
     title: 'Haute Collection',
     subtitle: 'Avant-garde artisan compositions created by world-renowned Master Perfumers.',
-    editorial: 'The artisanal crown jewel of the House of NEESH. Formulated in Grasse with ultra-rare natural resins and distilled botanical isolates for the true connoisseur.',
+    editorial: 'The artisanal crown jewel of the House of BakhoorBliss. Formulated in Grasse with ultra-rare natural resins and distilled botanical isolates for the true connoisseur.',
     bannerImage: ''
   },
   'miss_neesh': {
-    badge: 'MISS NEESH COLLECTION',
-    title: 'Miss NEESH Collection',
+    badge: 'MISS BAKHOORBLISS COLLECTION',
+    title: 'Miss BakhoorBliss Collection',
     subtitle: 'Radiant, youthful floral bouquets and shimmering gourmand nectar formulations.',
     editorial: 'Youthful vivacity meets haute elegance. Sparkling fruity-floral accords blended with white musks and pink peonies for an uplifting, luminous daytime aura.',
     bannerImage: ''
   },
   'all': {
-    badge: 'HOUSE OF NEESH™',
+    badge: 'HOUSE OF BAKHOORBLISS',
     title: 'All Haute Fragrances',
-    subtitle: 'Explore the complete universe of NEESH™ Extrait de Parfums, Imperial Attars, and Discovery Sets.',
+    subtitle: 'Explore the complete universe of BakhoorBliss Extrait de Parfums, Imperial Attars, and Discovery Sets.',
     editorial: 'Discover the entire compendium of luxury perfumes, discovery sets, and pure oils formulated with Royal Indian traditions and Parisian fine perfumery finesse.',
     bannerImage: ''
   }
@@ -222,9 +222,9 @@ export default function CollectionPage() {
   }, [querySearch]);
 
   const defaultMeta = COLLECTION_INFO_MAP[slug] || {
-    badge: 'HOUSE OF NEESH™',
+    badge: 'HOUSE OF BAKHOORBLISS',
     title: `${slug.replace(/[-_]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())} Collection`,
-    subtitle: 'Handcrafted luxury extraits and rare botanical blends from the House of NEESH™.',
+    subtitle: 'Handcrafted luxury extraits and rare botanical blends from the House of BakhoorBliss.',
     editorial: 'Each perfume in this curation is blended with the highest concentration of fragrance oils to guarantee lingering longevity and sublime presence.',
     bannerImage: ''
   };
@@ -305,18 +305,29 @@ export default function CollectionPage() {
         (c) => (c.slug || c.id) !== slug && c.name?.toLowerCase().replace(/[^a-z0-9]+/g, '-') !== slug
       );
       if (others.length > 0) {
-        return others.slice(0, 3).map((c) => ({
-          id: c.slug || c.id,
-          title: c.name,
-          badge: c.badge || `${c.name.toUpperCase()} COLLECTION`,
-          description: c.editorial || c.subtitle || '',
-          image: c.bannerImage || c.image,
-          href: `/collections/${c.slug || c.id}`
-        }));
+        return others.slice(0, 3).map((c) => {
+          const matchingProduct = productsList.find(
+            (p) => p.collection === c.id || p.collection === c.name || p.category === c.slug
+          );
+          return {
+            id: c.slug || c.id,
+            title: c.name,
+            badge: c.badge || `${c.name.toUpperCase()} COLLECTION`,
+            description: c.editorial || c.subtitle || '',
+            image: c.bannerImage || c.image || matchingProduct?.image || '',
+            href: `/collections/${c.slug || c.id}`
+          };
+        });
       }
     }
-    return CROSS_COLLECTIONS.filter((c) => c.id !== slug);
-  }, [dbCollections, slug]);
+    return CROSS_COLLECTIONS.filter((c) => c.id !== slug).map((c) => {
+      const matchingProduct = productsList.find((p) => p.collection === c.id || p.category === c.id);
+      return {
+        ...c,
+        image: c.image || matchingProduct?.image || ''
+      };
+    });
+  }, [dbCollections, slug, productsList]);
 
   return (
     <div className="min-h-screen bg-white text-slate-900 font-sans selection:bg-[#d6a13d] selection:text-black">
@@ -343,7 +354,7 @@ export default function CollectionPage() {
       />
 
       {/* 3. Hero Visual Lifestyle Banner (Only when bannerImage is configured) */}
-      {meta.bannerImage && (
+      {Boolean(meta.bannerImage && meta.bannerImage.trim()) && (
         <div className="relative w-full min-h-[380px] sm:min-h-[500px] md:min-h-[600px] lg:min-h-[660px] max-h-[740px] overflow-hidden bg-slate-100">
           <img
             src={meta.bannerImage}
@@ -409,7 +420,7 @@ export default function CollectionPage() {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-10">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 lg:gap-8">
             {filteredProducts.map((product) => (
               <div key={product.id} className="h-full">
                 <ProductCard
@@ -435,13 +446,20 @@ export default function CollectionPage() {
                 {/* Image Col (Left on Even, Right on Odd) - Clean Luxury Photography Without Text Overlay */}
                 <div className={`md:col-span-6 ${isEven ? 'md:order-1' : 'md:order-2'}`}>
                   <Link href={col.href} className="group relative block aspect-[16/9] md:aspect-[4/3] rounded-md overflow-hidden bg-slate-100 shadow-md">
-                    <img
-                      src={col.image}
-                      alt={col.title}
-                      loading="lazy"
-                      decoding="async"
-                      className="w-full h-full object-cover"
-                    />
+                    {col.image ? (
+                      <img
+                        src={col.image}
+                        alt={col.title}
+                        loading="lazy"
+                        decoding="async"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-amber-50/80 via-slate-50 to-slate-100 flex flex-col items-center justify-center text-center p-6 border border-amber-200/50">
+                        <span className="font-serif text-2xl sm:text-3xl text-slate-800 font-bold mb-2">{col.title}</span>
+                        <span className="text-xs text-[#b88f3e] tracking-widest uppercase font-semibold">House of BakhoorBliss</span>
+                      </div>
+                    )}
                   </Link>
                 </div>
 

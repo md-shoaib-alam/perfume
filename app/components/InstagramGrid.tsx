@@ -13,11 +13,9 @@ const INSTA_IMAGES = [
 export const InstagramGrid: React.FC = () => {
   return (
     <section className="py-16 bg-slate-950 border-t border-amber-900/30">
-      <div className="max-w-7xl mx-auto px-4 text-center mb-8">
-        <span className="text-xs uppercase tracking-[0.3em] text-amber-400 font-semibold">@NEESHPERFUMES</span>
-        <h2 className="font-serif text-2xl sm:text-3xl font-bold text-white mt-1">
-          Follow Our Imperial World On Instagram
-        </h2>
+      <div className="text-center mb-10">
+        <span className="text-xs uppercase tracking-[0.3em] text-amber-400 font-semibold">@BAKHOORBLISS</span>
+        <h2 className="font-serif text-3xl md:text-4xl text-white font-normal mt-2">Follow The Sillage</h2>
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2 px-2">
@@ -31,7 +29,7 @@ export const InstagramGrid: React.FC = () => {
           >
             <img
               src={img}
-              alt="Neesh Instagram"
+              alt="BakhoorBliss Instagram"
               className="w-full h-full object-cover"
             />
             <div className="absolute inset-0 bg-amber-950/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-amber-300">

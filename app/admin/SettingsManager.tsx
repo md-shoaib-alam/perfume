@@ -95,15 +95,15 @@ export const SettingsManager: React.FC = () => {
     announcementText: 'FLAT 15% OFF | USE CODE: LUXE15',
     announcementCode: 'LUXE15',
     freeGiftThreshold: 3500,
-    contactEmail: 'concierge@neesh.com',
-    contactPhone: '+91 (800) 555-NEESH',
+    contactEmail: 'concierge@bakhoorbliss.com',
+    contactPhone: '+91 (800) 555-BAKHOOR',
     returnsBadgeText: '7 DAYS',
     returnsTitle: 'No Questions Asked Returns',
     returnsDescription: 'Applicable on first order of 100ml and 50ml perfume bottles only',
     deliveryTitle: 'Free & Fast Delivery',
     deliveryDescription: 'on your doorsteps in 3-5 days, with a surprise',
     guaranteeTitle: 'The Lingering Effect You Want',
-    guaranteeDescription: 'NEESH™ perfumes are blended with proven ingredients to last 10+ hours (Guaranteed)'
+    guaranteeDescription: 'BakhoorBliss perfumes are blended with proven ingredients to last 10+ hours (Guaranteed)'
   });
 
   const [fragranceTiers, setFragranceTiers] = useState<FragrancePyramidData>(DEFAULT_FRAGRANCE_TIERS);

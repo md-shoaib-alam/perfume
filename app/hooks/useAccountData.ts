@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useUser, useClerk } from '@clerk/nextjs';
 import { api } from '../services/api';
+import { getRecentlyViewed } from '../utils/recentlyViewed';
 import type { Product } from '../types';
 
 export type TabKey =
@@ -35,6 +36,27 @@ export function useAccountData(onLogoutCallback?: () => void) {
   const [wishlist, setWishlist] = useState<Product[]>([]);
   const [recentProducts, setRecentProducts] = useState<Product[]>([]);
   const [userOrders, setUserOrders] = useState<any[]>([]);
+
+  useEffect(() => {
+    // Initial load from local storage
+    const localRecents = getRecentlyViewed();
+    if (localRecents.length > 0) {
+      setRecentProducts(localRecents);
+    }
+
+    const handleUpdate = () => {
+      const updated = getRecentlyViewed();
+      setRecentProducts(updated);
+    };
+
+    window.addEventListener('recently_viewed_updated', handleUpdate);
+    window.addEventListener('storage', handleUpdate);
+
+    return () => {
+      window.removeEventListener('recently_viewed_updated', handleUpdate);
+      window.removeEventListener('storage', handleUpdate);
+    };
+  }, []);
 
   useEffect(() => {
     if (user) {

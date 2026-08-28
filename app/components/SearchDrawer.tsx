@@ -270,8 +270,8 @@ export const SearchDrawer: React.FC<SearchDrawerProps> = ({
             className="shrink-0 flex items-center cursor-pointer py-1"
           >
             <img 
-              src="/assets/neesh_logo_130x40.avif" 
-              alt="NEESH PERFUMES" 
+              src="/assets/bakhoorbliss.avif" 
+              alt="Bakhoor Bliss" 
               loading="lazy"
               decoding="async"
               className="h-10 sm:h-12 w-auto object-contain transition-transform" 

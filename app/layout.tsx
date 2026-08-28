@@ -19,10 +19,10 @@ const playfair = Playfair_Display({
 });
 
 export const metadata: Metadata = {
-  title: "NEESH™ Perfumes | Luxury Extrait De Parfum & Attars",
+  title: "BakhoorBliss | Luxury Extrait De Parfum & Attars",
   description: "Experience global award-winning luxury perfumes, fine fragrances, and artisanal attars crafted with master perfumers.",
   icons: {
-    icon: "/favicon.svg",
+    icon: "/favicon.ico",
   },
 };
 

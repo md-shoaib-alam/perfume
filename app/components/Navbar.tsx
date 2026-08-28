@@ -79,11 +79,11 @@ export const Navbar: React.FC<NavbarProps> = ({
           <div className="absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 z-10 flex justify-center items-center">
             <Link href="/" className="flex items-center group cursor-pointer">
               <img 
-                src="/assets/neesh_logo_130x40.avif" 
-                alt="NEESH PERFUMES" 
+                src="/assets/bakhoorbliss.avif" 
+                alt="Bakhoor Bliss" 
                 loading="lazy"
                 decoding="async"
-                className="h-8 sm:h-10 w-auto object-contain transition-opacity duration-200 group-hover:opacity-90" 
+                className="h-10 sm:h-12 w-auto object-contain transition-opacity duration-200 group-hover:opacity-90" 
               />
             </Link>
           </div>

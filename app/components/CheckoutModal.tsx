@@ -268,7 +268,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
           key: rzpKey,
           amount: orderRes.amount,
           currency: orderRes.currency || 'INR',
-          name: 'NEESH™ Luxury Perfumery',
+          name: 'BakhoorBliss Luxury Perfumery',
           description: `Order ${orderRes.orderNumber} - Fine Fragrance`,
           image: 'https://images.unsplash.com/photo-1594035910387-fea47794261f?auto=format&fit=crop&w=200&q=80',
           order_id: orderRes.razorpayOrderId.startsWith('order_sim_') || orderRes.razorpayOrderId.startsWith('order_test_')
@@ -411,7 +411,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-[10px] font-bold tracking-wider text-[#caa04c] uppercase font-sans">
-                  Maison NEESH
+                  Maison BakhoorBliss
                 </span>
                 <span className="inline-block w-1 h-1 rounded-full bg-amber-400" />
                 <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider font-sans">

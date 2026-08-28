@@ -279,7 +279,7 @@ export default function CustomSignInPage() {
         const result = await client.signUp.attemptEmailAddressVerification({ code });
         if (result.status === 'complete' && clerk.setActive) {
           await clerk.setActive({ session: result.createdSessionId });
-          setSuccessMsg('Account created & verified! Welcome to NEESH.');
+          setSuccessMsg('Account created & verified! Welcome to BakhoorBliss.');
           setTimeout(() => {
             router.push('/');
           }, 900);
@@ -293,7 +293,7 @@ export default function CustomSignInPage() {
 
         if (result.status === 'complete' && clerk.setActive) {
           await clerk.setActive({ session: result.createdSessionId });
-          setSuccessMsg('Signed in successfully! Welcome to NEESH.');
+          setSuccessMsg('Signed in successfully! Welcome to BakhoorBliss.');
           setTimeout(() => {
             router.push('/');
           }, 900);
@@ -392,11 +392,11 @@ export default function CustomSignInPage() {
         <header className="px-6 py-6 max-w-7xl mx-auto w-full flex items-center justify-between z-10">
           <Link href="/" className="flex items-center gap-2 group cursor-pointer">
             <img 
-              src="/assets/neesh_logo_130x40.avif" 
-              alt="NEESH PERFUMES" 
+              src="/assets/bakhoorbliss.avif" 
+              alt="Bakhoor Bliss" 
               loading="lazy"
               decoding="async"
-              className="h-7 w-auto object-contain" 
+              className="h-10 w-auto object-contain" 
             />
           </Link>
           <Link
@@ -414,7 +414,7 @@ export default function CustomSignInPage() {
         </main>
 
         <footer className="py-6 text-center text-[11px] text-slate-400 z-10 border-t border-slate-200/60 w-full">
-          &copy; {new Date().getFullYear()} NEESH™ Perfumes. Encrypted & Secured by Clerk Auth.
+          &copy; {new Date().getFullYear()} BakhoorBliss Perfumes. Encrypted & Secured by Clerk Auth.
         </footer>
       </div>
     );
@@ -425,11 +425,11 @@ export default function CustomSignInPage() {
       <header className="px-6 py-6 max-w-7xl mx-auto w-full flex items-center justify-between z-10">
         <Link href="/" className="flex items-center gap-2 group cursor-pointer">
           <img 
-            src="/assets/neesh_logo_130x40.avif" 
-            alt="NEESH PERFUMES" 
+            src="/assets/bakhoorbliss.avif" 
+            alt="Bakhoor Bliss" 
             loading="lazy"
             decoding="async"
-            className="h-7 w-auto object-contain" 
+            className="h-10 w-auto object-contain" 
           />
         </Link>
         <Link
@@ -697,7 +697,7 @@ export default function CustomSignInPage() {
       </main>
 
       <footer className="py-6 text-center text-[11px] text-slate-500 z-10 border-t border-slate-200/60">
-        &copy; {new Date().getFullYear()} NEESH™ Perfumes. Encrypted & Secured by Clerk Auth.
+        &copy; {new Date().getFullYear()} BakhoorBliss Perfumes. Encrypted & Secured by Clerk Auth.
       </footer>
     </div>
   );

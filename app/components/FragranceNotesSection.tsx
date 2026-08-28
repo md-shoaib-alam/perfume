@@ -145,7 +145,7 @@ export const FragranceNotesSection: React.FC = () => {
             The Anatomy of Imperial Olfaction
           </h2>
           <p className="text-slate-600 text-sm md:text-base font-sans leading-relaxed">
-            Every Neesh creation evolves through three harmonious tiers of scent. Click each tier below to uncover the master ingredients.
+            Every BakhoorBliss creation evolves through three harmonious tiers of scent. Click each tier below to uncover the master ingredients.
           </p>
         </div>
 

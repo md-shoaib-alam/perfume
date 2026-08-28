@@ -63,7 +63,7 @@ export const TravelSetSection: React.FC<TravelSetSectionProps> = ({
               </span>
 
               <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl font-normal text-slate-900 leading-tight">
-                {product?.name ? product.name : 'NEESH MY CLOSET'} <br />
+                {product?.name ? product.name : 'BAKHOORBLISS MY CLOSET'} <br />
                 <span className="text-[#b88f3e]">
                   {headingTitle}
                 </span>

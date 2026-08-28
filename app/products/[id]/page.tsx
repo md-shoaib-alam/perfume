@@ -16,6 +16,7 @@ import { api } from '../../services/api';
 import { useCart } from '../../hooks/useCart';
 import { useConfirm } from '../../components/CustomConfirmModal';
 import { getProductSlug, slugify } from '../../utils/slug';
+import { addRecentlyViewed } from '../../utils/recentlyViewed';
 import type { Product, Review } from '../../types';
 import { resolveProductSizeOptions, resolveProductUnitPrice } from '@/lib/pricing';
 
@@ -94,6 +95,9 @@ export default function ProductDetailPage() {
             const defaultSize = sizeOpts.length > 0 ? sizeOpts[0].size : resolved.volume || '100ml';
             setSelectedSize(defaultSize);
 
+            // Record into recently viewed local storage
+            addRecentlyViewed(resolved);
+
             // Fetch reviews
             const fetchedReviews = await api.getReviews(resolved.name).catch(() => []);
             setReviews(fetchedReviews);
@@ -150,6 +154,19 @@ export default function ProductDetailPage() {
       })
       .slice(0, 4);
   }, [product, allProducts]);
+
+  const imagesList = useMemo(() => {
+    if (!product) return [];
+    const set = new Set<string>();
+    if (product.image) set.add(product.image);
+    if (product.hoverImage) set.add(product.hoverImage);
+    if (Array.isArray(product.storyBlocks)) {
+      product.storyBlocks.forEach((b) => {
+        if (b.image) set.add(b.image);
+      });
+    }
+    return Array.from(set);
+  }, [product]);
 
   const handleReviewSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -255,19 +272,6 @@ export default function ProductDetailPage() {
       </div>
     );
   }
-
-  const imagesList = useMemo(() => {
-    if (!product) return [];
-    const set = new Set<string>();
-    if (product.image) set.add(product.image);
-    if (product.hoverImage) set.add(product.hoverImage);
-    if (Array.isArray(product.storyBlocks)) {
-      product.storyBlocks.forEach((b) => {
-        if (b.image) set.add(b.image);
-      });
-    }
-    return Array.from(set);
-  }, [product]);
 
   return (
     <div className="min-h-screen bg-white text-slate-900 font-sans selection:bg-[#d6a13d] selection:text-black">

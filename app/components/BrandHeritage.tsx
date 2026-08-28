@@ -21,7 +21,7 @@ const DEFAULT_HERITAGE: HeritageContent = {
   title: 'BOTTLED WITH',
   titleHighlight: 'ROYAL HERITAGE & PARISIAN FINESSE',
   narrative:
-    'NEESH brings together centuries of Royal Indian Attar-making traditions and modern French haute perfumery. Every fragrance is macerated for 90 days in dark oak barrels to achieve unprecedented longevity and depth.',
+    'BakhoorBliss brings together centuries of Royal Indian Attar-making traditions and modern French haute perfumery. Every fragrance is macerated for 90 days in dark oak barrels to achieve unprecedented longevity and depth.',
   image: '',
   concentrationValue: '30%',
   concentrationLabel: 'Oil Concentration (Extrait)',

@@ -323,7 +323,7 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
                       />
                     ) : (
                       <div className="w-13 h-13 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center text-[#caa04c] shrink-0 font-serif font-bold text-xs group-hover:border-[#caa04c] transition-colors">
-                        NEESH
+                        BB
                       </div>
                     )}
                     <div className="flex-1 min-w-0">

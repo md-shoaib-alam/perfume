@@ -39,10 +39,10 @@ export const MasterPerfumersSection: React.FC = () => {
     <section className="py-16 sm:py-24 bg-white text-slate-900 font-serif">
       <div className="max-w-[1680px] mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
-        <div className="text-center mb-8 sm:mb-12">
-          <span className="text-[11px] font-sans uppercase tracking-[0.3em] text-[#d6a750] font-semibold block mb-2">
-            THE NOSES BEHIND NEESH
-          </span>
+        <div className="text-center max-w-3xl mx-auto space-y-3 mb-8 sm:mb-12">
+          <p className="text-[11px] font-sans font-bold tracking-[0.25em] text-[#d6a750] uppercase">
+            THE NOSES BEHIND BAKHOORBLISS
+          </p>
           <h2 className="text-2xl sm:text-4xl font-normal tracking-wide text-slate-800 leading-tight">
             Blended by Award-Winning <br />
             <span className="italic">Master Perfumers</span>

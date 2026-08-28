@@ -21,6 +21,7 @@ import { AccountSidebar } from './account/AccountSidebar';
 import { DashboardTab } from './account/DashboardTab';
 import { OrdersTab } from './account/OrdersTab';
 import { OrderTrackingModal } from './account/OrderTrackingModal';
+import { RecentlyViewedTab } from './account/RecentlyViewedTab';
 
 export const AccountView: React.FC<AccountViewProps> = ({
   onClose,
@@ -872,35 +873,10 @@ export const AccountView: React.FC<AccountViewProps> = ({
         {/* TAB 5: RECENTLY VIEWED                                      */}
         {/* ----------------------------------------------------------- */}
         {activeTab === 'recently_viewed' && (
-          <div className="space-y-4">
-            <h3 className="text-base font-bold text-slate-900">Recently Viewed Fragrances</h3>
-            {recentProducts.length === 0 ? (
-              <div className="bg-white rounded-2xl p-10 border border-slate-100 text-center text-slate-400">
-                <div className="w-10 h-10 mx-auto mb-3 text-slate-300">
-                  <svg className="w-full h-full fill-none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-                <p className="text-xs text-slate-500">Products you explore will automatically appear here for quick access.</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {recentProducts.map((p) => (
-                  <div key={p.id} className="bg-white p-4 rounded-2xl border border-slate-100 shadow-2xs">
-                    <img
-                      src={p.image}
-                      alt={p.name}
-                      loading="lazy"
-                      decoding="async"
-                      className="w-full h-36 object-cover rounded-xl mb-3"
-                    />
-                    <h4 className="font-serif font-bold text-sm text-slate-900">{p.name}</h4>
-                    <p className="text-xs text-slate-500">Rs.{p.price.toLocaleString('en-IN')}</p>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+          <RecentlyViewedTab
+            onAddToCart={onAddToCart}
+            onShopNow={onShopNow}
+          />
         )}
 
         {/* ----------------------------------------------------------- */}

@@ -107,7 +107,7 @@ export const MenuDrawer: React.FC<MenuDrawerProps> = ({
     { name: 'Collector\'s Edition', hasArrow: true },
     { name: 'Combo', hasArrow: true },
     { name: 'My Closet (4x10ml)', hasArrow: false, href: '/collections/travel-set' },
-    { name: 'NEESH Gift Sets', hasArrow: false, href: '/collections/gift-set' },
+    { name: 'BakhoorBliss Gift Sets', hasArrow: false, href: '/collections/gift-set' },
     { name: 'Our Story', hasArrow: false, href: '/#heritage' },
   ];
 
