@@ -7,7 +7,7 @@ import { slugify } from '../../utils/slug';
 import type { Product } from '../../types';
 
 interface RecentlyViewedTabProps {
-  onAddToCart?: (product: Product, size?: string) => void;
+  onAddToCart?: (product: Product, size: string) => void;
   onShopNow?: () => void;
 }
 
