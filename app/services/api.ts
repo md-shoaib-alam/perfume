@@ -435,12 +435,12 @@ export const api = {
     return await res.json();
   },
 
-  async updateOrderStatus(id: string, status: string, trackingNumber?: string): Promise<any> {
+  async updateOrderStatus(id: string, status: string, trackingNumber?: string, trackingUrl?: string): Promise<any> {
     try {
       const res = await fetch('/api/orders', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, status, trackingNumber })
+        body: JSON.stringify({ id, status, trackingNumber, trackingUrl })
       });
       if (res.ok) {
         return await res.json();
@@ -450,13 +450,17 @@ export const api = {
     }
 
     try {
+      const payload: any = { status };
+      if (trackingNumber !== undefined) payload.trackingNumber = trackingNumber;
+      if (trackingUrl !== undefined) payload.trackingUrl = trackingUrl;
+
       const doc = await databases.updateDocument(
         APPWRITE_DATABASE_ID,
         'orders',
         id,
-        { status, trackingNumber }
+        payload
       );
-      return { id: doc.$id, status: doc.status, trackingNumber: (doc as any).trackingNumber };
+      return { id: doc.$id, status: doc.status, trackingNumber: (doc as any).trackingNumber, trackingUrl: (doc as any).trackingUrl };
     } catch (err: any) {
       console.error('Appwrite updateOrderStatus error:', err);
       throw new Error(err.message || 'Failed to update order status');

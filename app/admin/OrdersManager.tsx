@@ -8,6 +8,13 @@ export const OrdersManager: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
 
+  // Edit fields for selected order modal
+  const [modalStatus, setModalStatus] = useState('');
+  const [modalTrackingNumber, setModalTrackingNumber] = useState('');
+  const [modalTrackingUrl, setModalTrackingUrl] = useState('');
+  const [isSavingModal, setIsSavingModal] = useState(false);
+  const [modalSuccessMsg, setModalSuccessMsg] = useState('');
+
   const loadOrders = async () => {
     setLoading(true);
     try {
@@ -22,25 +29,63 @@ export const OrdersManager: React.FC = () => {
     loadOrders();
   }, []);
 
+  useEffect(() => {
+    if (selectedOrder) {
+      setModalStatus(selectedOrder.orderStatus || selectedOrder.status || 'Processing');
+      setModalTrackingNumber(selectedOrder.trackingNumber || '');
+      setModalTrackingUrl(selectedOrder.trackingUrl || selectedOrder.trackingLink || '');
+      setModalSuccessMsg('');
+    }
+  }, [selectedOrder]);
+
   const handleStatusChange = async (orderId: string, newStatus: string) => {
     await api.updateOrderStatus(orderId, newStatus);
     await loadOrders();
   };
 
+  const handleSaveOrderTracking = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedOrder) return;
+    setIsSavingModal(true);
+    setModalSuccessMsg('');
+    try {
+      const orderId = selectedOrder._id || selectedOrder.id || selectedOrder.orderNumber;
+      await api.updateOrderStatus(orderId, modalStatus, modalTrackingNumber, modalTrackingUrl);
+      setModalSuccessMsg('Order status and live tracking URL updated successfully!');
+      await loadOrders();
+      // Update local selectedOrder state
+      setSelectedOrder((prev: any) => prev ? {
+        ...prev,
+        status: modalStatus,
+        orderStatus: modalStatus,
+        trackingNumber: modalTrackingNumber,
+        trackingUrl: modalTrackingUrl
+      } : null);
+    } catch (err: any) {
+      alert(err.message || 'Failed to update tracking details');
+    } finally {
+      setIsSavingModal(false);
+    }
+  };
+
   const filteredOrders = orders.filter((o) => {
     if (statusFilter === 'all') return true;
-    return (o.orderStatus || 'Processing') === statusFilter;
+    const s = (o.orderStatus || o.status || 'Processing').toLowerCase();
+    return s === statusFilter.toLowerCase();
   });
 
   const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'Delivered':
+    const s = (status || '').toLowerCase();
+    switch (s) {
+      case 'delivered':
         return 'bg-emerald-100 text-emerald-800 border-emerald-200';
-      case 'Shipped':
+      case 'in_transit':
+      case 'in transit':
+      case 'shipped':
         return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'Processing':
+      case 'processing':
         return 'bg-amber-100 text-amber-800 border-amber-200';
-      case 'Cancelled':
+      case 'cancelled':
         return 'bg-red-100 text-red-800 border-red-200';
       default:
         return 'bg-slate-100 text-slate-800 border-slate-200';
@@ -53,17 +98,17 @@ export const OrdersManager: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-xl border border-slate-200 shadow-xs">
         <div>
           <h2 className="text-xl font-serif font-bold text-slate-900">Customer Orders Pipeline</h2>
-          <p className="text-xs text-slate-500">Track shipments, dispatch packages, and view order details.</p>
+          <p className="text-xs text-slate-500">Track shipments, dispatch packages, and update live tracking URLs.</p>
         </div>
 
         {/* Filter Pills */}
         <div className="flex flex-wrap gap-2">
-          {['all', 'Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled'].map((st) => (
+          {['all', 'Pending', 'Processing', 'In Transit', 'Shipped', 'Delivered', 'Cancelled'].map((st) => (
             <button
               key={st}
               onClick={() => setStatusFilter(st)}
-              className={`px-3 py-1.5 rounded-full text-xs font-semibold capitalize transition-all ${
-                statusFilter === st
+              className={`px-3 py-1.5 rounded-full text-xs font-semibold capitalize transition-all cursor-pointer ${
+                statusFilter.toLowerCase() === st.toLowerCase()
                   ? 'bg-slate-900 text-white shadow-xs'
                   : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
               }`}
@@ -115,14 +160,15 @@ export const OrdersManager: React.FC = () => {
 
                 {/* Status Dropdown */}
                 <select
-                  value={ord.orderStatus || 'Processing'}
+                  value={ord.orderStatus || ord.status || 'Processing'}
                   onChange={(e) => handleStatusChange(ord._id || ord.orderNumber, e.target.value)}
                   className={`text-[11px] font-bold px-2.5 py-1 rounded-full border focus:outline-none cursor-pointer ${getStatusBadge(
-                    ord.orderStatus || 'Processing'
+                    ord.orderStatus || ord.status || 'Processing'
                   )}`}
                 >
                   <option value="Pending">Pending</option>
                   <option value="Processing">Processing</option>
+                  <option value="In Transit">In Transit</option>
                   <option value="Shipped">Shipped</option>
                   <option value="Delivered">Delivered</option>
                   <option value="Cancelled">Cancelled</option>
@@ -135,7 +181,7 @@ export const OrdersManager: React.FC = () => {
                   onClick={() => setSelectedOrder(ord)}
                   className="w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-semibold rounded-xl transition-colors cursor-pointer text-center"
                 >
-                  View Order Details
+                  View Order & Set Tracking URL
                 </button>
               </div>
             </div>
@@ -188,14 +234,15 @@ export const OrdersManager: React.FC = () => {
                     </td>
                     <td className="px-4 py-3.5">
                       <select
-                        value={ord.orderStatus || 'Processing'}
+                        value={ord.orderStatus || ord.status || 'Processing'}
                         onChange={(e) => handleStatusChange(ord._id || ord.orderNumber, e.target.value)}
                         className={`text-xs font-semibold px-2.5 py-1 rounded-full border focus:outline-none cursor-pointer ${getStatusBadge(
-                          ord.orderStatus || 'Processing'
+                          ord.orderStatus || ord.status || 'Processing'
                         )}`}
                       >
                         <option value="Pending">Pending</option>
                         <option value="Processing">Processing</option>
+                        <option value="In Transit">In Transit</option>
                         <option value="Shipped">Shipped</option>
                         <option value="Delivered">Delivered</option>
                         <option value="Cancelled">Cancelled</option>
@@ -204,9 +251,9 @@ export const OrdersManager: React.FC = () => {
                     <td className="px-4 py-3.5 text-right">
                       <button
                         onClick={() => setSelectedOrder(ord)}
-                        className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-medium rounded transition-colors cursor-pointer"
+                        className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-medium rounded-lg transition-colors cursor-pointer"
                       >
-                        View Details
+                        View & Track
                       </button>
                     </td>
                   </tr>
@@ -217,10 +264,10 @@ export const OrdersManager: React.FC = () => {
         </div>
       </div>
 
-      {/* Order Details Modal */}
+      {/* Order Details & Tracking URL Modal */}
       {selectedOrder && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 sm:p-8 shadow-2xl space-y-5">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 sm:p-7 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center pb-3 border-b border-slate-100">
               <div>
                 <h3 className="font-serif text-lg font-bold text-slate-900">Order: {selectedOrder.orderNumber}</h3>
@@ -228,11 +275,81 @@ export const OrdersManager: React.FC = () => {
               </div>
               <button
                 onClick={() => setSelectedOrder(null)}
-                className="text-slate-400 hover:text-slate-700 text-xl font-bold"
+                className="text-slate-400 hover:text-slate-700 text-xl font-bold cursor-pointer"
               >
                 ✕
               </button>
             </div>
+
+            {/* Admin Live Tracking URL Configurator */}
+            <form onSubmit={handleSaveOrderTracking} className="bg-amber-50/60 border border-amber-200/70 p-4 rounded-xl space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-[#b88f3e] uppercase tracking-wider">
+                  Live Shipment & Tracking Setup
+                </span>
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${getStatusBadge(modalStatus)}`}>
+                  {modalStatus}
+                </span>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-700 mb-1">Order Status</label>
+                <select
+                  value={modalStatus}
+                  onChange={(e) => setModalStatus(e.target.value)}
+                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs font-medium text-slate-800 focus:outline-none focus:border-[#caa04c]"
+                >
+                  <option value="Pending">Pending</option>
+                  <option value="Processing">Processing</option>
+                  <option value="In Transit">In Transit</option>
+                  <option value="Shipped">Shipped</option>
+                  <option value="Delivered">Delivered</option>
+                  <option value="Cancelled">Cancelled</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                  Custom Live Tracking URL
+                </label>
+                <input
+                  type="url"
+                  placeholder="https://www.delhivery.com/track/package/... or https://shiprocket.co/tracking/..."
+                  value={modalTrackingUrl}
+                  onChange={(e) => setModalTrackingUrl(e.target.value)}
+                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-800 focus:outline-none focus:border-[#caa04c]"
+                />
+                <p className="text-[10px] text-slate-500 mt-1">
+                  When in transit, the user clicking &quot;Track Live&quot; opens this exact URL in a new tab.
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                  Waybill / Tracking Number (AWB)
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. NSH-EXP-98412"
+                  value={modalTrackingNumber}
+                  onChange={(e) => setModalTrackingNumber(e.target.value)}
+                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-800 focus:outline-none focus:border-[#caa04c]"
+                />
+              </div>
+
+              <div className="flex items-center justify-between pt-1">
+                {modalSuccessMsg && (
+                  <span className="text-xs text-emerald-600 font-semibold">{modalSuccessMsg}</span>
+                )}
+                <button
+                  type="submit"
+                  disabled={isSavingModal}
+                  className="ml-auto px-4 py-2 bg-[#caa04c] hover:bg-[#b88f3e] text-white text-xs font-bold rounded-lg shadow-xs transition-all cursor-pointer disabled:opacity-50"
+                >
+                  {isSavingModal ? 'Saving...' : 'Save Tracking & Status'}
+                </button>
+              </div>
+            </form>
 
             {/* Customer Info */}
             <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 text-xs space-y-1">
@@ -249,7 +366,7 @@ export const OrdersManager: React.FC = () => {
             </div>
 
             {/* Items Breakdown */}
-            <div className="space-y-2 max-h-48 overflow-y-auto">
+            <div className="space-y-2 max-h-40 overflow-y-auto">
               {selectedOrder.items?.map((it: any, i: number) => (
                 <div key={i} className="flex items-center justify-between text-xs py-2 border-b border-slate-100">
                   <div className="flex items-center gap-3">
@@ -275,12 +392,12 @@ export const OrdersManager: React.FC = () => {
             {/* Total */}
             <div className="flex justify-between items-center pt-2 text-sm font-bold text-slate-900 border-t border-slate-100">
               <span>Total Amount</span>
-              <span className="text-[#c59b48] text-base">₹{(selectedOrder.total || 0).toLocaleString('en-IN')}</span>
+              <span className="text-[#caa04c] text-base">₹{(selectedOrder.total || 0).toLocaleString('en-IN')}</span>
             </div>
 
             <button
               onClick={() => setSelectedOrder(null)}
-              className="w-full py-2.5 bg-slate-900 hover:bg-black text-white text-xs font-semibold rounded-lg transition-colors"
+              className="w-full py-2.5 bg-slate-900 hover:bg-black text-white text-xs font-semibold rounded-lg transition-colors cursor-pointer"
             >
               Close
             </button>

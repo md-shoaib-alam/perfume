@@ -36,7 +36,9 @@ const formatOrderDoc = (doc: any) => {
     paymentMethod: doc.paymentMethod || parsedShipping?.paymentMethod || (doc.paymentStatus === 'paid' ? 'razorpay' : 'cod'),
     paymentStatus: doc.paymentStatus || 'pending',
     status: doc.status || 'pending',
+    orderStatus: doc.status || 'pending',
     trackingNumber: doc.trackingNumber || '',
+    trackingUrl: doc.trackingUrl || doc.trackingLink || '',
     createdAt: doc.$createdAt || new Date().toISOString()
   };
 };
@@ -226,12 +228,13 @@ export async function PUT(req: Request) {
   }
 
   try {
-    const { id, status, trackingNumber } = await req.json();
+    const { id, status, trackingNumber, trackingUrl } = await req.json();
     if (!id) return NextResponse.json({ error: 'Missing order id' }, { status: 400 });
 
     const cleanUpdates: any = {};
     if (status !== undefined) cleanUpdates.status = status;
     if (trackingNumber !== undefined) cleanUpdates.trackingNumber = trackingNumber;
+    if (trackingUrl !== undefined) cleanUpdates.trackingUrl = trackingUrl;
 
     const doc = await databases.updateDocument(
       APPWRITE_DATABASE_ID,
