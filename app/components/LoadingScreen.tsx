@@ -11,7 +11,7 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({ isLoading }) => {
 
   useEffect(() => {
     if (!isLoading) {
-      const timer = setTimeout(() => setShouldRender(false), 900);
+      const timer = setTimeout(() => setShouldRender(false), 2000);
       return () => clearTimeout(timer);
     }
     setShouldRender(true);
@@ -21,7 +21,7 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({ isLoading }) => {
 
   return (
     <div
-      className={`fixed inset-0 z-[99999] bg-white flex flex-col items-center justify-center select-none transition-all duration-900 ease-out ${
+      className={`fixed inset-0 z-[99999] bg-white flex flex-col items-center justify-center select-none transition-opacity duration-[2000ms] ease-in-out ${
         isLoading
           ? 'opacity-100 pointer-events-auto visible'
           : 'opacity-0 pointer-events-none invisible'
@@ -29,7 +29,7 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({ isLoading }) => {
       aria-hidden={!isLoading}
     >
       <div
-        className={`flex flex-col items-center justify-center text-center px-4 max-w-xs mx-auto transition-all duration-700 ease-out ${
+        className={`flex flex-col items-center justify-center text-center px-4 max-w-xs mx-auto transition-all duration-[1800ms] ease-out ${
           isLoading
             ? 'opacity-100 transform translate-y-0 scale-100'
             : 'opacity-0 transform -translate-y-3 scale-95'
