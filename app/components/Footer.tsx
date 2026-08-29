@@ -130,52 +130,34 @@ export const Footer: React.FC = () => {
             </div>
           </div>
 
-          {/* Column 4: Subscribe to our newsletter */}
+          {/* Column 4: Subscribe to our newsletter (Always open & visible without collapse arrow) */}
           <div className="md:col-span-3 pb-2 md:pb-0">
-            <button
-              onClick={() => toggleSection('newsletter')}
-              className="w-full flex items-center justify-between font-sans text-sm font-semibold text-white md:pointer-events-none md:cursor-default py-1"
-            >
-              <span>Subscribe to our newsletter</span>
-              <svg 
-                className={`w-3.5 h-3.5 md:hidden text-slate-400 transform transition-transform duration-300 ease-in-out ${openSections.newsletter ? 'rotate-180' : 'rotate-0'}`} 
-                fill="none" 
-                viewBox="0 0 24 24" 
-                stroke="currentColor"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </button>
+            <h4 className="font-sans text-sm font-semibold text-white py-1">
+              Subscribe to our newsletter
+            </h4>
 
-            <div 
-              className={`grid transition-all duration-300 ease-in-out md:grid-rows-[1fr] ${
-                openSections.newsletter ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0 md:opacity-100'
-              }`}
-            >
-              <div className="overflow-hidden">
-                <div className="mt-3">
-                  <p className="text-xs text-slate-300 leading-relaxed mb-4">
-                    subscribe to get notified about product launches, special offers and company news.
-                  </p>
-                  
-                  <form onSubmit={handleSubscribe} suppressHydrationWarning className="relative w-full">
-                    <input
-                      type="email"
-                      suppressHydrationWarning
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="Your Email"
-                      className="w-full bg-white text-slate-900 text-xs px-4 py-3 focus:outline-none focus:ring-1 focus:ring-[#d6a750] transition-all placeholder:text-slate-500 rounded-none shadow-sm"
-                      required
-                    />
-                    <button
-                      type="submit"
-                      className="absolute right-0 top-0 h-full px-4 bg-[#d6a750] text-slate-950 text-xs font-bold uppercase tracking-wider hover:bg-[#c59843] transition-colors cursor-pointer"
-                    >
-                      Join
-                    </button>
-                  </form>                </div>
-              </div>
+            <div className="mt-3">
+              <p className="text-xs text-slate-300 leading-relaxed mb-4">
+                subscribe to get notified about product launches, special offers and company news.
+              </p>
+              
+              <form onSubmit={handleSubscribe} suppressHydrationWarning className="relative w-full">
+                <input
+                  type="email"
+                  suppressHydrationWarning
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Your Email"
+                  className="w-full bg-white text-slate-900 text-xs px-4 py-3 focus:outline-none focus:ring-1 focus:ring-[#d6a750] transition-all placeholder:text-slate-500 rounded-none shadow-sm"
+                  required
+                />
+                <button
+                  type="submit"
+                  className="absolute right-0 top-0 h-full px-4 bg-[#d6a750] text-slate-950 text-xs font-bold uppercase tracking-wider hover:bg-[#c59843] transition-colors cursor-pointer"
+                >
+                  Join
+                </button>
+              </form>
             </div>
           </div>
 
