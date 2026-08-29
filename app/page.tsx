@@ -209,28 +209,44 @@ export default function Page() {
             ))}
           </div>
         ) : filteredProducts.length === 0 ? (
-          <div className="py-16 text-center bg-slate-50/80 rounded-2xl border border-slate-200 p-8 space-y-3">
-            <div className="w-12 h-12 rounded-full bg-amber-50 border border-amber-200/60 mx-auto flex items-center justify-center text-[#caa04c]">
-              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+          <div className="py-14 sm:py-18 px-6 text-center bg-[#faf8f5] rounded-2xl border border-amber-200/50 shadow-xs max-w-lg mx-auto space-y-4 my-6">
+            <div className="w-16 h-16 rounded-full bg-white border border-amber-200/80 shadow-xs mx-auto flex items-center justify-center text-[#caa04c]">
+              <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
               </svg>
             </div>
-            <h4 className="font-serif font-bold text-slate-800 text-base">
-              {searchQuery ? `No Fragrances Matching "${searchQuery}"` : 'No Perfumes Found'}
-            </h4>
-            <p className="text-xs text-slate-500 max-w-sm mx-auto">
-              {searchQuery
-                ? 'Try refining your search keyword or search all collections.'
-                : 'No products are currently available in this category.'}
-            </p>
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery('')}
-                className="mt-2 px-4 py-2 bg-[#d6a750] text-white font-bold text-xs uppercase tracking-wider rounded-xl cursor-pointer hover:bg-[#c49640] transition-colors"
+            
+            <div className="space-y-1.5">
+              <h3 className="font-serif font-bold text-slate-900 text-xl sm:text-2xl tracking-tight">
+                {searchQuery ? `No Fragrances Matching "${searchQuery}"` : 'No Fragrances Found'}
+              </h3>
+              <p className="text-xs sm:text-sm text-slate-500 max-w-sm mx-auto leading-relaxed">
+                {searchQuery
+                  ? 'We couldn\'t find any perfumes matching your search query. Try clearing the filter or exploring our signature lines.'
+                  : 'No products are currently available in this specific category.'}
+              </p>
+            </div>
+
+            <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery('')}
+                  className="w-full sm:w-auto px-5 py-2.5 bg-white hover:bg-slate-50 text-slate-800 text-xs font-semibold rounded-lg border border-slate-200 transition-colors cursor-pointer"
+                >
+                  Clear Search
+                </button>
+              )}
+              <Link
+                href="/collections/all"
+                className="w-full sm:w-auto px-7 py-3 bg-[#caa04c] hover:bg-[#b88f3e] text-white text-xs uppercase font-bold tracking-widest rounded-lg shadow-sm transition-colors cursor-pointer inline-flex items-center justify-center gap-2"
               >
-                Clear Search
-              </button>
-            )}
+                <span>EXPLORE ALL COLLECTIONS</span>
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                </svg>
+              </Link>
+            </div>
           </div>
         ) : (
           <div className="flex flex-nowrap overflow-x-auto snap-x snap-mandatory gap-3 sm:gap-6 pb-4 no-scrollbar sm:grid sm:grid-cols-2 lg:grid-cols-4 sm:overflow-x-visible sm:pb-0">
