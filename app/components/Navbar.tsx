@@ -51,7 +51,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
   return (
     <>
-      <header className={`sticky top-0 z-40 w-full bg-white text-slate-900 py-1 transition-all duration-300 ease-in-out transform-gpu ${
+      <header className={`sticky top-0 z-50 w-full bg-white text-slate-900 py-1 transition-all duration-300 ease-in-out transform-gpu ${
         isScrolled ? 'shadow-xs border-b border-slate-100' : ''
       }`}>
         <div className="max-w-[1680px] mx-auto w-full px-4 sm:px-6 lg:px-8 flex items-center justify-between h-14 sm:h-16 relative">

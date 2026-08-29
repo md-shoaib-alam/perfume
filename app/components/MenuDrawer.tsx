@@ -209,14 +209,14 @@ export const MenuDrawer: React.FC<MenuDrawerProps> = ({
   const topPositionClass = isScrolled ? 'top-[56px] sm:top-[64px]' : 'top-[88px] sm:top-[96px]';
 
   return (
-    <div className={`fixed inset-0 z-40 overflow-hidden font-sans transition-all duration-300 ${isOpen ? 'visible' : 'invisible delay-300'}`}>
+    <div className={`fixed inset-0 z-40 overflow-hidden font-sans transition-all duration-300 pointer-events-none ${isOpen ? 'visible' : 'invisible delay-300'}`}>
       {/* Backdrop */}
       <div 
         onClick={onClose}
-        className={`fixed ${topPositionClass} inset-x-0 bottom-0 bg-black/60 backdrop-blur-xs transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0'}`} 
+        className={`fixed ${topPositionClass} inset-x-0 bottom-0 bg-black/60 backdrop-blur-xs transition-opacity duration-300 pointer-events-auto cursor-pointer ${isOpen ? 'opacity-100' : 'opacity-0'}`} 
       />
 
-      <div className={`fixed ${topPositionClass} bottom-0 left-0 max-w-full flex transition-all duration-300 ease-in-out ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+      <div className={`fixed ${topPositionClass} bottom-0 left-0 max-w-full flex transition-all duration-300 ease-in-out pointer-events-auto ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="w-[80vw] max-w-sm bg-white text-slate-900 shadow-2xl flex flex-col overflow-hidden">
           
           {/* Sliding container holding both main menu and sub-menu */}
