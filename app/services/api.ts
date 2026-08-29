@@ -25,8 +25,10 @@ const formatProductDoc = (doc: any): Product => {
     }
   }
 
+  const stableId = doc.$id || doc.id || (doc.name ? doc.name.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-') : 'prod-' + Math.random().toString(36).substring(2, 9));
+
   return {
-    id: doc.$id || doc.id,
+    id: stableId,
     name: doc.name || 'Untitled Perfume',
     subtitle: doc.subtitle || '',
     category: doc.category || 'extrait-de-parfum',

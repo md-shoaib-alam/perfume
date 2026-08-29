@@ -3,15 +3,18 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import { AnnouncementBar } from '../../components/AnnouncementBar';
 import { Navbar } from '../../components/Navbar';
 import { Footer } from '../../components/Footer';
-import { CartDrawer } from '../../components/CartDrawer';
-import { MenuDrawer } from '../../components/MenuDrawer';
-import { AuthModal } from '../../auth/AuthModal';
-import { AccountDashboard } from '../../components/AccountDashboard';
 import { ProductCard } from '../../components/ProductCard';
 import { GoldTrustBanner } from '../../components/GoldTrustBanner';
+
+const CartDrawer = dynamic(() => import('../../components/CartDrawer').then((m) => m.CartDrawer), { ssr: false });
+const MenuDrawer = dynamic(() => import('../../components/MenuDrawer').then((m) => m.MenuDrawer), { ssr: false });
+const AuthModal = dynamic(() => import('../../auth/AuthModal').then((m) => m.AuthModal), { ssr: false });
+const AccountDashboard = dynamic(() => import('../../components/AccountDashboard').then((m) => m.AccountDashboard), { ssr: false });
+
 import { api } from '../../services/api';
 import { useCart } from '../../hooks/useCart';
 import { getProductSlug } from '../../utils/slug';
@@ -191,6 +194,10 @@ export default function CollectionPage() {
   const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin');
 
   useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  }, [slug]);
+
+  useEffect(() => {
     if (querySearch) {
       setSearchQuery(querySearch);
     }
@@ -320,14 +327,15 @@ export default function CollectionPage() {
       {/* 2. Header / Navbar */}
       <Navbar
         cartCount={totalCartCount}
-        onOpenCart={() => setIsCartOpen(true)}
+        onOpenCart={() => setIsCartOpen(!isCartOpen)}
         onOpenMenu={() => setIsMenuOpen(!isMenuOpen)}
+        isCartOpen={isCartOpen}
+        isMenuOpen={isMenuOpen}
         onOpenAuth={() => {
           setAuthMode('signin');
           setIsAuthModalOpen(true);
         }}
         onOpenAccount={() => setIsAccountOpen(true)}
-        isMenuOpen={isMenuOpen}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
         onSearchSubmit={(q) => {

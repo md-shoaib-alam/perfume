@@ -3,6 +3,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import { AnnouncementBar } from './components/AnnouncementBar';
 import { Navbar } from './components/Navbar';
 import { HeroSection } from './components/HeroSection';
@@ -15,10 +16,12 @@ import { CelebritySection } from './components/CelebritySection';
 import { CollectionsCirclesSection } from './components/CollectionsCirclesSection';
 import { GenderCampaignBanners } from './components/GenderCampaignBanners';
 import { Footer } from './components/Footer';
-import { CartDrawer } from './components/CartDrawer';
-import { MenuDrawer } from './components/MenuDrawer';
-import { AuthModal } from './auth/AuthModal';
-import { AccountDashboard } from './components/AccountDashboard';
+
+const CartDrawer = dynamic(() => import('./components/CartDrawer').then((m) => m.CartDrawer), { ssr: false });
+const MenuDrawer = dynamic(() => import('./components/MenuDrawer').then((m) => m.MenuDrawer), { ssr: false });
+const AuthModal = dynamic(() => import('./auth/AuthModal').then((m) => m.AuthModal), { ssr: false });
+const AccountDashboard = dynamic(() => import('./components/AccountDashboard').then((m) => m.AccountDashboard), { ssr: false });
+
 import { api } from './services/api';
 import { useCart } from './hooks/useCart';
 import { getProductSlug } from './utils/slug';
@@ -52,16 +55,16 @@ export default function Page() {
     clearCart
   } = useCart();
 
-  // Set Home page title
+  // Set Home page title & scroll to top
   useEffect(() => {
     document.title = 'BakhoorBliss | Luxury Extrait De Parfum & Attars';
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
   }, []);
 
-  // Initial loading timer (3-second presentation)
+  // Initial loading timer (1.5-second presentation)
   useEffect(() => {
     let isMounted = true;
-    const startTime = Date.now();
-    const MIN_LOAD_TIME_MS = 3000;
+    const MIN_LOAD_TIME_MS = 1500;
 
     const timer = setTimeout(() => {
       if (isMounted) {
@@ -113,14 +116,15 @@ export default function Page() {
       {/* 2. Header / Navbar */}
       <Navbar
         cartCount={totalCartCount}
-        onOpenCart={() => setIsCartOpen(true)}
+        onOpenCart={() => setIsCartOpen(!isCartOpen)}
         onOpenMenu={() => setIsMenuOpen(!isMenuOpen)}
+        isCartOpen={isCartOpen}
+        isMenuOpen={isMenuOpen}
         onOpenAuth={() => {
           setAuthMode('signin');
           setIsAuthModalOpen(true);
         }}
         onOpenAccount={() => setIsAccountOpen(true)}
-        isMenuOpen={isMenuOpen}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
         onSearchSubmit={(q) => {

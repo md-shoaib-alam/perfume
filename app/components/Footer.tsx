@@ -1,6 +1,7 @@
 'use client';
 import React, { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useConfirm } from './CustomConfirmModal';
 
 export const Footer: React.FC = () => {
@@ -40,11 +41,11 @@ export const Footer: React.FC = () => {
           {/* Column 1: Bakhoor Bliss Logo */}
           <div className="md:col-span-3 flex justify-start items-center pb-2 md:pb-0">
             <Link href="/" className="inline-block">
-              <img
+              <Image
                 src="/assets/bakhoorbliss.avif"
                 alt="Bakhoor Bliss"
-                loading="lazy"
-                decoding="async"
+                width={160}
+                height={80}
                 className="h-16 sm:h-20 w-auto object-contain"
               />
             </Link>

@@ -33,6 +33,7 @@ export default function AccountPage() {
 
   useEffect(() => {
     document.title = 'My Account – BakhoorBliss';
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
   }, []);
 
   useEffect(() => {
@@ -59,11 +60,12 @@ export default function AccountPage() {
       {/* 2. Top Header / Navbar */}
       <Navbar
         cartCount={totalCartCount}
-        onOpenCart={() => setIsCartOpen(true)}
+        onOpenCart={() => setIsCartOpen(!isCartOpen)}
         onOpenMenu={() => setIsMenuOpen(!isMenuOpen)}
+        isCartOpen={isCartOpen}
+        isMenuOpen={isMenuOpen}
         onOpenAuth={() => setIsAuthModalOpen(true)}
         onOpenAccount={() => {}}
-        isMenuOpen={isMenuOpen}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
         onSearchSubmit={(q) => {

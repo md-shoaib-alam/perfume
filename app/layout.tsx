@@ -6,16 +6,19 @@ import "./globals.css";
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
+  display: "swap",
 });
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+  display: "swap",
 });
 
 const playfair = Playfair_Display({
   variable: "--font-serif",
   subsets: ["latin"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -29,6 +32,7 @@ export const metadata: Metadata = {
 import { ConfirmProvider } from "./components/CustomConfirmModal";
 import { UserSyncGlobal } from "./components/UserSyncGlobal";
 import { QueryProvider } from "./providers/QueryProvider";
+import { ScrollToTop } from "./components/ScrollToTop";
 
 export default function RootLayout({
   children,
@@ -44,6 +48,7 @@ export default function RootLayout({
       <body suppressHydrationWarning className="min-h-full flex flex-col bg-white text-slate-900">
         <ClerkProvider>
           <QueryProvider>
+            <ScrollToTop />
             <UserSyncGlobal />
             <ConfirmProvider>
               {children}

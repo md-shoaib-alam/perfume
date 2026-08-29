@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { useUser } from '@clerk/nextjs';
 import { SearchDrawer } from './SearchDrawer';
 
+import Image from 'next/image';
+
 interface NavbarProps {
   cartCount: number;
   onOpenCart: () => void;
@@ -12,6 +14,7 @@ interface NavbarProps {
   onOpenAuth?: () => void;
   onOpenAccount?: () => void;
   isMenuOpen?: boolean;
+  isCartOpen?: boolean;
   searchQuery?: string;
   onSearchChange?: (query: string) => void;
   onSearchSubmit?: (query: string) => void;
@@ -24,6 +27,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenAuth,
   onOpenAccount,
   isMenuOpen = false,
+  isCartOpen = false,
   searchQuery,
   onSearchChange,
   onSearchSubmit
@@ -78,11 +82,12 @@ export const Navbar: React.FC<NavbarProps> = ({
           {/* Center: Absolute Centered Golden Logo (Matches Image 1 & Image 3) */}
           <div className="absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 z-10 flex justify-center items-center">
             <Link href="/" className="flex items-center group cursor-pointer">
-              <img 
+              <Image 
                 src="/assets/bakhoorbliss.avif" 
                 alt="Bakhoor Bliss" 
-                loading="lazy"
-                decoding="async"
+                width={120}
+                height={48}
+                priority
                 className="h-10 sm:h-12 w-auto object-contain transition-opacity duration-200 group-hover:opacity-90" 
               />
             </Link>
@@ -153,13 +158,19 @@ export const Navbar: React.FC<NavbarProps> = ({
               type="button"
               onClick={onOpenCart}
               className="relative p-1.5 transition-colors duration-200 cursor-pointer text-slate-900 hover:text-[#d6a750]"
-              title="Bag"
-              aria-label="Bag"
+              title={isCartOpen ? "Close Bag" : "Bag"}
+              aria-label={isCartOpen ? "Close Bag" : "Bag"}
             >
-              <svg className="w-6 h-6 sm:w-7 sm:h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-              </svg>
-              {cartCount > 0 && (
+              {isCartOpen ? (
+                <svg className="w-6 h-6 sm:w-7 sm:h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              ) : (
+                <svg className="w-6 h-6 sm:w-7 sm:h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                </svg>
+              )}
+              {!isCartOpen && cartCount > 0 && (
                 <span className="absolute -top-1 -right-1 bg-[#d6a750] text-slate-950 font-sans font-extrabold text-[10px] w-4.5 h-4.5 rounded-full flex items-center justify-center shadow-md">
                   {cartCount}
                 </span>

@@ -49,7 +49,7 @@ export const AnnouncementBar: React.FC = () => {
   }, [queryClient]);
 
   return (
-    <div className="announcement-bar group bg-[#caa04c] text-[#222222] font-semibold text-[11px] py-2 overflow-hidden uppercase tracking-widest whitespace-nowrap block w-full select-none cursor-pointer relative">
+    <div className="announcement-bar group bg-[#caa04c] text-[#222222] font-semibold text-[11px] py-2 overflow-hidden uppercase tracking-widest whitespace-nowrap block w-full select-none cursor-pointer relative min-h-[32px] sm:min-h-[34px]">
       <div className="flex w-max animate-marquee-slow group-hover:[animation-play-state:paused]">
         {/* Track 1 */}
         <div className="flex shrink-0 items-center">

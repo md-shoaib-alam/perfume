@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useClerk, useUser } from '@clerk/nextjs';
 import { api } from '@/app/services/api';
@@ -395,11 +396,12 @@ export default function CustomSignInPage() {
       <div className="min-h-screen bg-[#faf9f6] flex flex-col justify-between items-center selection:bg-[#d6a750] selection:text-white">
         <header className="px-6 py-6 max-w-7xl mx-auto w-full flex items-center justify-between z-10">
           <Link href="/" className="flex items-center gap-2 group cursor-pointer">
-            <img 
+            <Image 
               src="/assets/bakhoorbliss.avif" 
               alt="Bakhoor Bliss" 
-              loading="lazy"
-              decoding="async"
+              width={120}
+              height={40}
+              priority
               className="h-10 w-auto object-contain" 
             />
           </Link>
@@ -430,11 +432,12 @@ export default function CustomSignInPage() {
       <div className="min-h-screen bg-[#faf9f6] text-slate-900 flex flex-col justify-between selection:bg-[#d6a750] selection:text-white relative">
         <header className="px-6 py-6 max-w-7xl mx-auto w-full flex items-center justify-between z-10">
         <Link href="/" className="flex items-center gap-2 group cursor-pointer">
-          <img 
+          <Image 
             src="/assets/bakhoorbliss.avif" 
             alt="Bakhoor Bliss" 
-            loading="lazy"
-            decoding="async"
+            width={120}
+            height={40}
+            priority
             className="h-10 w-auto object-contain" 
           />
         </Link>

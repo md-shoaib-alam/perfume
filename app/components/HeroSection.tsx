@@ -102,7 +102,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onShopNow }) => {
       onMouseLeave={() => setIsHovered(false)}
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
-      className="relative w-full bg-black overflow-hidden border-b border-[#b69254]/30 select-none group"
+      className="relative w-full bg-black overflow-hidden border-b border-[#b69254]/30 select-none group min-h-[340px] sm:min-h-[460px] md:min-h-[560px]"
     >
       {/* Sliding Track */}
       <div

@@ -3,15 +3,18 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import { AnnouncementBar } from '../../components/AnnouncementBar';
 import { Navbar } from '../../components/Navbar';
 import { Footer } from '../../components/Footer';
-import { CartDrawer } from '../../components/CartDrawer';
-import { MenuDrawer } from '../../components/MenuDrawer';
-import { AuthModal } from '../../auth/AuthModal';
-import { AccountDashboard } from '../../components/AccountDashboard';
 import { ProductCard } from '../../components/ProductCard';
 import { GoldTrustBanner } from '../../components/GoldTrustBanner';
+
+const CartDrawer = dynamic(() => import('../../components/CartDrawer').then((m) => m.CartDrawer), { ssr: false });
+const MenuDrawer = dynamic(() => import('../../components/MenuDrawer').then((m) => m.MenuDrawer), { ssr: false });
+const AuthModal = dynamic(() => import('../../auth/AuthModal').then((m) => m.AuthModal), { ssr: false });
+const AccountDashboard = dynamic(() => import('../../components/AccountDashboard').then((m) => m.AccountDashboard), { ssr: false });
+
 import { api } from '../../services/api';
 import { useCart } from '../../hooks/useCart';
 import { useConfirm } from '../../components/CustomConfirmModal';
@@ -83,7 +86,10 @@ export default function ProductDetailPage() {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
   const [isAccountOpen, setIsAccountOpen] = useState<boolean>(false);
   const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin');
-  const [searchQuery, setSearchQuery] = useState<string>('');
+  // Reset scroll to top on navigation to product
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  }, [productId]);
 
   // Sync selected image and recently viewed when product is ready
   useEffect(() => {
@@ -198,8 +204,10 @@ export default function ProductDetailPage() {
         <AnnouncementBar />
         <Navbar
           cartCount={totalCartCount}
-          onOpenCart={() => setIsCartOpen(true)}
-          onOpenMenu={() => setIsMenuOpen(true)}
+          onOpenCart={() => setIsCartOpen(!isCartOpen)}
+          onOpenMenu={() => setIsMenuOpen(!isMenuOpen)}
+          isCartOpen={isCartOpen}
+          isMenuOpen={isMenuOpen}
           onOpenAuth={() => {
             setAuthMode('signin');
             setIsAuthModalOpen(true);
@@ -227,8 +235,10 @@ export default function ProductDetailPage() {
         <AnnouncementBar />
         <Navbar
           cartCount={totalCartCount}
-          onOpenCart={() => setIsCartOpen(true)}
-          onOpenMenu={() => setIsMenuOpen(true)}
+          onOpenCart={() => setIsCartOpen(!isCartOpen)}
+          onOpenMenu={() => setIsMenuOpen(!isMenuOpen)}
+          isCartOpen={isCartOpen}
+          isMenuOpen={isMenuOpen}
           onOpenAuth={() => {
             setAuthMode('signin');
             setIsAuthModalOpen(true);
@@ -266,14 +276,15 @@ export default function ProductDetailPage() {
         <AnnouncementBar />
       <Navbar
         cartCount={totalCartCount}
-        onOpenCart={() => setIsCartOpen(true)}
+        onOpenCart={() => setIsCartOpen(!isCartOpen)}
         onOpenMenu={() => setIsMenuOpen(!isMenuOpen)}
+        isCartOpen={isCartOpen}
+        isMenuOpen={isMenuOpen}
         onOpenAuth={() => {
           setAuthMode('signin');
           setIsAuthModalOpen(true);
         }}
         onOpenAccount={() => setIsAccountOpen(true)}
-        isMenuOpen={isMenuOpen}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
         onSearchSubmit={(q) => {

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
 import { api } from '../services/api';
@@ -269,11 +270,12 @@ export const SearchDrawer: React.FC<SearchDrawerProps> = ({
             onClick={onClose}
             className="shrink-0 flex items-center cursor-pointer py-1"
           >
-            <img 
+            <Image 
               src="/assets/bakhoorbliss.avif" 
               alt="Bakhoor Bliss" 
-              loading="lazy"
-              decoding="async"
+              width={120}
+              height={48}
+              priority
               className="h-10 sm:h-12 w-auto object-contain transition-transform" 
             />
           </Link>
