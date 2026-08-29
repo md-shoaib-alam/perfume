@@ -3,43 +3,32 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
 
+import { useSettingsQuery, queryKeys } from '../hooks/useQueries';
+import { useQueryClient } from '@tanstack/react-query';
+
 export const GoldTrustBanner: React.FC = () => {
-  const [claims, setClaims] = useState({
-    returnsBadgeText: '7 DAYS',
-    returnsTitle: 'No Questions Asked Returns',
-    returnsDescription: 'Applicable on first order of 100ml and 50ml perfume bottles only',
-    deliveryTitle: 'Free & Fast Delivery',
-    deliveryDescription: 'on your doorsteps in 3-5 days, with a surprise',
-    guaranteeTitle: 'The Lingering Effect You Want',
-    guaranteeDescription: 'BakhoorBliss perfumes are blended with proven ingredients to last 10+ hours (Guaranteed)'
-  });
+  const queryClient = useQueryClient();
+  const { data: settings } = useSettingsQuery();
+
+  const claims = {
+    returnsBadgeText: settings?.returnsBadgeText || '7 DAYS',
+    returnsTitle: settings?.returnsTitle || 'No Questions Asked Returns',
+    returnsDescription: settings?.returnsDescription || 'Applicable on first order of 100ml and 50ml perfume bottles only',
+    deliveryTitle: settings?.deliveryTitle || 'Free & Fast Delivery',
+    deliveryDescription: settings?.deliveryDescription || 'on your doorsteps in 3-5 days, with a surprise',
+    guaranteeTitle: settings?.guaranteeTitle || 'The Lingering Effect You Want',
+    guaranteeDescription: settings?.guaranteeDescription || 'BakhoorBliss perfumes are blended with proven ingredients to last 10+ hours (Guaranteed)'
+  };
 
   useEffect(() => {
-    const loadSettings = async () => {
-      try {
-        const settings = await api.getSettings();
-        if (settings) {
-          setClaims((prev) => ({
-            returnsBadgeText: settings.returnsBadgeText || prev.returnsBadgeText,
-            returnsTitle: settings.returnsTitle || prev.returnsTitle,
-            returnsDescription: settings.returnsDescription || prev.returnsDescription,
-            deliveryTitle: settings.deliveryTitle || prev.deliveryTitle,
-            deliveryDescription: settings.deliveryDescription || prev.deliveryDescription,
-            guaranteeTitle: settings.guaranteeTitle || prev.guaranteeTitle,
-            guaranteeDescription: settings.guaranteeDescription || prev.guaranteeDescription,
-          }));
-        }
-      } catch (err) {
-        console.warn('Failed to load trust banner settings:', err);
-      }
+    const handleUpdate = () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.settings });
     };
-
-    loadSettings();
-    window.addEventListener('neesh_settings_updated', loadSettings);
+    window.addEventListener('neesh_settings_updated', handleUpdate);
     return () => {
-      window.removeEventListener('neesh_settings_updated', loadSettings);
+      window.removeEventListener('neesh_settings_updated', handleUpdate);
     };
-  }, []);
+  }, [queryClient]);
 
   return (
     <section className="bg-[#c59b48] text-white py-6 sm:py-8 border-y border-[#b58b38]">

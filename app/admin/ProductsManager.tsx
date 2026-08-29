@@ -7,9 +7,11 @@ import { MediaUploader } from '../components/MediaUploader';
 import { useConfirm } from '../components/CustomConfirmModal';
 import { deleteMediaFromAppwrite } from '@/lib/appwrite';
 import { getProductSlug } from '../utils/slug';
-
+import { useQueryClient } from '@tanstack/react-query';
+import { queryKeys } from '../hooks/useQueries';
 
 export const ProductsManager: React.FC = () => {
+  const queryClient = useQueryClient();
   const { showConfirm, showAlert } = useConfirm();
   const [products, setProducts] = useState<Product[]>([]);
   const [collections, setCollections] = useState<any[]>([]);
@@ -87,6 +89,7 @@ export const ProductsManager: React.FC = () => {
       ]);
       setProducts(prodsData || []);
       setCollections(colsData || []);
+      queryClient.invalidateQueries({ queryKey: queryKeys.allProducts });
     } catch (err: any) {
       console.error('Failed to load products/collections:', err);
     } finally {

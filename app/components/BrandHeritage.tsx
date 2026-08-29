@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { api } from '../services/api';
 
 export interface HeritageContent {
@@ -31,40 +31,39 @@ const DEFAULT_HERITAGE: HeritageContent = {
   ctaLink: '#bestsellers',
 };
 
+import { useSettingsQuery, queryKeys } from '../hooks/useQueries';
+import { useQueryClient } from '@tanstack/react-query';
+
 export const BrandHeritage: React.FC = () => {
-  const [content, setContent] = useState<HeritageContent>(DEFAULT_HERITAGE);
+  const queryClient = useQueryClient();
+  const { data: settings } = useSettingsQuery();
+
+  const content: HeritageContent = useMemo(() => {
+    if (!settings) return DEFAULT_HERITAGE;
+    return {
+      badge: settings.heritageBadge || DEFAULT_HERITAGE.badge,
+      title: settings.heritageTitle || DEFAULT_HERITAGE.title,
+      titleHighlight: settings.heritageTitleHighlight || DEFAULT_HERITAGE.titleHighlight,
+      narrative: settings.heritageNarrative || DEFAULT_HERITAGE.narrative,
+      image: settings.heritageImage || DEFAULT_HERITAGE.image,
+      concentrationValue: settings.heritageConcentrationValue || DEFAULT_HERITAGE.concentrationValue,
+      concentrationLabel: settings.heritageConcentrationLabel || DEFAULT_HERITAGE.concentrationLabel,
+      macerationValue: settings.heritageMacerationValue || DEFAULT_HERITAGE.macerationValue,
+      macerationLabel: settings.heritageMacerationLabel || DEFAULT_HERITAGE.macerationLabel,
+      ctaText: settings.heritageCtaText || DEFAULT_HERITAGE.ctaText,
+      ctaLink: settings.heritageCtaLink || DEFAULT_HERITAGE.ctaLink,
+    };
+  }, [settings]);
 
   useEffect(() => {
-    const load = async () => {
-      try {
-        const settings = await api.getSettings();
-        if (settings) {
-          setContent({
-            badge: settings.heritageBadge || DEFAULT_HERITAGE.badge,
-            title: settings.heritageTitle || DEFAULT_HERITAGE.title,
-            titleHighlight: settings.heritageTitleHighlight || DEFAULT_HERITAGE.titleHighlight,
-            narrative: settings.heritageNarrative || DEFAULT_HERITAGE.narrative,
-            image: settings.heritageImage || DEFAULT_HERITAGE.image,
-            concentrationValue: settings.heritageConcentrationValue || DEFAULT_HERITAGE.concentrationValue,
-            concentrationLabel: settings.heritageConcentrationLabel || DEFAULT_HERITAGE.concentrationLabel,
-            macerationValue: settings.heritageMacerationValue || DEFAULT_HERITAGE.macerationValue,
-            macerationLabel: settings.heritageMacerationLabel || DEFAULT_HERITAGE.macerationLabel,
-            ctaText: settings.heritageCtaText || DEFAULT_HERITAGE.ctaText,
-            ctaLink: settings.heritageCtaLink || DEFAULT_HERITAGE.ctaLink,
-          });
-        }
-      } catch (e) {
-        console.warn('Could not load heritage content from Appwrite:', e);
-      }
+    const handleUpdate = () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.settings });
     };
-    load();
-    window.addEventListener('focus', load);
-    window.addEventListener('neesh_settings_updated', load);
+    window.addEventListener('neesh_settings_updated', handleUpdate);
     return () => {
-      window.removeEventListener('focus', load);
-      window.removeEventListener('neesh_settings_updated', load);
+      window.removeEventListener('neesh_settings_updated', handleUpdate);
     };
-  }, []);
+  }, [queryClient]);
 
   return (
     <section className="py-24 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 border-t border-amber-900/30">

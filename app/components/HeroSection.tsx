@@ -16,28 +16,26 @@ interface HeroSectionProps {
   onShopNow: () => void;
 }
 
+import { useHeroSlidesQuery, queryKeys } from '../hooks/useQueries';
+import { useQueryClient } from '@tanstack/react-query';
+
 export const HeroSection: React.FC<HeroSectionProps> = ({ onShopNow }) => {
-  const [slides, setSlides] = useState<HeroSlide[]>([]);
+  const queryClient = useQueryClient();
+  const { data: slides = [] } = useHeroSlidesQuery();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
   const touchStartX = useRef<number>(0);
 
-  // Load slides dynamically from Appwrite
+  // Invalidate on admin updates
   useEffect(() => {
-    const loadSlides = async () => {
-      try {
-        const data = await api.getHeroSlides();
-        if (data && data.length > 0) {
-          setSlides(data);
-        }
-      } catch (e) {}
+    const handleUpdate = () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.heroSlides });
     };
-    loadSlides();
-    window.addEventListener('neesh_hero_updated', loadSlides);
+    window.addEventListener('neesh_hero_updated', handleUpdate);
     return () => {
-      window.removeEventListener('neesh_hero_updated', loadSlides);
+      window.removeEventListener('neesh_hero_updated', handleUpdate);
     };
-  }, []);
+  }, [queryClient]);
 
   // Automatic slide interval (every 5.5 seconds)
   useEffect(() => {

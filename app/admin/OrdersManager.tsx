@@ -240,12 +240,15 @@ export const OrdersManager: React.FC = () => {
                           ord.orderStatus || ord.status || 'Processing'
                         )}`}
                       >
-                        <option value="Pending">Pending</option>
-                        <option value="Processing">Processing</option>
-                        <option value="In Transit">In Transit</option>
+                        <option value="Order Placed">Order Placed</option>
+                        <option value="Packed">Packed</option>
                         <option value="Shipped">Shipped</option>
+                        <option value="Out for Delivery">Out for Delivery</option>
                         <option value="Delivered">Delivered</option>
                         <option value="Cancelled">Cancelled</option>
+                        <option value="Pending">Pending (Legacy)</option>
+                        <option value="Processing">Processing (Legacy)</option>
+                        <option value="In Transit">In Transit (Legacy)</option>
                       </select>
                     </td>
                     <td className="px-4 py-3.5 text-right">
@@ -299,12 +302,15 @@ export const OrdersManager: React.FC = () => {
                   onChange={(e) => setModalStatus(e.target.value)}
                   className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs font-medium text-slate-800 focus:outline-none focus:border-[#caa04c]"
                 >
-                  <option value="Pending">Pending</option>
-                  <option value="Processing">Processing</option>
-                  <option value="In Transit">In Transit</option>
+                  <option value="Order Placed">Order Placed</option>
+                  <option value="Packed">Packed</option>
                   <option value="Shipped">Shipped</option>
+                  <option value="Out for Delivery">Out for Delivery</option>
                   <option value="Delivered">Delivered</option>
                   <option value="Cancelled">Cancelled</option>
+                  <option value="Pending">Pending (Legacy)</option>
+                  <option value="Processing">Processing (Legacy)</option>
+                  <option value="In Transit">In Transit (Legacy)</option>
                 </select>
               </div>
 

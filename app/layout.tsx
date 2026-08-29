@@ -28,6 +28,7 @@ export const metadata: Metadata = {
 
 import { ConfirmProvider } from "./components/CustomConfirmModal";
 import { UserSyncGlobal } from "./components/UserSyncGlobal";
+import { QueryProvider } from "./providers/QueryProvider";
 
 export default function RootLayout({
   children,
@@ -42,10 +43,12 @@ export default function RootLayout({
     >
       <body suppressHydrationWarning className="min-h-full flex flex-col bg-white text-slate-900">
         <ClerkProvider>
-          <UserSyncGlobal />
-          <ConfirmProvider>
-            {children}
-          </ConfirmProvider>
+          <QueryProvider>
+            <UserSyncGlobal />
+            <ConfirmProvider>
+              {children}
+            </ConfirmProvider>
+          </QueryProvider>
         </ClerkProvider>
       </body>
     </html>

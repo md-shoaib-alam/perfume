@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { api } from '../services/api';
 
 const DEFAULT_MESSAGES = [
@@ -19,31 +19,34 @@ const StarSeparator: React.FC = () => (
   </svg>
 );
 
+import { useSettingsQuery, queryKeys } from '../hooks/useQueries';
+import { useQueryClient } from '@tanstack/react-query';
+
 export const AnnouncementBar: React.FC = () => {
-  const [messages, setMessages] = useState<string[]>(DEFAULT_MESSAGES);
+  const queryClient = useQueryClient();
+  const { data: settings } = useSettingsQuery();
+
+  const messages = useMemo(() => {
+    if (settings?.announcementText) {
+      return [
+        settings.announcementText,
+        "FREE SHIPPING ON ORDERS OVER RS. 1,500",
+        "LUXURY EXTRAIT DE PARFUM | 10+ HOURS LINGERING GUARANTEE",
+        "7 DAYS NO QUESTIONS ASKED RETURNS ON 100ML & 50ML",
+      ];
+    }
+    return DEFAULT_MESSAGES;
+  }, [settings]);
 
   useEffect(() => {
-    const load = async () => {
-      try {
-        const settings = await api.getSettings();
-        if (settings?.announcementText) {
-          setMessages([
-            settings.announcementText,
-            "FREE SHIPPING ON ORDERS OVER RS. 1,500",
-            "LUXURY EXTRAIT DE PARFUM | 10+ HOURS LINGERING GUARANTEE",
-            "7 DAYS NO QUESTIONS ASKED RETURNS ON 100ML & 50ML",
-          ]);
-        }
-      } catch (e) {}
+    const handleUpdate = () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.settings });
     };
-    load();
-    window.addEventListener('focus', load);
-    window.addEventListener('neesh_settings_updated', load);
+    window.addEventListener('neesh_settings_updated', handleUpdate);
     return () => {
-      window.removeEventListener('focus', load);
-      window.removeEventListener('neesh_settings_updated', load);
+      window.removeEventListener('neesh_settings_updated', handleUpdate);
     };
-  }, []);
+  }, [queryClient]);
 
   return (
     <div className="announcement-bar group bg-[#caa04c] text-[#222222] font-semibold text-[11px] py-2 overflow-hidden uppercase tracking-widest whitespace-nowrap block w-full select-none cursor-pointer relative">

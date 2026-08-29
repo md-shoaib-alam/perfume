@@ -16,17 +16,17 @@ export const OrdersTab: React.FC<OrdersTabProps> = ({
   onClose
 }) => {
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
+    <div className="space-y-3 sm:space-y-4">
+      <div>
+        <div className="flex items-center justify-between gap-2">
           <h3 className="text-sm sm:text-base font-bold text-slate-900">Order History & Tracking</h3>
-          <p className="text-xs text-slate-400">Track shipments, view itemized invoices, and delivery status.</p>
+          {orders.length > 0 && (
+            <span className="text-xs font-bold text-[#b88f3e] bg-amber-50 px-2.5 sm:px-3 py-1 rounded-full border border-amber-200/50 whitespace-nowrap shrink-0">
+              {orders.length} {orders.length === 1 ? 'Order' : 'Orders'}
+            </span>
+          )}
         </div>
-        {orders.length > 0 && (
-          <span className="text-xs font-bold text-[#b88f3e] bg-amber-50 px-3 py-1 rounded-full border border-amber-200/50">
-            {orders.length} {orders.length === 1 ? 'Order' : 'Orders'}
-          </span>
-        )}
+        <p className="text-xs text-slate-400 mt-1 hidden sm:block">Track shipments, view itemized invoices, and delivery status.</p>
       </div>
 
       {orders.length === 0 ? (
@@ -62,45 +62,53 @@ export const OrdersTab: React.FC<OrdersTabProps> = ({
               <div
                 key={ord._id || ord.id || i}
                 onClick={() => onSelectOrder(ord)}
-                className="bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-100 shadow-2xs hover:border-[#caa04c]/60 hover:shadow-xs transition-all cursor-pointer flex items-center justify-between gap-3 sm:gap-4 group"
+                className="bg-white p-2.5 sm:p-3.5 rounded-2xl border border-slate-100 shadow-2xs hover:border-[#caa04c]/60 hover:shadow-xs transition-all cursor-pointer flex flex-col gap-2.5 sm:gap-3 group"
               >
-                {/* Left: Box Icon in rounded container + Order Number & Date */}
-                <div className="flex items-center gap-2.5 sm:gap-3.5 min-w-0 flex-1">
-                  <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-[#d09e44] shrink-0 group-hover:bg-amber-50/60 group-hover:border-amber-200/50 transition-colors">
-                    <svg className="w-4 h-4 sm:w-5 sm:h-5 fill-none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                    </svg>
+                {/* Row 1: Order Info (left) + Status Badge (right) */}
+                <div className="flex items-center justify-between gap-2">
+                  {/* Left: Box Icon in rounded container + Order Number & Date */}
+                  <div className="flex items-center gap-2 min-w-0 flex-1">
+                    <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center text-[#d09e44] shrink-0 group-hover:bg-amber-50/60 group-hover:border-amber-200/50 transition-colors">
+                      <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                      </svg>
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm sm:text-base font-bold text-slate-900 truncate group-hover:text-[#b88f3e] transition-colors leading-tight">
+                        Order #{orderNum}
+                      </p>
+                      <p className="text-xs sm:text-sm text-slate-400 font-normal leading-tight">
+                        {dateStr}
+                      </p>
+                    </div>
                   </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs sm:text-sm font-bold text-slate-900 truncate group-hover:text-[#b88f3e] transition-colors">
-                      Order #{orderNum}
-                    </p>
-                    <p className="text-[10px] sm:text-[11px] text-slate-400 font-normal">
-                      {dateStr}
-                    </p>
-                  </div>
+
+                  {/* Right: Status Badge */}
+                  <span className={`px-2 sm:px-2.5 py-0.5 text-[9px] sm:text-xs font-bold rounded-full uppercase tracking-wider whitespace-nowrap border leading-tight shrink-0 ${
+                    rawStatus === 'delivered'
+                      ? 'bg-emerald-50 text-emerald-700 border-emerald-200/60'
+                      : rawStatus === 'out for delivery' || rawStatus === 'out_for_delivery'
+                      ? 'bg-indigo-50 text-indigo-700 border-indigo-200/60'
+                      : rawStatus === 'shipped' || rawStatus === 'in_transit' || rawStatus === 'in transit'
+                      ? 'bg-blue-50 text-blue-700 border-blue-200/60'
+                      : rawStatus === 'packed' || rawStatus === 'packaged'
+                      ? 'bg-purple-50 text-purple-700 border-purple-200/60'
+                      : rawStatus === 'cancelled'
+                      ? 'bg-rose-50 text-rose-700 border-rose-200/60'
+                      : 'bg-amber-50/80 text-[#b88f3e] border-amber-200/60'
+                  }`}>
+                    {ord.orderStatus || ord.status || 'ORDER PLACED'}
+                  </span>
                 </div>
 
-                {/* Right: Price + Status Badge + Chevron Icon */}
-                <div className="flex items-center gap-2 sm:gap-4 shrink-0">
-                  <span className="text-xs sm:text-sm font-bold text-slate-800 whitespace-nowrap">
+                {/* Row 2: Price + Arrow (both right on desktop) */}
+                <div className="flex items-center justify-between gap-2 sm:justify-end sm:gap-3">
+                  <span className="text-sm sm:text-base font-bold text-slate-800 whitespace-nowrap leading-tight">
                     Rs.{(Number(ord.total || ord.totalAmount) || 0).toLocaleString('en-IN')}
                   </span>
-                  
-                  <span className={`px-2.5 sm:px-3 py-0.5 sm:py-1 text-[9px] sm:text-[11px] font-bold rounded-full uppercase tracking-wider whitespace-nowrap ${
-                    rawStatus === 'delivered'
-                      ? 'bg-emerald-50 text-emerald-700'
-                      : rawStatus === 'shipped' || rawStatus === 'in_transit'
-                      ? 'bg-blue-50 text-blue-700'
-                      : rawStatus === 'cancelled'
-                      ? 'bg-red-50 text-red-700'
-                      : 'bg-emerald-50 text-emerald-700'
-                  }`}>
-                    {ord.orderStatus || ord.status || 'PENDING'}
-                  </span>
 
-                  <span className="text-slate-400 group-hover:text-[#caa04c] transition-colors hidden sm:inline">
-                    <svg className="w-4 h-4 fill-none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <span className="text-slate-400 group-hover:text-[#caa04c] transition-colors shrink-0">
+                    <svg className="w-3.5 h-3.5 fill-none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                     </svg>
                   </span>

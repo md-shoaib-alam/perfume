@@ -20,7 +20,11 @@ import { addRecentlyViewed } from '../../utils/recentlyViewed';
 import type { Product, Review } from '../../types';
 import { resolveProductSizeOptions, resolveProductUnitPrice } from '@/lib/pricing';
 
+import { useProductsQuery, useProductQuery, useReviewsQuery, queryKeys } from '../../hooks/useQueries';
+import { useQueryClient } from '@tanstack/react-query';
+
 export default function ProductDetailPage() {
+  const queryClient = useQueryClient();
   const params = useParams();
   const router = useRouter();
   const rawId = (params?.id as string) || '';
@@ -38,10 +42,30 @@ export default function ProductDetailPage() {
     clearCart
   } = useCart();
 
-  const [product, setProduct] = useState<Product | null>(null);
-  const [allProducts, setAllProducts] = useState<Product[]>([]);
-  const [reviews, setReviews] = useState<Review[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  // TanStack Queries (Cached with 0ms redundant DB hits)
+  const { data: allProducts = [] } = useProductsQuery();
+  const { data: queryProduct, isLoading: isProductLoading } = useProductQuery(productId);
+  
+  // Resolve product from query or fallback catalog search
+  const product = useMemo(() => {
+    if (queryProduct) return queryProduct;
+    if (!productId || allProducts.length === 0) return null;
+    const normalizedParam = slugify(productId);
+    return (
+      allProducts.find(
+        (p) =>
+          p.id === productId ||
+          slugify(p.name) === normalizedParam ||
+          slugify(p.name) === slugify(productId)
+      ) || null
+    );
+  }, [queryProduct, productId, allProducts]);
+
+  const { data: fetchedReviews = [] } = useReviewsQuery(product?.name || '');
+  const [localReviews, setLocalReviews] = useState<Review[]>([]);
+  const reviews = useMemo(() => [...localReviews, ...fetchedReviews], [localReviews, fetchedReviews]);
+
+  const loading = isProductLoading && !product;
   const [selectedImage, setSelectedImage] = useState<string>('');
   const [quantity, setQuantity] = useState<number>(1);
   const [selectedSize, setSelectedSize] = useState<string>('100ml');
@@ -61,64 +85,21 @@ export default function ProductDetailPage() {
   const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin');
   const [searchQuery, setSearchQuery] = useState<string>('');
 
-  // Fetch product, reviews, and catalog
+  // Sync selected image and recently viewed when product is ready
   useEffect(() => {
-    if (!productId) return;
-    let isMounted = true;
-    setLoading(true);
+    if (product) {
+      setSelectedImage(product.image);
+      const sizeOpts = resolveProductSizeOptions(product);
+      const defaultSize = sizeOpts.length > 0 ? sizeOpts[0].size : product.volume || '100ml';
+      setSelectedSize(defaultSize);
 
-    const loadData = async () => {
-      try {
-        const [fetchedProduct, catalog] = await Promise.all([
-          api.getProductById(productId),
-          api.getProducts().catch(() => [])
-        ]);
+      // Record into recently viewed local storage
+      addRecentlyViewed(product);
 
-        if (isMounted) {
-          setAllProducts(catalog);
-          // Match by direct response, or in catalog by slug or ID
-          const normalizedParam = slugify(productId);
-          const resolved =
-            fetchedProduct ||
-            catalog.find(
-              (p) =>
-                p.id === productId ||
-                slugify(p.name) === normalizedParam ||
-                slugify(p.name) === slugify(productId)
-            ) ||
-            null;
-          setProduct(resolved);
-
-          if (resolved) {
-            setSelectedImage(resolved.image);
-            const sizeOpts = resolveProductSizeOptions(resolved);
-            const defaultSize = sizeOpts.length > 0 ? sizeOpts[0].size : resolved.volume || '100ml';
-            setSelectedSize(defaultSize);
-
-            // Record into recently viewed local storage
-            addRecentlyViewed(resolved);
-
-            // Update browser tab title
-            document.title = `${resolved.name} – BakhoorBliss`;
-
-            // Fetch reviews
-            const fetchedReviews = await api.getReviews(resolved.name).catch(() => []);
-            setReviews(fetchedReviews);
-          }
-        }
-      } catch (err) {
-        console.warn('Failed to load product details:', err);
-      } finally {
-        if (isMounted) setLoading(false);
-      }
-    };
-
-    loadData();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [productId]);
+      // Update browser tab title
+      document.title = `${product.name} – BakhoorBliss`;
+    }
+  }, [product]);
 
   const sizeOptions = useMemo(() => {
     return product ? resolveProductSizeOptions(product) : [];
@@ -187,7 +168,8 @@ export default function ProductDetailPage() {
         date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
       });
 
-      setReviews((prev) => [created, ...prev]);
+      setLocalReviews((prev) => [created, ...prev]);
+      queryClient.invalidateQueries({ queryKey: queryKeys.reviews(product.name) });
       setIsWritingReview(false);
       setNewTitle('');
       setNewComment('');

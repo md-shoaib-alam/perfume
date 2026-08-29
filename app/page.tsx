@@ -24,11 +24,11 @@ import { useCart } from './hooks/useCart';
 import { getProductSlug } from './utils/slug';
 import type { Product } from './types';
 import { resolveProductSizeOptions, resolveProductUnitPrice } from '@/lib/pricing';
+import { useProductsQuery } from './hooks/useQueries';
 
 export default function Page() {
   const router = useRouter();
-  const [productsList, setProductsList] = useState<Product[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  const { data: queryProducts = [], isLoading: isQueryLoading } = useProductsQuery();
   const [initialLoading, setInitialLoading] = useState<boolean>(true);
   const [activeTab, setActiveTab] = useState<'For Him' | 'For Her' | 'Gift Sets'>('For Him');
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -37,6 +37,9 @@ export default function Page() {
   const [isAccountOpen, setIsAccountOpen] = useState<boolean>(false);
   const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin');
   const [selectedProductModal, setSelectedProductModal] = useState<Product | null>(null);
+
+  const productsList = queryProducts;
+  const loading = isQueryLoading;
 
   const {
     cartItems,
@@ -54,36 +57,21 @@ export default function Page() {
     document.title = 'BakhoorBliss | Luxury Extrait De Parfum & Attars';
   }, []);
 
-  // Load products dynamically in background with 3-second presentation
+  // Initial loading timer (3-second presentation)
   useEffect(() => {
     let isMounted = true;
     const startTime = Date.now();
-    const MIN_LOAD_TIME_MS = 3000; // 3 seconds minimum display
+    const MIN_LOAD_TIME_MS = 3000;
 
-    const load = async () => {
-      try {
-        const data = await api.getProducts();
-        if (isMounted && data) {
-          setProductsList(data);
-        }
-      } catch (err) {
-        console.warn('Failed to fetch live products:', err);
-      } finally {
-        const elapsed = Date.now() - startTime;
-        const remaining = Math.max(0, MIN_LOAD_TIME_MS - elapsed);
-        setTimeout(() => {
-          if (isMounted) {
-            setLoading(false);
-            setInitialLoading(false);
-          }
-        }, remaining);
+    const timer = setTimeout(() => {
+      if (isMounted) {
+        setInitialLoading(false);
       }
-    };
-
-    load();
+    }, MIN_LOAD_TIME_MS);
 
     return () => {
       isMounted = false;
+      clearTimeout(timer);
     };
   }, []);
 

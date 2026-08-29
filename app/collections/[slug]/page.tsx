@@ -155,6 +155,8 @@ const CROSS_COLLECTIONS = [
   }
 ];
 
+import { useProductsQuery, useCollectionsQuery } from '../../hooks/useQueries';
+
 export default function CollectionPage() {
   const params = useParams();
   const searchParams = useSearchParams();
@@ -174,9 +176,11 @@ export default function CollectionPage() {
     clearCart
   } = useCart();
 
-  const [productsList, setProductsList] = useState<Product[]>([]);
-  const [dbCollections, setDbCollections] = useState<any[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  const { data: queryProducts = [], isLoading: isProductsLoading } = useProductsQuery();
+  const { data: dbCollections = [], isLoading: isCollectionsLoading } = useCollectionsQuery();
+  const productsList = queryProducts;
+  const loading = (isProductsLoading || isCollectionsLoading) && productsList.length === 0;
+
   const [sortBy, setSortBy] = useState<'bestseller' | 'price-asc' | 'price-desc' | 'rating'>('bestseller');
   const [searchQuery, setSearchQuery] = useState<string>(querySearch);
 
@@ -185,35 +189,6 @@ export default function CollectionPage() {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
   const [isAccountOpen, setIsAccountOpen] = useState<boolean>(false);
   const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin');
-
-  useEffect(() => {
-    let isMounted = true;
-    setLoading(true);
-
-    const loadData = async () => {
-      try {
-        const [productsData, collectionsData] = await Promise.all([
-          api.getProducts().catch(() => []),
-          api.getCollections().catch(() => [])
-        ]);
-
-        if (isMounted) {
-          if (productsData) setProductsList(productsData);
-          if (collectionsData) setDbCollections(collectionsData);
-        }
-      } catch (err) {
-        console.warn('Failed to load collection data:', err);
-      } finally {
-        if (isMounted) setLoading(false);
-      }
-    };
-
-    loadData();
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
 
   useEffect(() => {
     if (querySearch) {

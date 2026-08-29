@@ -61,41 +61,41 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
         </h2>
 
         {/* 3 Top Metric Summary Cards (Orders, Total Spent, Wishlist) */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-4">
           {/* 1. Total Orders */}
-          <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-100 shadow-2xs flex items-center justify-between gap-2">
+          <div className="bg-white p-2.5 sm:p-5 rounded-2xl border border-slate-100 shadow-2xs flex items-center justify-between gap-2">
             <div className="min-w-0">
-              <p className="text-[11px] text-slate-400 font-medium mb-1 truncate">Total Orders</p>
-              <h4 className="text-xl sm:text-2xl font-bold text-slate-900">{userOrders.length}</h4>
+              <p className="text-[9px] sm:text-[11px] text-slate-400 font-medium mb-1 truncate">Total Orders</p>
+              <h4 className="text-lg sm:text-2xl font-bold text-slate-900">{userOrders.length}</h4>
             </div>
-            <div className="w-10 h-10 rounded-xl bg-slate-50 border border-slate-100 text-[#caa04c] flex items-center justify-center shrink-0">
-              <svg className="w-5 h-5 fill-none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-slate-50 border border-slate-100 text-[#caa04c] flex items-center justify-center shrink-0">
+              <svg className="w-4 h-4 sm:w-5 sm:h-5 fill-none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
               </svg>
             </div>
           </div>
 
-          {/* 2. Total Spent */}
-          <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-100 shadow-2xs flex items-center justify-between gap-2">
+          {/* 3. Wishlist Items (moved to row 1 on mobile) */}
+          <div className="bg-white p-2.5 sm:p-5 rounded-2xl border border-slate-100 shadow-2xs flex items-center justify-between gap-2">
             <div className="min-w-0">
-              <p className="text-[11px] text-slate-400 font-medium mb-1 truncate">Total Spent</p>
-              <h4 className="text-xl sm:text-2xl font-bold text-slate-900 truncate">Rs.{totalSpent.toLocaleString('en-IN')}</h4>
+              <p className="text-[9px] sm:text-[11px] text-slate-400 font-medium mb-1 truncate">Wishlist Items</p>
+              <h4 className="text-lg sm:text-2xl font-bold text-slate-900">{wishlist.length}</h4>
             </div>
-            <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-base shrink-0">
-              ₹
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-rose-50 text-rose-500 flex items-center justify-center shrink-0">
+              <svg className="w-4 h-4 sm:w-5 sm:h-5 fill-none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+              </svg>
             </div>
           </div>
 
-          {/* 3. Wishlist Items */}
-          <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-100 shadow-2xs flex items-center justify-between gap-2">
+          {/* 2. Total Spent (full width on mobile, normal width on desktop) */}
+          <div className="col-span-2 sm:col-span-1 bg-white p-2.5 sm:p-5 rounded-2xl border border-slate-100 shadow-2xs flex items-center justify-between gap-2">
             <div className="min-w-0">
-              <p className="text-[11px] text-slate-400 font-medium mb-1 truncate">Wishlist Items</p>
-              <h4 className="text-xl sm:text-2xl font-bold text-slate-900">{wishlist.length}</h4>
+              <p className="text-[9px] sm:text-[11px] text-slate-400 font-medium mb-1 truncate">Total Spent</p>
+              <h4 className="text-lg sm:text-2xl font-bold text-slate-900 truncate">Rs.{totalSpent.toLocaleString('en-IN')}</h4>
             </div>
-            <div className="w-10 h-10 rounded-xl bg-rose-50 text-rose-500 flex items-center justify-center shrink-0">
-              <svg className="w-5 h-5 fill-none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-              </svg>
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-sm sm:text-base shrink-0">
+              ₹
             </div>
           </div>
         </div>

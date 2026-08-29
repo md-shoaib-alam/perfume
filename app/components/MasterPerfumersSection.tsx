@@ -2,28 +2,11 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
 
-export const MasterPerfumersSection: React.FC = () => {
-  const [perfumers, setPerfumers] = useState<any[]>([]);
-  const [activeIndex, setActiveIndex] = useState(0);
-  const [loading, setLoading] = useState(true);
+import { usePerfumersQuery } from '../hooks/useQueries';
 
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const data = await api.getPerfumers();
-        setPerfumers(data || []);
-      } catch (e) {
-        console.error('Failed to load perfumers:', e);
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
-    window.addEventListener('focus', load);
-    return () => {
-      window.removeEventListener('focus', load);
-    };
-  }, []);
+export const MasterPerfumersSection: React.FC = () => {
+  const { data: perfumers = [], isLoading: loading } = usePerfumersQuery();
+  const [activeIndex, setActiveIndex] = useState(0);
 
   if (!loading && perfumers.length === 0) {
     return null;

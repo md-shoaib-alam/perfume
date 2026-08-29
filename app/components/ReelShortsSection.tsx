@@ -2,41 +2,38 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { api } from '../services/api';
 
+import { useReelsQuery, queryKeys } from '../hooks/useQueries';
+import { useQueryClient } from '@tanstack/react-query';
+
 export const ReelShortsSection: React.FC = () => {
+  const queryClient = useQueryClient();
   const scrollRef = useRef<HTMLDivElement>(null);
   const [isMouseDown, setIsMouseDown] = useState(false);
   const [startX, setStartX] = useState(0);
   const [scrollLeft, setScrollLeft] = useState(0);
 
-  const [reelsList, setReelsList] = useState<any[]>([]);
+  const { data: reelsList = [], isLoading } = useReelsQuery();
   const [logosList, setLogosList] = useState<string[]>([]);
-  const [loading, setLoading] = useState(true);
+  const loading = isLoading && reelsList.length === 0;
 
   useEffect(() => {
-    const loadData = async () => {
+    const loadLogos = async () => {
       try {
-        const [reelsData, logosData] = await Promise.all([
-          api.getReels(),
-          api.getPressLogos()
-        ]);
-        setReelsList(reelsData || []);
-        const rawLogos = logosData || [];
+        const rawLogos = (await api.getPressLogos()) || [];
         setLogosList(rawLogos.length > 0 && rawLogos.length < 12 ? [...rawLogos, ...rawLogos] : rawLogos);
-      } catch (e) {
-        console.error('Error fetching reels & press:', e);
-      } finally {
-        setLoading(false);
-      }
+      } catch (e) {}
     };
+    loadLogos();
 
-    loadData();
-    window.addEventListener('neesh_reels_updated', loadData);
-    window.addEventListener('focus', loadData);
-    return () => {
-      window.removeEventListener('neesh_reels_updated', loadData);
-      window.removeEventListener('focus', loadData);
+    const handleUpdate = () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.reels });
+      loadLogos();
     };
-  }, []);
+    window.addEventListener('neesh_reels_updated', handleUpdate);
+    return () => {
+      window.removeEventListener('neesh_reels_updated', handleUpdate);
+    };
+  }, [queryClient]);
 
   const handleMouseDown = (e: React.MouseEvent) => {
     setIsMouseDown(true);

@@ -6,8 +6,11 @@ import type { HeroSlide } from '../types';
 import { deleteMediaFromAppwrite } from '@/lib/appwrite';
 import { MediaUploader } from '../components/MediaUploader';
 import { useConfirm } from '../components/CustomConfirmModal';
+import { useQueryClient } from '@tanstack/react-query';
+import { queryKeys } from '../hooks/useQueries';
 
 export const HeroManager: React.FC = () => {
+  const queryClient = useQueryClient();
   const { showConfirm, showAlert } = useConfirm();
   const [slides, setSlides] = useState<HeroSlide[]>([]);
   const [initialSlides, setInitialSlides] = useState<HeroSlide[]>([]);
@@ -22,6 +25,7 @@ export const HeroManager: React.FC = () => {
       if (data && data.length > 0) {
         setSlides(data);
         setInitialSlides(JSON.parse(JSON.stringify(data)));
+        queryClient.invalidateQueries({ queryKey: queryKeys.heroSlides });
         return;
       }
     } catch (e) {}

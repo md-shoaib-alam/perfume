@@ -7,6 +7,8 @@ import { seedAppwriteDatabase } from '@/lib/seedAppwrite';
 import { MediaUploader } from '../components/MediaUploader';
 import { useConfirm } from '../components/CustomConfirmModal';
 import type { FragrancePyramidData, PyramidTier, NoteItem } from '../types';
+import { useQueryClient } from '@tanstack/react-query';
+import { queryKeys } from '../hooks/useQueries';
 
 const DEFAULT_FRAGRANCE_TIERS: FragrancePyramidData = {
   top: {
@@ -90,6 +92,7 @@ const DEFAULT_FRAGRANCE_TIERS: FragrancePyramidData = {
 };
 
 export const SettingsManager: React.FC = () => {
+  const queryClient = useQueryClient();
   const { showConfirm, showAlert } = useConfirm();
   const [settings, setSettings] = useState({
     announcementText: 'FLAT 15% OFF | USE CODE: LUXE15',
@@ -279,6 +282,7 @@ export const SettingsManager: React.FC = () => {
 
       setInitialFragranceTiers(JSON.parse(JSON.stringify(fragranceTiers)));
       window.dispatchEvent(new Event('neesh_settings_updated'));
+      queryClient.invalidateQueries({ queryKey: queryKeys.settings });
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
     } catch (err: any) {

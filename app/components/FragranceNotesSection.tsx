@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { api } from '../services/api';
 import type { FragrancePyramidData, PyramidTier } from '../types';
 
@@ -85,50 +85,46 @@ const INITIAL_FALLBACK_TIERS: FragrancePyramidData = {
   }
 };
 
+import { useSettingsQuery, queryKeys } from '../hooks/useQueries';
+import { useQueryClient } from '@tanstack/react-query';
+
 export const FragranceNotesSection: React.FC = () => {
+  const queryClient = useQueryClient();
   const [activeTier, setActiveTier] = useState<'top' | 'heart' | 'base'>('top');
-  const [pyramidData, setPyramidData] = useState<FragrancePyramidData>(INITIAL_FALLBACK_TIERS);
+  const { data: settings } = useSettingsQuery();
 
-  const loadDataFromAppwrite = async () => {
-    try {
-      const settings = await api.getSettings();
-      if (settings && settings.fragranceTiers) {
-        let parsed: FragrancePyramidData | null = null;
-        if (typeof settings.fragranceTiers === 'string') {
-          try {
-            parsed = JSON.parse(settings.fragranceTiers);
-          } catch (e) {
-            console.error('Failed to parse fragranceTiers JSON:', e);
-          }
-        } else if (typeof settings.fragranceTiers === 'object') {
-          parsed = settings.fragranceTiers;
-        }
-
-        if (parsed && (parsed.top || parsed.heart || parsed.base)) {
-          setPyramidData({
-            top: parsed.top || INITIAL_FALLBACK_TIERS.top,
-            heart: parsed.heart || INITIAL_FALLBACK_TIERS.heart,
-            base: parsed.base || INITIAL_FALLBACK_TIERS.base
-          });
-        }
+  const pyramidData: FragrancePyramidData = useMemo(() => {
+    if (!settings || !settings.fragranceTiers) return INITIAL_FALLBACK_TIERS;
+    let parsed: FragrancePyramidData | null = null;
+    if (typeof settings.fragranceTiers === 'string') {
+      try {
+        parsed = JSON.parse(settings.fragranceTiers);
+      } catch (e) {
+        console.error('Failed to parse fragranceTiers JSON:', e);
       }
-    } catch (err) {
-      console.warn('Could not fetch dynamic fragrance notes from Appwrite:', err);
+    } else if (typeof settings.fragranceTiers === 'object') {
+      parsed = settings.fragranceTiers;
     }
-  };
+
+    if (parsed && (parsed.top || parsed.heart || parsed.base)) {
+      return {
+        top: parsed.top || INITIAL_FALLBACK_TIERS.top,
+        heart: parsed.heart || INITIAL_FALLBACK_TIERS.heart,
+        base: parsed.base || INITIAL_FALLBACK_TIERS.base
+      };
+    }
+    return INITIAL_FALLBACK_TIERS;
+  }, [settings]);
 
   useEffect(() => {
-    loadDataFromAppwrite();
-
     const handleSettingsUpdated = () => {
-      loadDataFromAppwrite();
+      queryClient.invalidateQueries({ queryKey: queryKeys.settings });
     };
-
     window.addEventListener('neesh_settings_updated', handleSettingsUpdated);
     return () => {
       window.removeEventListener('neesh_settings_updated', handleSettingsUpdated);
     };
-  }, []);
+  }, [queryClient]);
 
   const current: PyramidTier = pyramidData[activeTier] || INITIAL_FALLBACK_TIERS[activeTier];
 

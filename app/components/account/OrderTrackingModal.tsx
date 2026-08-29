@@ -60,20 +60,21 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
   };
 
   const getTrackingStep = (status?: string) => {
-    const s = (status || '').toLowerCase();
-    if (s === 'delivered') return 4;
-    if (s === 'in_transit' || s === 'in transit' || s === 'shipped') return 3;
-    if (s === 'sent_out' || s === 'dispatched' || s === 'packaged') return 2;
-    if (s === 'processing' || s === 'confirmed' || s === 'pending') return 1;
+    const s = (status || '').toLowerCase().trim().replace(/[-_]/g, ' ');
+    if (s === 'delivered' || s === 'completed') return 5;
+    if (s === 'out for delivery' || s === 'out for delivery') return 4;
+    if (s === 'shipped' || s === 'in transit' || s === 'dispatched') return 3;
+    if (s === 'packed' || s === 'packaged' || s === 'ready for dispatch' || s === 'sent out') return 2;
+    if (s === 'order placed' || s === 'placed' || s === 'processing' || s === 'confirmed' || s === 'pending') return 1;
     if (s === 'cancelled') return 0;
     return 1;
   };
 
   const items = getOrderItems(order);
-  const rawStatus = (order.orderStatus || order.status || 'Processing').toLowerCase();
+  const rawStatus = (order.orderStatus || order.status || 'Order Placed').toLowerCase();
   const isCancelled = rawStatus === 'cancelled';
   const isDelivered = rawStatus === 'delivered';
-  const isInTransit = rawStatus === 'in_transit' || rawStatus === 'in transit' || rawStatus === 'shipped';
+  const isInTransit = rawStatus === 'in_transit' || rawStatus === 'in transit' || rawStatus === 'shipped' || rawStatus === 'out for delivery';
   const trackingStep = getTrackingStep(rawStatus);
 
   const orderIdText = order.orderNumber || (order._id ? `NSH-${order._id.slice(-5).toUpperCase()}` : (order.id ? `NSH-${order.id.slice(-5).toUpperCase()}` : 'NSH-1234'));
@@ -102,26 +103,52 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
 
   const steps = [
     {
-      title: 'Packaged',
-      time: orderDateObj.toLocaleDateString('en-IN', { month: 'short', day: 'numeric' }) + ', 10:30 AM',
-      stage: 1
+      title: 'ORDER PLACED',
+      stage: 1,
+      icon: (
+        <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4" strokeWidth={2.2} />
+        </svg>
+      )
     },
     {
-      title: 'Sent out',
-      time: trackingStep >= 2
-        ? orderDateObj.toLocaleDateString('en-IN', { month: 'short', day: 'numeric' }) + ', 04:15 PM'
-        : 'Waiting...',
-      stage: 2
+      title: 'PACKED',
+      stage: 2,
+      icon: (
+        <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+        </svg>
+      )
     },
     {
-      title: 'In Transit',
-      time: trackingStep >= 3 ? 'Active Courier' : 'Waiting...',
-      stage: 3
+      title: 'SHIPPED',
+      stage: 3,
+      icon: (
+        <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1" />
+        </svg>
+      )
     },
     {
-      title: 'Delivered',
-      time: trackingStep >= 4 ? formattedDeliveryDate : 'Waiting...',
-      stage: 4
+      title: 'OUT FOR DELIVERY',
+      stage: 4,
+      icon: (
+        <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+        </svg>
+      )
+    },
+    {
+      title: 'DELIVERED',
+      stage: 5,
+      icon: (
+        <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+        </svg>
+      )
     }
   ];
 
@@ -243,58 +270,103 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
                 </div>
               </div>
             ) : (
-              /* Stepper Progress Card for Active Orders */
-              <div className="bg-slate-50/80 rounded-2xl p-5 sm:p-6 border border-slate-200/80">
-                <div className="relative flex items-center justify-between">
-                  {/* Horizontal Progress Lines connecting nodes */}
-                  <div className="absolute left-[12%] right-[12%] top-3.5 sm:top-4 h-[2px] bg-slate-200 -z-0" />
-                  <div
-                    className="absolute left-[12%] top-3.5 sm:top-4 h-[2px] bg-[#caa04c] -z-0 transition-all duration-500"
-                    style={{
-                      width: trackingStep <= 1 ? '0%' : trackingStep === 2 ? '38%' : trackingStep === 3 ? '75%' : '76%'
-                    }}
-                  />
+              <>
+                {/* Stepper Progress Card for Active Orders matching luxury reference design */}
+                <div className="bg-[#faf7f2] rounded-xl sm:rounded-3xl p-3 sm:p-7 border border-[#e8dfcf] shadow-xs">
+                  {/* Mobile-optimized stepper (vertical or compact horizontal) */}
+                  <div className="block sm:hidden">
+                    {/* Vertical Stepper for Mobile */}
+                    <div className="space-y-2">
+                      {steps.map((step, idx) => {
+                        const isDone = trackingStep >= step.stage;
+                        const isCurrent = trackingStep === step.stage;
 
-                  {/* 4 Nodes */}
-                  {steps.map((step, idx) => {
-                    const isDone = trackingStep >= step.stage;
-                    const isCurrent = trackingStep === step.stage;
+                        return (
+                          <div key={idx}>
+                            <div className="flex items-center gap-3">
+                              {/* Vertical Connector Line */}
+                              {idx > 0 && (
+                                <div className="absolute left-[22px] w-0.5 h-6 bg-[#dfd4c0] top-[-28px]" />
+                              )}
+                              {/* Node Circle */}
+                              <div className={`relative z-10 flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center transition-all ${
+                                isDone || isCurrent
+                                  ? 'bg-[#caa04c] text-white shadow-md shadow-amber-900/15'
+                                  : 'bg-[#faf7f2] border-2 border-[#d5c5a7] text-[#8c7d69]'
+                              }`}>
+                                {step.icon}
+                              </div>
+                              {/* Step Label */}
+                              <p className={`text-[10px] font-extrabold uppercase tracking-wider transition-colors ${
+                                isDone || isCurrent ? 'text-slate-900' : 'text-[#9c9384]'
+                              }`}>
+                                {step.title}
+                              </p>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
 
-                    return (
-                      <div key={idx} className="relative z-10 flex flex-col items-center flex-1 text-center">
-                        {/* Node Circle */}
-                        <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center transition-all ${
-                          isDone
-                            ? 'bg-[#caa04c] text-white shadow-xs'
-                            : isCurrent
-                            ? 'bg-white border-2 border-[#caa04c] text-[#caa04c] ring-4 ring-amber-100/50'
-                            : 'bg-white border-2 border-slate-200 text-slate-300'
-                        }`}>
-                          {isDone ? (
-                            <svg className="w-4 h-4 stroke-[3]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                            </svg>
-                          ) : isCurrent ? (
-                            <span className="w-2 h-2 rounded-full bg-[#caa04c] animate-pulse" />
-                          ) : (
-                            <span className="w-2 h-2 rounded-full bg-slate-200" />
-                          )}
-                        </div>
+                  {/* Desktop Horizontal Stepper (visible only on sm and up) */}
+                  <div className="hidden sm:block">
+                    <div className="relative flex items-center justify-between">
+                      {/* Background Track Line connecting nodes */}
+                      <div className="absolute left-[10%] right-[10%] top-5 h-0.5 bg-[#dfd4c0] -z-0" />
+                      
+                      {/* Active Gold Progress Fill Line */}
+                      <div
+                        className="absolute left-[10%] top-5 h-[2.5px] bg-[#caa04c] -z-0 transition-all duration-700 ease-in-out"
+                        style={{
+                          width:
+                            trackingStep <= 1
+                              ? '0%'
+                              : trackingStep === 2
+                              ? '20%'
+                              : trackingStep === 3
+                              ? '40%'
+                              : trackingStep === 4
+                              ? '60%'
+                              : '80%'
+                        }}
+                      />
 
-                        {/* Step Labels */}
-                        <p className={`mt-2.5 text-xs sm:text-sm font-bold ${
-                          isDone ? 'text-slate-900' : isCurrent ? 'text-[#b88f3e]' : 'text-slate-400'
-                        }`}>
-                          {step.title}
-                        </p>
-                        <p className="text-[10px] sm:text-[11px] text-slate-400 font-normal mt-0.5">
-                          {step.time}
-                        </p>
-                      </div>
-                    );
-                  })}
+                      {/* 5 Distinct Order Status Nodes */}
+                      {steps.map((step, idx) => {
+                        const isDone = trackingStep >= step.stage;
+                        const isCurrent = trackingStep === step.stage;
+
+                        return (
+                          <div key={idx} className="relative z-10 flex flex-col items-center flex-1 text-center px-1">
+                            {/* Node Circle with Halo on Active Step */}
+                            <div className={`transition-all duration-300 ${
+                              isCurrent
+                                ? 'p-1 sm:p-1.5 rounded-full bg-[#caa04c]/20 ring-4 ring-[#caa04c]/10'
+                                : 'p-1 sm:p-1.5 rounded-full'
+                            }`}>
+                              <div className={`w-8 h-8 sm:w-11 sm:h-11 rounded-full flex items-center justify-center transition-all ${
+                                isDone || isCurrent
+                                  ? 'bg-[#caa04c] text-white shadow-md shadow-amber-900/15'
+                                  : 'bg-[#faf7f2] border-2 border-[#d5c5a7] text-[#8c7d69]'
+                              }`}>
+                                {step.icon}
+                              </div>
+                            </div>
+
+                            {/* Step Label Underneath */}
+                            <p className={`mt-3 text-[9px] sm:text-[11px] font-extrabold uppercase tracking-wider text-center leading-tight transition-colors ${
+                              isDone || isCurrent ? 'text-slate-900' : 'text-[#9c9384]'
+                            }`}>
+                              {step.title}
+                            </p>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
                 </div>
-              </div>
+              </>
             )}
           </div>
 
