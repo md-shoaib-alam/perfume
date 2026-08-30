@@ -30,20 +30,20 @@ export const CollectionsCirclesSection: React.FC = () => {
 
   return (
     <section className="py-8 sm:py-12 bg-white border-t border-slate-100">
-      <div className="max-w-4xl mx-auto px-4">
-        <div className="flex items-center justify-center gap-4 sm:gap-10 md:gap-14">
+      <div className="max-w-5xl mx-auto px-4">
+        <div className="flex items-center justify-center gap-4 sm:gap-8 md:gap-12 overflow-x-auto no-scrollbar py-2">
           {collections.map((item) => (
             <Link
               key={item.id}
-              href={`/collections/${item.id}`}
-              className="group flex flex-col items-center text-center cursor-pointer transition-transform hover:-translate-y-1"
+              href={`/collections/${(item as any).slug || item.id}`}
+              className="group flex flex-col items-center text-center cursor-pointer transition-transform hover:-translate-y-1 shrink-0"
             >
-              {/* Gold Ring Circular Image */}
-              <div className="w-16 h-16 sm:w-20 sm:h-20 md:w-22 md:h-22 rounded-full p-[2.5px] border-2 border-[#d6a750] bg-white shadow-xs group-hover:shadow-md transition-all">
-                <div className="w-full h-full rounded-full overflow-hidden">
+              {/* Gold Ring Circular Image (104x104px Inspector Match) */}
+              <div className="w-[88px] h-[88px] sm:w-[104px] sm:h-[104px] rounded-full p-[2.5px] border-2 border-[#d6a750] bg-white shadow-xs group-hover:shadow-md transition-all">
+                <div className="w-full h-full rounded-full overflow-hidden bg-slate-50">
                   <img
                     src={item.image}
-                    alt={`${item.name} ${item.subname}`}
+                    alt={`${item.name} ${item.subname || ''}`}
                     loading="lazy"
                     decoding="async"
                     className="w-full h-full object-cover"
@@ -53,12 +53,14 @@ export const CollectionsCirclesSection: React.FC = () => {
 
               {/* Title & Subtitle */}
               <div className="mt-2.5 sm:mt-3">
-                <span className="block font-sans text-[11px] sm:text-xs md:text-sm font-medium text-slate-800 group-hover:text-[#d6a750] transition-colors leading-tight">
+                <span className="block font-sans text-xs sm:text-sm font-medium text-slate-900 group-hover:text-[#d6a750] transition-colors leading-tight">
                   {item.name}
                 </span>
-                <span className="block font-sans text-[11px] sm:text-xs md:text-sm font-medium text-slate-800 group-hover:text-[#d6a750] transition-colors leading-tight">
-                  {item.subname}
-                </span>
+                {item.subname && (
+                  <span className="block font-sans text-xs sm:text-sm font-medium text-slate-900 group-hover:text-[#d6a750] transition-colors leading-tight">
+                    {item.subname}
+                  </span>
+                )}
               </div>
             </Link>
           ))}

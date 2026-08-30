@@ -86,38 +86,40 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         <Link 
           href={`/products/${productSlug}`}
           onClick={() => addRecentlyViewed(product)}
-          className="font-serif text-lg sm:text-2xl font-normal text-slate-800 cursor-pointer hover:text-[#d6a750] transition-colors leading-tight mb-1 block"
+          className="font-serif text-base sm:text-xl lg:text-2xl font-normal text-slate-900 cursor-pointer hover:text-[#caa04c] transition-colors leading-tight mb-1 block"
         >
           {product.name}
         </Link>
 
         {/* Subtitle / Category */}
-        <p className="text-[11px] sm:text-xs font-sans text-slate-400 font-normal tracking-wider mb-1.5 sm:mb-2">
-          {product.category === 'extrait-de-parfum' ? 'Extrait De Parfum' : product.category}
+        <p className="text-[10px] sm:text-xs font-sans text-slate-400 font-normal tracking-wider mb-1 sm:mb-1.5">
+          {product.category === 'extrait-de-parfum' ? 'Extrait De Parfum' : (product.category || 'Extrait De Parfum')}
         </p>
 
         {/* Description / Accords */}
-        <p className="text-[11px] sm:text-xs font-sans text-slate-500 font-normal leading-relaxed max-w-xs mb-2 sm:mb-3 px-1 line-clamp-2">
-          {product.subtitle}
-        </p>
+        {product.subtitle && (
+          <p className="text-[10px] sm:text-xs font-sans text-slate-500 font-normal leading-tight max-w-xs mb-1.5 sm:mb-2.5 px-1 line-clamp-2">
+            {product.subtitle}
+          </p>
+        )}
 
         {/* Price */}
-        <p className="text-xs sm:text-sm font-sans font-bold text-slate-900 mb-3 sm:mb-4">
+        <p className="text-xs sm:text-sm font-sans font-bold text-slate-900 mb-2 sm:mb-3">
           Rs.{currentPrice.toLocaleString('en-IN')}.00
         </p>
 
         {/* Dynamic Size Selector Pills (Only when sizes are defined) */}
         {sizes.length > 0 && (
-          <div className="flex items-center justify-center gap-1.5 sm:gap-2 mb-3 sm:mb-4 flex-wrap">
+          <div className="flex items-center justify-center gap-1 sm:gap-2 mb-2 sm:mb-3 flex-wrap">
             {sizes.map((size) => (
               <button
                 key={size}
                 type="button"
                 onClick={() => setSelectedSize(size)}
-                className={`px-2.5 py-0.5 sm:px-4 sm:py-1 text-[11px] sm:text-xs font-sans rounded-full transition-all border cursor-pointer ${
+                className={`px-2 py-0.5 sm:px-3.5 sm:py-1 text-[10px] sm:text-xs font-sans rounded-full transition-all border cursor-pointer ${
                   selectedSize === size
                     ? 'bg-[#353534] text-white border-[#353534] font-bold'
-                    : 'bg-[#f5f5f5] text-slate-600 border-transparent hover:bg-slate-200'
+                    : 'bg-[#f5f5f5] text-slate-600 border-slate-100 hover:bg-slate-200'
                 }`}
               >
                 {size}
@@ -125,21 +127,28 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             ))}
           </div>
         )}
+
+        {/* Pre-Order shipping note if applicable */}
+        {product.isPreOrder && (
+          <p className="text-[10px] font-sans font-semibold text-emerald-600 mb-2">
+            Shipping Starts Soon
+          </p>
+        )}
       </div>
 
       {/* Bottom Section: Add to Cart Button */}
-      <div className="w-full mt-auto">
+      <div className="w-full mt-auto pt-1">
         <button
           type="button"
           onClick={() => onAddToCart(product, selectedSize, currentPrice)}
           disabled={isCurrentlySoldOut}
-          className={`w-full py-2.5 sm:py-3.5 px-4 font-sans font-bold text-[11px] sm:text-xs uppercase tracking-widest transition-all duration-300 shadow-2xs rounded-lg ${
+          className={`w-full py-2 sm:py-3 px-3 font-sans font-bold text-[10.5px] sm:text-xs uppercase tracking-wider transition-all duration-300 shadow-2xs rounded-md ${
             isCurrentlySoldOut
               ? 'bg-slate-200 text-slate-400 cursor-not-allowed border border-slate-200'
-              : 'bg-[#caa04c] text-[#222222] hover:bg-[#b88f3e] hover:text-white active:scale-98 cursor-pointer'
+              : 'bg-[#caa04c] text-white hover:bg-[#b88f3e] active:scale-98 cursor-pointer'
           }`}
         >
-          {isCurrentlySoldOut ? 'Sold Out' : 'Add to Bag'}
+          {isCurrentlySoldOut ? 'Sold Out' : (product.isPreOrder ? 'Pre-Order' : 'Add to Cart')}
         </button>
       </div>
     </div>

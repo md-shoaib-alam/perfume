@@ -905,7 +905,19 @@ export const ProductsManager: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">Target Gender *</label>
+                  <div className="flex items-center justify-between mb-1.5 min-w-0">
+                    <label className="block text-xs font-semibold text-slate-700 whitespace-nowrap">
+                      Target Gender <span className="text-rose-500">*</span>
+                    </label>
+                    <Link
+                      href="/admin/collections"
+                      target="_blank"
+                      className="text-[10.5px] text-[#caa04c] hover:underline font-bold cursor-pointer whitespace-nowrap"
+                      title="Manage landing page hero banners for For Him, For Her, Unisex, and Gift Sets"
+                    >
+                      Manage Banners ↗
+                    </Link>
+                  </div>
                   <select
                     value={formData.gender || 'For Him'}
                     onChange={(e) => setFormData({ ...formData, gender: e.target.value as any })}

@@ -220,12 +220,15 @@ export default function CollectionPage() {
         (c.id && c.id === slug)
     );
 
+    // Only use the real banner image saved in database or explicitly configured in metadata (no mock product image fallbacks)
+    const resolvedBanner = (dbMatch?.bannerImage || defaultMeta.bannerImage || '').trim();
+
     return {
       ...defaultMeta,
       title: dbMatch?.name || defaultMeta.title,
       subtitle: dbMatch?.subtitle || defaultMeta.subtitle,
       editorial: dbMatch?.editorial || defaultMeta.editorial,
-      bannerImage: dbMatch?.bannerImage || defaultMeta.bannerImage,
+      bannerImage: resolvedBanner,
       badge: dbMatch?.badge || defaultMeta.badge
     };
   }, [dbCollections, slug, defaultMeta]);
@@ -344,43 +347,55 @@ export default function CollectionPage() {
         }}
       />
 
-      {/* 3. Hero Visual Lifestyle Banner (Only when bannerImage is configured) */}
+      {/* 3. Hero Visual Lifestyle Banner (Mobile 16:9 & Expanded Desktop Height) */}
       {Boolean(meta.bannerImage && meta.bannerImage.trim()) && (
-        <div className="relative w-full min-h-[380px] sm:min-h-[500px] md:min-h-[600px] lg:min-h-[660px] max-h-[740px] overflow-hidden bg-slate-100">
+        <section className="relative w-full aspect-[16/9] md:aspect-auto md:h-[520px] lg:h-[600px] xl:h-[680px] overflow-hidden bg-slate-100 select-none">
           <img
             src={meta.bannerImage}
             alt={meta.title}
-            loading="lazy"
+            loading="eager"
             decoding="async"
             className="w-full h-full object-cover object-center"
           />
-        </div>
+        </section>
       )}
 
-      {/* 4. Collection Title & Centered Editorial Story */}
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 pt-10 pb-6 text-center space-y-3">
-        <h1 className="font-serif text-3xl sm:text-4xl md:text-5xl font-normal text-slate-900 tracking-wide">
+      {/* 4. Collection Title & Centered Editorial Story (Light Luxury Surface) */}
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 pt-8 pb-5 sm:pt-10 sm:pb-6 text-center space-y-2.5 sm:space-y-3">
+        {meta.badge && (
+          <span className="inline-block text-[10px] sm:text-xs font-bold tracking-[0.25em] text-[#caa04c] uppercase">
+            {meta.badge}
+          </span>
+        )}
+        <h1 className="font-serif text-2xl sm:text-4xl md:text-5xl lg:text-5xl font-normal text-slate-900 tracking-tight">
           {meta.title}
         </h1>
-        <p className="text-xs sm:text-sm font-sans text-slate-600 leading-relaxed max-w-3xl mx-auto font-normal">
-          {meta.editorial}
-        </p>
+        {meta.subtitle && (
+          <p className="text-[11px] sm:text-sm text-slate-500 font-medium max-w-2xl mx-auto italic">
+            {meta.subtitle}
+          </p>
+        )}
+        {meta.editorial && (
+          <p className="text-[11.5px] sm:text-sm font-sans text-slate-600 leading-relaxed max-w-3xl mx-auto font-normal pt-1">
+            {meta.editorial}
+          </p>
+        )}
       </div>
 
-      {/* 5. Clean Toolbar: Sort & Count */}
-      <div className="max-w-[1680px] mx-auto px-4 sm:px-6 lg:px-8 py-4 border-b border-slate-100 mb-6">
-        <div className="flex items-center justify-between gap-4 text-xs font-sans">
-          <span className="text-slate-500 font-medium">
+      {/* 5. Clean Toolbar: Sort & Count (Sticky under Navbar on Scroll) */}
+      <div className="sticky top-14 sm:top-16 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200/80 mb-5 sm:mb-6 shadow-2xs transition-all">
+        <div className="max-w-[1680px] mx-auto px-3.5 sm:px-6 lg:px-8 py-3 sm:py-3.5 flex items-center justify-between gap-4 text-xs font-sans">
+          <span className="text-slate-500 font-medium text-[11.5px] sm:text-xs">
             Showing <strong className="text-slate-900 font-bold">{filteredProducts.length}</strong> {filteredProducts.length === 1 ? 'Fragrance' : 'Fragrances'}
           </span>
 
           <div className="flex items-center gap-2">
-            <label htmlFor="sort-select" className="text-slate-500 font-semibold">Sort By:</label>
+            <label htmlFor="sort-select" className="text-slate-500 font-semibold text-[11px] sm:text-xs">Sort By:</label>
             <select
               id="sort-select"
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as any)}
-              className="bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-800 focus:outline-none focus:border-[#d6a750] cursor-pointer shadow-2xs"
+              className="bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-[11.5px] sm:text-xs font-semibold text-slate-800 focus:outline-none focus:border-[#d6a750] cursor-pointer shadow-2xs"
             >
               <option value="bestseller">Featured / Bestseller</option>
               <option value="price-asc">Price: Low to High</option>
@@ -391,8 +406,8 @@ export default function CollectionPage() {
         </div>
       </div>
 
-      {/* 6. Product Grid (3 Columns on Desktop - Screenshot Match) */}
-      <main className="max-w-[1680px] mx-auto px-4 sm:px-6 lg:px-8 pb-16">
+      {/* 6. Product Grid (2 Columns on Mobile, 3 Columns on Tablet/Desktop) */}
+      <main className="max-w-[1680px] mx-auto px-3 sm:px-6 lg:px-8 pb-16">
         {loading ? (
           <div className="py-24 text-center text-slate-400 font-sans text-xs">
             <div className="inline-block w-8 h-8 border-2 border-[#d6a750] border-t-transparent rounded-full animate-spin mb-4" />
@@ -434,7 +449,7 @@ export default function CollectionPage() {
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 lg:gap-8">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-6 lg:gap-8">
             {filteredProducts.map((product) => (
               <div key={product.id} className="h-full">
                 <ProductCard
