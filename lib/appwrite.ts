@@ -13,7 +13,9 @@ if (APPWRITE_ENDPOINT && APPWRITE_PROJECT_ID) {
     .setProject(APPWRITE_PROJECT_ID);
 
   if (APPWRITE_API_KEY && typeof window === 'undefined') {
-    client.setKey(APPWRITE_API_KEY);
+    if (typeof (client as any).setKey === 'function') {
+      (client as any).setKey(APPWRITE_API_KEY);
+    }
   }
 }
 

@@ -22,7 +22,7 @@ export interface Product {
   id: string;
   name: string;
   subtitle: string;
-  category: 'extrait-de-parfum' | 'attar' | 'discovery-set' | 'gift-set' | 'travel-set';
+  category: string;
   gender?: 'For Him' | 'For Her' | 'Unisex' | 'Gift Sets';
   price: number;
   originalPrice: number;

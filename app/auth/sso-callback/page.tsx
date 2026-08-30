@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, Suspense } from 'react';
 import { AuthenticateWithRedirectCallback, useUser } from '@clerk/nextjs';
 import { useRouter, useSearchParams } from 'next/navigation';
 
-export default function AuthSSOCallbackPage() {
+function AuthSSOCallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { isSignedIn, isLoaded } = useUser();
@@ -38,5 +38,17 @@ export default function AuthSSOCallbackPage() {
         continueSignUpUrl={redirectUrl}
       />
     </div>
+  );
+}
+
+export default function AuthSSOCallbackPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex flex-col items-center justify-center bg-[#faf9f6] text-slate-900 px-4">
+        <div className="w-10 h-10 border-3 border-[#caa04c] border-t-transparent rounded-full animate-spin" />
+      </div>
+    }>
+      <AuthSSOCallbackContent />
+    </Suspense>
   );
 }
