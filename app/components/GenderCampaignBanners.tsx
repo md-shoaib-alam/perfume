@@ -29,37 +29,32 @@ export const GenderCampaignBanners: React.FC<GenderCampaignBannersProps> = () =>
   useEffect(() => {
     const loadCampaignMedia = async () => {
       try {
-        const [products, collections] = await Promise.all([
-          api.getProducts().catch(() => []),
-          api.getCollections().catch(() => [])
-        ]);
+        const collections = await api.getCollections().catch(() => []);
 
-        const himProduct = products.find((p) => p.gender === 'For Him' && p.image);
-        const herProduct = products.find((p) => p.gender === 'For Her' && p.image);
-        const himCollection = collections.find((c) => c.name?.toLowerCase().includes('him') && c.image);
-        const herCollection = collections.find((c) => c.name?.toLowerCase().includes('her') && c.image);
+        const himCollection = collections.find(
+          (c) => c.slug === 'for-him' || c.name?.toLowerCase().includes('him')
+        );
+        const herCollection = collections.find(
+          (c) => c.slug === 'for-her' || c.name?.toLowerCase().includes('her')
+        );
 
-        const items: CampaignItem[] = [];
-        const himImg = himCollection?.image || himProduct?.image;
-        const herImg = herCollection?.image || herProduct?.image;
+        const himImg = himCollection?.image || himCollection?.bannerImage || '';
+        const herImg = herCollection?.image || herCollection?.bannerImage || '';
 
-        if (himImg) {
-          items.push({
+        const items: CampaignItem[] = [
+          {
             id: 'for-him',
-            title: 'For Him',
+            title: himCollection?.name || 'For Him',
             gender: 'For Him',
             image: himImg
-          });
-        }
-
-        if (herImg) {
-          items.push({
+          },
+          {
             id: 'for-her',
-            title: 'For Her',
+            title: herCollection?.name || 'For Her',
             gender: 'For Her',
             image: herImg
-          });
-        }
+          }
+        ];
 
         setCampaigns(items);
       } catch (err) {

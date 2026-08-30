@@ -804,9 +804,11 @@ export const api = {
           subname: d.subname || '',
           image: d.image || '',
           bannerImage: d.bannerImage || '',
+          campaignImage: d.campaignImage || '',
           subtitle: d.subtitle || '',
           editorial: d.editorial || '',
-          badge: d.badge || ''
+          badge: d.badge || '',
+          showInStoryCircle: Boolean(d.showInStoryCircle)
         }));
       }
     } catch (err) {
@@ -817,24 +819,18 @@ export const api = {
 
   async updateCollection(id: string, data: any): Promise<any> {
     try {
-      const cleanData: any = {};
-      if (data.name !== undefined) cleanData.name = data.name;
-      if (data.subname !== undefined) cleanData.subname = data.subname;
-      if (data.image !== undefined) cleanData.image = data.image;
-      if (data.slug !== undefined) cleanData.slug = data.slug;
-      if (data.bannerImage !== undefined) cleanData.bannerImage = data.bannerImage;
-      if (data.subtitle !== undefined) cleanData.subtitle = data.subtitle;
-      if (data.editorial !== undefined) cleanData.editorial = data.editorial;
-      if (data.badge !== undefined) cleanData.badge = data.badge;
-
-      return await databases.updateDocument(
-        APPWRITE_DATABASE_ID,
-        'collections',
-        id,
-        cleanData
-      );
+      const res = await fetch('/api/collections', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, updates: data })
+      });
+      if (res.ok) {
+        return await res.json();
+      }
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.error || 'Failed to update collection');
     } catch (err: any) {
-      console.error('Appwrite updateCollection error:', err);
+      console.error('updateCollection error:', err);
       throw err;
     }
   },

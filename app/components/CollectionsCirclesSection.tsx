@@ -11,6 +11,8 @@ interface CollectionCircle {
   image: string;
 }
 
+const GENDER_LANDING_SLUGS = ['for-him', 'for-her', 'unisex', 'gift-set', 'discovery-set'];
+
 export const CollectionsCirclesSection: React.FC = () => {
   const [collections, setCollections] = useState<CollectionCircle[]>([]);
 
@@ -19,7 +21,15 @@ export const CollectionsCirclesSection: React.FC = () => {
       try {
         const data = await api.getCollections();
         if (data && data.length > 0) {
-          setCollections(data);
+          // Filter to only display Story Collections (Bureau, Luxe, Haute, Miss NEESH) and exclude gender landing pages unless explicitly enabled
+          const storyCollections = data.filter((item: any) => {
+            const isGenderPage = GENDER_LANDING_SLUGS.includes(item.slug || item.id);
+            if (isGenderPage) {
+              return Boolean(item.showInStoryCircle);
+            }
+            return true;
+          });
+          setCollections(storyCollections);
         }
       } catch (e) {}
     };
@@ -40,14 +50,20 @@ export const CollectionsCirclesSection: React.FC = () => {
             >
               {/* Gold Ring Circular Image (104x104px Inspector Match) */}
               <div className="w-[88px] h-[88px] sm:w-[104px] sm:h-[104px] rounded-full p-[2.5px] border-2 border-[#d6a750] bg-white shadow-xs group-hover:shadow-md transition-all">
-                <div className="w-full h-full rounded-full overflow-hidden bg-slate-50">
-                  <img
-                    src={item.image}
-                    alt={`${item.name} ${item.subname || ''}`}
-                    loading="lazy"
-                    decoding="async"
-                    className="w-full h-full object-cover"
-                  />
+                <div className="w-full h-full rounded-full overflow-hidden bg-slate-100 flex items-center justify-center">
+                  {item.image ? (
+                    <img
+                      src={item.image}
+                      alt={`${item.name} ${item.subname || ''}`}
+                      loading="lazy"
+                      decoding="async"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="font-serif font-bold text-slate-700 text-lg sm:text-xl">
+                      {item.name.charAt(0)}
+                    </span>
+                  )}
                 </div>
               </div>
 

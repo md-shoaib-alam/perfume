@@ -31,7 +31,7 @@ export const GoldTrustBanner: React.FC = () => {
   }, [queryClient]);
 
   return (
-    <section className="bg-[#c59b48] text-white py-6 sm:py-8 border-y border-[#b58b38]">
+    <section className="bg-[#A98D65] text-white py-6 sm:py-8 border-y border-[#977d56]">
       <div className="max-w-[1680px] mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 max-w-sm sm:max-w-md md:max-w-none mx-auto font-sans">
           
