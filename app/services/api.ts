@@ -788,7 +788,7 @@ export const api = {
       const res = await fetch('/api/collections', { cache: 'no-store' });
       if (res.ok) {
         const data = await res.json();
-        if (Array.isArray(data) && data.length > 0) return data;
+        if (Array.isArray(data)) return data;
       }
     } catch (err) {
       console.warn('API /api/collections error, trying direct SDK:', err);
@@ -799,7 +799,7 @@ export const api = {
       if (res && res.documents) {
         return res.documents.map((d: any) => ({
           id: d.$id,
-          slug: d.slug || '',
+          slug: d.slug || (d.name ? d.name.toLowerCase().replace(/[^a-z0-9]+/g, '-') : ''),
           name: d.name || '',
           subname: d.subname || '',
           image: d.image || '',

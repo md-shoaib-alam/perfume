@@ -114,14 +114,16 @@ export const PerfumersCelebritiesManager: React.FC = () => {
           <p className="text-xs text-slate-500 mt-0.5">Manage master nose biographies, awards, and celebrity fragrance endorsements.</p>
         </div>
 
-        <div className="flex items-center gap-2.5 flex-wrap">
+        <div className="w-full sm:w-auto flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
           {/* Tab Switcher */}
-          <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
+          <div className="w-full sm:w-auto grid grid-cols-2 sm:flex p-1 bg-slate-100 rounded-xl border border-slate-200/70">
             <button
               type="button"
               onClick={() => setActiveSection('perfumers')}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                activeSection === 'perfumers' ? 'bg-[#c59b48] text-white shadow-2xs' : 'text-slate-600 hover:text-slate-900'
+              className={`px-3 sm:px-4 py-2 sm:py-1.5 rounded-lg text-xs font-bold text-center transition-all cursor-pointer ${
+                activeSection === 'perfumers'
+                  ? 'bg-[#c59b48] text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
               }`}
             >
               Master Perfumers ({perfumers.length})
@@ -129,8 +131,10 @@ export const PerfumersCelebritiesManager: React.FC = () => {
             <button
               type="button"
               onClick={() => setActiveSection('celebrities')}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                activeSection === 'celebrities' ? 'bg-[#c59b48] text-white shadow-2xs' : 'text-slate-600 hover:text-slate-900'
+              className={`px-3 sm:px-4 py-2 sm:py-1.5 rounded-lg text-xs font-bold text-center transition-all cursor-pointer ${
+                activeSection === 'celebrities'
+                  ? 'bg-[#c59b48] text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
               }`}
             >
               Celebrities ({celebrities.length})
@@ -142,23 +146,23 @@ export const PerfumersCelebritiesManager: React.FC = () => {
             <button
               type="button"
               onClick={handleAddPerfumer}
-              className="px-4 py-2 bg-slate-900 hover:bg-black text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
+              className="w-full sm:w-auto px-4 py-2.5 sm:py-2 bg-slate-900 hover:bg-black text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer"
             >
-              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
               </svg>
-              <span>+ Add Perfumer</span>
+              <span>Add Perfumer</span>
             </button>
           ) : (
             <button
               type="button"
               onClick={handleAddCelebrity}
-              className="px-4 py-2 bg-slate-900 hover:bg-black text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
+              className="w-full sm:w-auto px-4 py-2.5 sm:py-2 bg-slate-900 hover:bg-black text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer"
             >
-              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
               </svg>
-              <span>+ Add Celebrity</span>
+              <span>Add Celebrity</span>
             </button>
           )}
         </div>

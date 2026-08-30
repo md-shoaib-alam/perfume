@@ -8,10 +8,11 @@ import { useConfirm } from '../components/CustomConfirmModal';
 import { deleteMediaFromAppwrite } from '@/lib/appwrite';
 import { getProductSlug } from '../utils/slug';
 import { useQueryClient } from '@tanstack/react-query';
-import { queryKeys } from '../hooks/useQueries';
+import { queryKeys, useCollectionsQuery } from '../hooks/useQueries';
 
 export const ProductsManager: React.FC = () => {
   const queryClient = useQueryClient();
+  const { data: reactiveCollections = [] } = useCollectionsQuery();
   const { showConfirm, showAlert } = useConfirm();
   const [products, setProducts] = useState<Product[]>([]);
   const [collections, setCollections] = useState<any[]>([]);
@@ -90,6 +91,7 @@ export const ProductsManager: React.FC = () => {
       setProducts(prodsData || []);
       setCollections(colsData || []);
       queryClient.invalidateQueries({ queryKey: queryKeys.allProducts });
+      queryClient.invalidateQueries({ queryKey: queryKeys.collections });
     } catch (err: any) {
       console.error('Failed to load products/collections:', err);
     } finally {
@@ -97,26 +99,34 @@ export const ProductsManager: React.FC = () => {
     }
   };
 
-  // Derive collection options dynamically from Appwrite collections (no fake fallback data)
+  // Derive collection options dynamically from Appwrite collections
+  const activeCollections = (collections && collections.length > 0) ? collections : reactiveCollections;
+
   const collectionOptions = useMemo(() => {
-    if (collections && collections.length > 0) {
-      return collections
-        .filter((c: any) => c.slug)
+    if (activeCollections && activeCollections.length > 0) {
+      return activeCollections
         .map((c: any) => {
-          const name = c.name || '';
-          const subname = c.subname || '';
+          const name = (c.name || '').trim();
+          const subname = (c.subname || '').trim();
           const label =
             name.toLowerCase().includes('collection') || subname.toLowerCase().includes('collection')
               ? (subname ? `${name} ${subname}` : name)
               : `${name} ${subname || 'Collection'}`.trim();
+          const slug = (
+            c.slug ||
+            name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') ||
+            c.id ||
+            ''
+          ).trim();
           return {
-            slug: c.slug,
-            name: label || c.slug
+            slug: slug,
+            name: label || slug || 'Unnamed Collection'
           };
-        });
+        })
+        .filter((c: any) => Boolean(c.slug && c.name));
     }
     return [];
-  }, [collections]);
+  }, [activeCollections]);
 
   // Derive categories dynamically ONLY from database catalog products (no mock categories)
   const availableCategories = useMemo(() => {
