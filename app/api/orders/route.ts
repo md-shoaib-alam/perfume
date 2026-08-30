@@ -9,7 +9,7 @@ import { calculateOrderBreakdown } from '@/lib/pricing';
 const formatOrderDoc = (doc: any) => {
   let parsedItems = [];
   try {
-    parsedItems = typeof doc.items === 'string' ? JSON.parse(doc.items) : doc.items;
+    parsedItems = typeof doc.items === 'string' ? JSON.parse(doc.items) : (doc.items || []);
   } catch (e) {
     parsedItems = [];
   }
@@ -18,18 +18,38 @@ const formatOrderDoc = (doc: any) => {
   try {
     parsedShipping = typeof doc.shippingAddress === 'string' ? JSON.parse(doc.shippingAddress) : (doc.shippingAddress || {});
   } catch (e) {
-    parsedShipping = {};
+    parsedShipping = typeof doc.shippingAddress === 'string' ? { address: doc.shippingAddress } : {};
   }
+
+  const custName = doc.customerName || parsedShipping?.name || 'Anonymous Customer';
+  const custEmail = doc.customerEmail || parsedShipping?.email || '';
+  const custPhone = doc.customerPhone || parsedShipping?.phone || '';
+  const custAddress = typeof parsedShipping?.address === 'string' ? parsedShipping.address : (doc.shippingAddress || '');
+  const custCity = parsedShipping?.city || '';
+  const custState = parsedShipping?.state || '';
+  const custPincode = parsedShipping?.pincode || parsedShipping?.postalCode || '';
+  const custCountry = parsedShipping?.country || 'India';
 
   return {
     _id: doc.$id,
     id: doc.$id,
     orderNumber: `NSH-${doc.$id.slice(-5).toUpperCase()}`,
     userId: doc.userId || 'guest',
-    customerName: doc.customerName || 'Anonymous',
-    customerEmail: doc.customerEmail || '',
-    customerPhone: doc.customerPhone || '',
+    customerName: custName,
+    customerEmail: custEmail,
+    customerPhone: custPhone,
     shippingAddress: doc.shippingAddress || '',
+    customer: {
+      name: custName,
+      email: custEmail,
+      phone: custPhone,
+      address: custAddress,
+      city: custCity,
+      state: custState,
+      pincode: custPincode,
+      postalCode: custPincode,
+      country: custCountry
+    },
     items: parsedItems,
     total: Number(doc.totalAmount || 0),
     totalAmount: Number(doc.totalAmount || 0),
@@ -49,14 +69,23 @@ export async function GET(req: Request) {
     const userIdParam = searchParams.get('userId');
 
     const { userId: authUserId } = await auth();
+    let isAdmin = false;
+    try {
+      isAdmin = await checkRole('admin');
+    } catch (e) {
+      isAdmin = false;
+    }
 
     const queries: string[] = [Query.limit(100), Query.orderDesc('$createdAt')];
 
-    // Filter by specific user if provided or if authenticated non-admin
-    const targetUserId = userIdParam || authUserId;
-    if (targetUserId) {
-      queries.push(Query.equal('userId', targetUserId));
+    // Filter by specific user if provided
+    if (userIdParam) {
+      queries.push(Query.equal('userId', userIdParam));
+    } else if (!isAdmin && authUserId) {
+      // If customer requests without query param, restrict to their orders
+      queries.push(Query.equal('userId', authUserId));
     }
+    // If admin or general pipeline query, return all orders across all users
 
     const res = await databases.listDocuments(APPWRITE_DATABASE_ID, 'orders', queries);
     const orders = (res.documents || []).map(formatOrderDoc);
@@ -217,7 +246,7 @@ export async function POST(req: Request) {
 }
 
 export async function PUT(req: Request) {
-  // Only admins may update order status / tracking
+  // Only admins may update order status / tracking / customer address
   const { userId } = await auth();
   if (!userId) {
     return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
@@ -228,13 +257,19 @@ export async function PUT(req: Request) {
   }
 
   try {
-    const { id, status, trackingNumber, trackingUrl } = await req.json();
+    const { id, status, trackingNumber, trackingUrl, customerName, customerEmail, customerPhone, shippingAddress } = await req.json();
     if (!id) return NextResponse.json({ error: 'Missing order id' }, { status: 400 });
 
     const cleanUpdates: any = {};
     if (status !== undefined) cleanUpdates.status = status;
     if (trackingNumber !== undefined) cleanUpdates.trackingNumber = trackingNumber;
     if (trackingUrl !== undefined) cleanUpdates.trackingUrl = trackingUrl;
+    if (customerName !== undefined) cleanUpdates.customerName = customerName;
+    if (customerEmail !== undefined) cleanUpdates.customerEmail = customerEmail;
+    if (customerPhone !== undefined) cleanUpdates.customerPhone = customerPhone;
+    if (shippingAddress !== undefined) {
+      cleanUpdates.shippingAddress = typeof shippingAddress === 'string' ? shippingAddress : JSON.stringify(shippingAddress);
+    }
 
     const doc = await databases.updateDocument(
       APPWRITE_DATABASE_ID,

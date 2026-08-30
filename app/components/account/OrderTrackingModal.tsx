@@ -106,9 +106,8 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
       title: 'ORDER PLACED',
       stage: 1,
       icon: (
-        <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-          <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4" strokeWidth={2.2} />
+        <svg className="w-4 h-4 sm:w-4.5 sm:h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
         </svg>
       )
     },
@@ -116,7 +115,7 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
       title: 'PACKED',
       stage: 2,
       icon: (
-        <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+        <svg className="w-4 h-4 sm:w-4.5 sm:h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
         </svg>
       )
@@ -125,9 +124,8 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
       title: 'SHIPPED',
       stage: 3,
       icon: (
-        <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z" />
-          <path strokeLinecap="round" strokeLinejoin="round" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1" />
+        <svg className="w-4 h-4 sm:w-4.5 sm:h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0" />
         </svg>
       )
     },
@@ -135,7 +133,7 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
       title: 'OUT FOR DELIVERY',
       stage: 4,
       icon: (
-        <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+        <svg className="w-4 h-4 sm:w-4.5 sm:h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
           <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
         </svg>
@@ -145,7 +143,7 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
       title: 'DELIVERED',
       stage: 5,
       icon: (
-        <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+        <svg className="w-4 h-4 sm:w-4.5 sm:h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
         </svg>
       )
@@ -236,7 +234,7 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
 
             {/* Subheader: Product Stage & ETA */}
             <div className="flex items-center justify-between text-xs sm:text-sm">
-              <span className="font-bold text-slate-800">
+              <span className="font-medium text-slate-800">
                 {isCancelled
                   ? 'Order Cancelled'
                   : isDelivered
@@ -245,11 +243,11 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
                   ? 'Product in Transit'
                   : 'Package Ready for Dispatch'}
               </span>
-              <span className="text-[11px] sm:text-xs font-semibold text-slate-400">
+              <span className="text-[11px] sm:text-xs font-normal text-slate-400">
                 {isCancelled ? (
-                  <span className="text-rose-600 font-bold">Status: Void</span>
+                  <span className="text-rose-600 font-medium">Status: Void</span>
                 ) : (
-                  <>EST: <span className="font-bold text-slate-700">3–5 days</span></>
+                  <>EST: <span className="font-medium text-slate-600">3–5 days</span></>
                 )}
               </span>
             </div>
@@ -271,34 +269,34 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
               </div>
             ) : (
               <>
-                {/* Stepper Progress Card for Active Orders matching luxury reference design */}
-                <div className="bg-[#faf7f2] rounded-xl sm:rounded-3xl p-3 sm:p-7 border border-[#e8dfcf] shadow-xs">
-                  {/* Mobile-optimized stepper (vertical or compact horizontal) */}
+                {/* Stepper Progress Card for Active Orders */}
+                <div className="bg-[#faf9f6] rounded-2xl p-4 sm:p-7 border border-slate-200 shadow-xs">
+                  {/* Mobile-optimized stepper */}
                   <div className="block sm:hidden">
                     {/* Vertical Stepper for Mobile */}
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       {steps.map((step, idx) => {
                         const isDone = trackingStep >= step.stage;
                         const isCurrent = trackingStep === step.stage;
 
                         return (
-                          <div key={idx}>
+                          <div key={idx} className="relative">
                             <div className="flex items-center gap-3">
                               {/* Vertical Connector Line */}
                               {idx > 0 && (
-                                <div className="absolute left-[22px] w-0.5 h-6 bg-[#dfd4c0] top-[-28px]" />
+                                <div className="absolute left-[18px] w-0.5 h-6 bg-slate-200 top-[-20px]" />
                               )}
                               {/* Node Circle */}
                               <div className={`relative z-10 flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center transition-all ${
                                 isDone || isCurrent
-                                  ? 'bg-[#caa04c] text-white shadow-md shadow-amber-900/15'
-                                  : 'bg-[#faf7f2] border-2 border-[#d5c5a7] text-[#8c7d69]'
+                                  ? 'bg-[#caa04c] text-white shadow-xs'
+                                  : 'bg-white border border-slate-200 text-slate-400'
                               }`}>
                                 {step.icon}
                               </div>
                               {/* Step Label */}
-                              <p className={`text-[10px] font-extrabold uppercase tracking-wider transition-colors ${
-                                isDone || isCurrent ? 'text-slate-900' : 'text-[#9c9384]'
+                              <p className={`text-[10px] font-medium uppercase tracking-wider transition-colors ${
+                                isDone || isCurrent ? 'text-slate-900' : 'text-slate-400'
                               }`}>
                                 {step.title}
                               </p>
@@ -313,11 +311,11 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
                   <div className="hidden sm:block">
                     <div className="relative flex items-center justify-between">
                       {/* Background Track Line connecting nodes */}
-                      <div className="absolute left-[10%] right-[10%] top-5 h-0.5 bg-[#dfd4c0] -z-0" />
+                      <div className="absolute left-[10%] right-[10%] top-5 h-0.5 bg-slate-200 -z-0" />
                       
                       {/* Active Gold Progress Fill Line */}
                       <div
-                        className="absolute left-[10%] top-5 h-[2.5px] bg-[#caa04c] -z-0 transition-all duration-700 ease-in-out"
+                        className="absolute left-[10%] top-5 h-[2px] bg-[#caa04c] -z-0 transition-all duration-700 ease-in-out"
                         style={{
                           width:
                             trackingStep <= 1
@@ -345,18 +343,18 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
                                 ? 'p-1 sm:p-1.5 rounded-full bg-[#caa04c]/20 ring-4 ring-[#caa04c]/10'
                                 : 'p-1 sm:p-1.5 rounded-full'
                             }`}>
-                              <div className={`w-8 h-8 sm:w-11 sm:h-11 rounded-full flex items-center justify-center transition-all ${
+                              <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center transition-all ${
                                 isDone || isCurrent
-                                  ? 'bg-[#caa04c] text-white shadow-md shadow-amber-900/15'
-                                  : 'bg-[#faf7f2] border-2 border-[#d5c5a7] text-[#8c7d69]'
+                                  ? 'bg-[#caa04c] text-white shadow-xs'
+                                  : 'bg-white border border-slate-300 text-slate-400'
                               }`}>
                                 {step.icon}
                               </div>
                             </div>
 
                             {/* Step Label Underneath */}
-                            <p className={`mt-3 text-[9px] sm:text-[11px] font-extrabold uppercase tracking-wider text-center leading-tight transition-colors ${
-                              isDone || isCurrent ? 'text-slate-900' : 'text-[#9c9384]'
+                            <p className={`mt-2.5 text-[9.5px] sm:text-[10.5px] font-medium uppercase tracking-wider text-center leading-tight transition-colors ${
+                              isDone || isCurrent ? 'text-slate-800' : 'text-slate-400'
                             }`}>
                               {step.title}
                             </p>

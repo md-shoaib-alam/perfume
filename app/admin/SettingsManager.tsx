@@ -34,23 +34,34 @@ const DEFAULT_FRAGRANCE_TIERS: FragrancePyramidData = {
   }
 };
 
+const DEFAULT_ANNOUNCEMENTS = [
+  'FLAT 15% OFF | USE CODE: LUXE15',
+  'FREE SHIPPING ON ORDERS OVER RS. 1,500',
+  'LUXURY EXTRAIT DE PARFUM | 10+ HOURS LINGERING GUARANTEE',
+  '7 DAYS NO QUESTIONS ASKED RETURNS ON 100ML & 50ML'
+];
+
+const DEFAULT_SETTINGS = {
+  announcementText: 'FLAT 15% OFF | USE CODE: LUXE15',
+  announcementCode: 'LUXE15',
+  announcementMessages: JSON.stringify(DEFAULT_ANNOUNCEMENTS),
+  freeGiftThreshold: 3500,
+  contactEmail: 'concierge@bakhoorbliss.com',
+  contactPhone: '+91 (800) 555-BAKHOOR',
+  returnsBadgeText: '7 DAYS',
+  returnsTitle: '7 Days No Questions Asked Returns',
+  returnsDescription: 'Applicable on first order of 100ml and 50ml perfume bottles only',
+  deliveryTitle: 'Free & Fast Express Delivery',
+  deliveryDescription: 'Free shipping on orders over ₹1,500 delivered within 3-5 business days',
+  guaranteeTitle: '10+ Hours Long-Lasting Sillage Guarantee',
+  guaranteeDescription: 'BakhoorBliss extraits de parfum are crafted with high oil concentration to linger all day'
+};
+
 export const SettingsManager: React.FC = () => {
   const queryClient = useQueryClient();
   const { showConfirm, showAlert } = useConfirm();
-  const [settings, setSettings] = useState({
-    announcementText: 'FLAT 15% OFF | USE CODE: LUXE15',
-    announcementCode: 'LUXE15',
-    freeGiftThreshold: 3500,
-    contactEmail: 'concierge@bakhoorbliss.com',
-    contactPhone: '+91 (800) 555-BAKHOOR',
-    returnsBadgeText: '7 DAYS',
-    returnsTitle: 'No Questions Asked Returns',
-    returnsDescription: 'Applicable on first order of 100ml and 50ml perfume bottles only',
-    deliveryTitle: 'Free & Fast Delivery',
-    deliveryDescription: 'on your doorsteps in 3-5 days, with a surprise',
-    guaranteeTitle: 'The Lingering Effect You Want',
-    guaranteeDescription: 'BakhoorBliss perfumes are blended with proven ingredients to last 10+ hours (Guaranteed)'
-  });
+  const [settings, setSettings] = useState(DEFAULT_SETTINGS);
+  const [announcementList, setAnnouncementList] = useState<string[]>(DEFAULT_ANNOUNCEMENTS);
 
   const [fragranceTiers, setFragranceTiers] = useState<FragrancePyramidData>(DEFAULT_FRAGRANCE_TIERS);
   const [initialFragranceTiers, setInitialFragranceTiers] = useState<FragrancePyramidData>(DEFAULT_FRAGRANCE_TIERS);
@@ -140,7 +151,41 @@ export const SettingsManager: React.FC = () => {
       try {
         const data = await api.getSettings();
         if (data) {
-          setSettings((prev) => ({ ...prev, ...data }));
+          const loadedSettings = {
+            announcementText: data.announcementText || DEFAULT_SETTINGS.announcementText,
+            announcementCode: data.announcementCode || DEFAULT_SETTINGS.announcementCode,
+            announcementMessages: data.announcementMessages || DEFAULT_SETTINGS.announcementMessages,
+            freeGiftThreshold: data.freeGiftThreshold ?? DEFAULT_SETTINGS.freeGiftThreshold,
+            contactEmail: data.contactEmail || DEFAULT_SETTINGS.contactEmail,
+            contactPhone: data.contactPhone || DEFAULT_SETTINGS.contactPhone,
+            returnsBadgeText: data.returnsBadgeText || DEFAULT_SETTINGS.returnsBadgeText,
+            returnsTitle: data.returnsTitle || DEFAULT_SETTINGS.returnsTitle,
+            returnsDescription: data.returnsDescription || DEFAULT_SETTINGS.returnsDescription,
+            deliveryTitle: data.deliveryTitle || DEFAULT_SETTINGS.deliveryTitle,
+            deliveryDescription: data.deliveryDescription || DEFAULT_SETTINGS.deliveryDescription,
+            guaranteeTitle: data.guaranteeTitle || DEFAULT_SETTINGS.guaranteeTitle,
+            guaranteeDescription: data.guaranteeDescription || DEFAULT_SETTINGS.guaranteeDescription
+          };
+          setSettings(loadedSettings);
+
+          if (data.announcementMessages) {
+            let parsedMsgs: string[] = [];
+            if (typeof data.announcementMessages === 'string') {
+              try { parsedMsgs = JSON.parse(data.announcementMessages); } catch (e) {}
+            } else if (Array.isArray(data.announcementMessages)) {
+              parsedMsgs = data.announcementMessages;
+            }
+            if (Array.isArray(parsedMsgs) && parsedMsgs.length > 0) {
+              setAnnouncementList(parsedMsgs.map((m: any) => String(m)).filter(Boolean));
+            }
+          } else if (data.announcementText) {
+            setAnnouncementList([
+              data.announcementText,
+              'FREE SHIPPING ON ORDERS OVER RS. 1,500',
+              'LUXURY EXTRAIT DE PARFUM | 10+ HOURS LINGERING GUARANTEE',
+              '7 DAYS NO QUESTIONS ASKED RETURNS ON 100ML & 50ML'
+            ]);
+          }
           if (data.fragranceTiers) {
             let parsed: FragrancePyramidData | null = null;
             if (typeof data.fragranceTiers === 'string') {
@@ -248,12 +293,31 @@ export const SettingsManager: React.FC = () => {
     });
   };
 
+  const handleAddAnnouncement = () => {
+    setAnnouncementList((prev) => [...prev, 'NEW LUXURY ANNOUNCEMENT OFFER']);
+  };
+
+  const handleUpdateAnnouncement = (index: number, text: string) => {
+    setAnnouncementList((prev) => {
+      const updated = [...prev];
+      updated[index] = text;
+      return updated;
+    });
+  };
+
+  const handleRemoveAnnouncement = (index: number) => {
+    setAnnouncementList((prev) => prev.filter((_, i) => i !== index));
+  };
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
     try {
+      const cleanMsgs = announcementList.map((m) => m.trim()).filter(Boolean);
       const payload = {
         ...settings,
+        announcementText: cleanMsgs[0] || settings.announcementText || 'FLAT 15% OFF | USE CODE: LUXE15',
+        announcementMessages: JSON.stringify(cleanMsgs.length > 0 ? cleanMsgs : DEFAULT_ANNOUNCEMENTS),
         fragranceTiers: JSON.stringify(fragranceTiers)
       };
 
@@ -314,30 +378,116 @@ export const SettingsManager: React.FC = () => {
 
       <form onSubmit={handleSave} className="bg-white p-6 rounded-xl border border-slate-200 shadow-xs space-y-8">
         {/* Announcement Bar Section */}
-        <div>
-          <h4 className="font-bold text-slate-900 text-sm mb-3 pb-2 border-b border-slate-100">
-            Gold Top Announcement Bar
-          </h4>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+        <div className="space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-100">
             <div>
-              <label className="block font-semibold text-slate-700 mb-1">Banner Announcement Text</label>
-              <input
-                type="text"
-                value={settings.announcementText}
-                onChange={(e) => setSettings({ ...settings, announcementText: e.target.value })}
-                className="w-full bg-slate-50 border border-slate-200 rounded px-3 py-2 text-xs focus:outline-none focus:border-[#d6a750]"
-              />
+              <h4 className="font-bold text-slate-900 text-sm">
+                Gold Top Announcement Bar (Dynamic Promotional Ticker)
+              </h4>
+              <p className="text-[11px] text-slate-500">
+                Manage the live scrolling messages displayed at the very top of your storefront. Add, edit, or remove any phrase in real time.
+              </p>
             </div>
 
-            <div>
-              <label className="block font-semibold text-slate-700 mb-1">Coupon Promo Code</label>
+            <button
+              type="button"
+              onClick={handleAddAnnouncement}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#c59b48] hover:bg-[#b58b38] text-white text-xs font-bold rounded-lg shadow-2xs transition-all cursor-pointer shrink-0"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+              </svg>
+              <span>Add Ticker Message</span>
+            </button>
+          </div>
+
+          {/* Live Dynamic Storefront Preview */}
+          <div>
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-[11px] font-semibold text-slate-600">Live Storefront Ticker Preview ({announcementList.length} phrases):</span>
+              <span className="text-[10px] text-slate-400 font-medium">Updates instantly on store when saved</span>
+            </div>
+            <div className="bg-[#caa04c] text-[#222222] font-semibold text-[11px] py-2 px-4 rounded-xl overflow-hidden uppercase tracking-widest whitespace-nowrap border border-[#b88f3e]/40 shadow-xs flex items-center gap-6">
+              {announcementList.length === 0 ? (
+                <span className="text-slate-800/80 italic">No announcement messages added. Click "Add Ticker Message" below.</span>
+              ) : (
+                announcementList.map((msg, idx) => (
+                  <React.Fragment key={idx}>
+                    <span className="flex items-center gap-2 shrink-0">
+                      {idx === 0 && <span className="w-2 h-2 rounded-full bg-slate-900 animate-pulse" />}
+                      <span>{msg || '(Empty message)'}</span>
+                    </span>
+                    {idx < announcementList.length - 1 && <span className="text-slate-900/60 font-bold">•</span>}
+                  </React.Fragment>
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* Coupon Code Shortcut */}
+          <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
+            <label className="block font-semibold text-slate-700 mb-1 text-xs">Primary Coupon Promo Code</label>
+            <div className="flex items-center gap-3">
               <input
                 type="text"
                 value={settings.announcementCode}
-                onChange={(e) => setSettings({ ...settings, announcementCode: e.target.value })}
-                className="w-full bg-slate-50 border border-slate-200 rounded px-3 py-2 text-xs focus:outline-none focus:border-[#d6a750]"
+                onChange={(e) => setSettings({ ...settings, announcementCode: e.target.value.toUpperCase() })}
+                placeholder="e.g. LUXE15"
+                className="w-full sm:w-64 bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-mono font-bold uppercase text-slate-900 focus:outline-none focus:border-[#d6a750] transition-all"
               />
+              <span className="text-[11px] text-slate-500">Auto-applies when customers click promo banners</span>
             </div>
+          </div>
+
+          {/* Dynamic Message List Editor */}
+          <div className="space-y-2.5">
+            <span className="block font-bold text-slate-800 text-xs">
+              Configured Ticker Phrases ({announcementList.length}):
+            </span>
+            <div className="space-y-2">
+              {announcementList.map((msg, index) => (
+                <div
+                  key={index}
+                  className="flex items-center gap-2.5 p-2.5 bg-slate-50 rounded-xl border border-slate-200/80 text-xs"
+                >
+                  <span className="w-6 h-6 rounded-lg bg-amber-50 border border-amber-200/80 font-bold text-[11px] text-[#caa04c] flex items-center justify-center shrink-0">
+                    {index + 1}
+                  </span>
+
+                  <input
+                    type="text"
+                    value={msg}
+                    onChange={(e) => handleUpdateAnnouncement(index, e.target.value)}
+                    placeholder={`Announcement message #${index + 1}`}
+                    className="flex-1 bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-900 font-medium focus:outline-none focus:border-[#d6a750] transition-all"
+                  />
+
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveAnnouncement(index)}
+                    title="Remove Message"
+                    className="w-8 h-8 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 flex items-center justify-center transition-colors cursor-pointer shrink-0"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            {announcementList.length === 0 && (
+              <div className="text-center py-6 border border-dashed border-slate-300 rounded-xl bg-slate-50 text-slate-500 text-xs">
+                <span>No ticker messages. </span>
+                <button
+                  type="button"
+                  onClick={() => setAnnouncementList(DEFAULT_ANNOUNCEMENTS)}
+                  className="font-bold text-[#caa04c] hover:underline cursor-pointer"
+                >
+                  Load Luxury Defaults
+                </button>
+              </div>
+            )}
           </div>
         </div>
 

@@ -322,7 +322,7 @@ export const api = {
         return res.documents.map((doc: any) => {
           let parsedItems = [];
           try {
-            parsedItems = typeof doc.items === 'string' ? JSON.parse(doc.items) : doc.items;
+            parsedItems = typeof doc.items === 'string' ? JSON.parse(doc.items) : (doc.items || []);
           } catch (e) {
             parsedItems = [];
           }
@@ -330,19 +330,39 @@ export const api = {
           try {
             parsedShipping = typeof doc.shippingAddress === 'string' ? JSON.parse(doc.shippingAddress) : (doc.shippingAddress || {});
           } catch (e) {
-            parsedShipping = {};
+            parsedShipping = typeof doc.shippingAddress === 'string' ? { address: doc.shippingAddress } : {};
           }
+          const custName = doc.customerName || parsedShipping?.name || 'Anonymous Customer';
+          const custEmail = doc.customerEmail || parsedShipping?.email || '';
+          const custPhone = doc.customerPhone || parsedShipping?.phone || '';
+          const custAddress = typeof parsedShipping?.address === 'string' ? parsedShipping.address : (doc.shippingAddress || '');
+          const custCity = parsedShipping?.city || '';
+          const custState = parsedShipping?.state || '';
+          const custPincode = parsedShipping?.pincode || parsedShipping?.postalCode || '';
+          const custCountry = parsedShipping?.country || 'India';
+
           return {
             _id: doc.$id,
             id: doc.$id,
             orderNumber: `NSH-${doc.$id.slice(-5).toUpperCase()}`,
             userId: doc.userId,
-            customerName: doc.customerName,
-            customerEmail: doc.customerEmail,
-            customerPhone: doc.customerPhone,
+            customerName: custName,
+            customerEmail: custEmail,
+            customerPhone: custPhone,
             shippingAddress: doc.shippingAddress,
-            total: Number(doc.totalAmount),
-            totalAmount: Number(doc.totalAmount),
+            customer: {
+              name: custName,
+              email: custEmail,
+              phone: custPhone,
+              address: custAddress,
+              city: custCity,
+              state: custState,
+              pincode: custPincode,
+              postalCode: custPincode,
+              country: custCountry
+            },
+            total: Number(doc.totalAmount || 0),
+            totalAmount: Number(doc.totalAmount || 0),
             status: doc.status || 'pending',
             orderStatus: doc.status || 'pending',
             paymentStatus: doc.paymentStatus || 'pending',
@@ -437,12 +457,21 @@ export const api = {
     return await res.json();
   },
 
-  async updateOrderStatus(id: string, status: string, trackingNumber?: string, trackingUrl?: string): Promise<any> {
+  async updateOrderStatus(id: string, status: string, trackingNumber?: string, trackingUrl?: string, customerData?: any): Promise<any> {
     try {
       const res = await fetch('/api/orders', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, status, trackingNumber, trackingUrl })
+        body: JSON.stringify({
+          id,
+          status,
+          trackingNumber,
+          trackingUrl,
+          customerName: customerData?.name,
+          customerEmail: customerData?.email,
+          customerPhone: customerData?.phone,
+          shippingAddress: customerData?.address ? customerData : undefined
+        })
       });
       if (res.ok) {
         return await res.json();
@@ -455,6 +484,10 @@ export const api = {
       const payload: any = { status };
       if (trackingNumber !== undefined) payload.trackingNumber = trackingNumber;
       if (trackingUrl !== undefined) payload.trackingUrl = trackingUrl;
+      if (customerData?.name) payload.customerName = customerData.name;
+      if (customerData?.email) payload.customerEmail = customerData.email;
+      if (customerData?.phone) payload.customerPhone = customerData.phone;
+      if (customerData?.address) payload.shippingAddress = JSON.stringify(customerData);
 
       const doc = await databases.updateDocument(
         APPWRITE_DATABASE_ID,

@@ -27,6 +27,21 @@ export const AnnouncementBar: React.FC = () => {
   const { data: settings } = useSettingsQuery();
 
   const messages = useMemo(() => {
+    if (settings?.announcementMessages) {
+      let parsed: string[] = [];
+      if (typeof settings.announcementMessages === 'string') {
+        try {
+          parsed = JSON.parse(settings.announcementMessages);
+        } catch (e) {}
+      } else if (Array.isArray(settings.announcementMessages)) {
+        parsed = settings.announcementMessages;
+      }
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        const clean = parsed.map((m: any) => (typeof m === 'string' ? m.trim() : '')).filter(Boolean);
+        if (clean.length > 0) return clean;
+      }
+    }
+
     if (settings?.announcementText) {
       return [
         settings.announcementText,

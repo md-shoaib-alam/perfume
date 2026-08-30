@@ -247,7 +247,16 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
                   <span className="font-bold text-xs text-slate-800 whitespace-nowrap">
                     Rs.{(Number(o.total || o.totalAmount) || 0).toLocaleString('en-IN')}
                   </span>
-                  <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 text-[9px] sm:text-[10px] font-bold rounded-full uppercase tracking-wider whitespace-nowrap">
+                  <span className={`px-2 sm:px-2.5 py-0.5 text-[9px] sm:text-[10px] font-bold rounded-full uppercase tracking-wider whitespace-nowrap border ${
+                    (() => {
+                      const s = (o.orderStatus || o.status || 'pending').toLowerCase().replace(/_/g, ' ');
+                      if (s === 'delivered') return 'bg-emerald-50 text-emerald-700 border-emerald-200/60';
+                      if (s === 'cancelled') return 'bg-rose-50 text-rose-700 border-rose-200/60';
+                      if (s === 'shipped' || s === 'in transit' || s === 'out for delivery') return 'bg-blue-50 text-blue-700 border-blue-200/60';
+                      if (s === 'packed') return 'bg-purple-50 text-purple-700 border-purple-200/60';
+                      return 'bg-amber-50/80 text-[#b88f3e] border-amber-200/60';
+                    })()
+                  }`}>
                     {o.orderStatus || o.status || 'Processing'}
                   </span>
                   <span className="text-slate-400 group-hover:text-[#caa04c] transition-colors hidden sm:inline">

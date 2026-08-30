@@ -147,10 +147,15 @@ export function useCart() {
   }, []);
 
   const totalCartCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
+  const subtotal = cartItems.reduce(
+    (sum, item) => sum + (item.unitPrice ?? item.product.price) * item.quantity,
+    0
+  );
 
   return {
     cartItems,
     totalCartCount,
+    subtotal,
     isCartOpen,
     setIsCartOpen,
     addToCart,

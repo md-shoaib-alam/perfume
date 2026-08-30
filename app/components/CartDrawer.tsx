@@ -1,7 +1,7 @@
 'use client';
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import type { CartItem } from '../types';
-import { CheckoutModal } from './CheckoutModal';
 
 interface CartDrawerProps {
   isOpen: boolean;
@@ -22,7 +22,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
   onRemoveItem,
   onClearCart
 }) => {
-  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+  const router = useRouter();
   const [isScrolled, setIsScrolled] = useState(false);
 
   // Prevent background page scrolling when cart drawer is open
@@ -205,7 +205,10 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
               </div>
 
               <button
-                onClick={() => setIsCheckoutOpen(true)}
+                onClick={() => {
+                  onClose();
+                  router.push('/checkout');
+                }}
                 className="w-full py-3.5 bg-[#caa04c] hover:bg-[#b88f3e] text-white font-bold uppercase tracking-widest text-xs rounded-lg shadow-sm transition-colors cursor-pointer flex items-center justify-center gap-2"
               >
                 <span>PROCEED TO CHECKOUT</span>
@@ -218,18 +221,6 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
 
         </div>
       </div>
-
-      {/* Luxury Razorpay & COD Checkout Modal */}
-      <CheckoutModal
-        isOpen={isCheckoutOpen}
-        onClose={() => setIsCheckoutOpen(false)}
-        cartItems={cartItems}
-        onClearCart={() => {
-          onClearCart?.();
-          setIsCheckoutOpen(false);
-          onClose();
-        }}
-      />
     </div>
   );
 };

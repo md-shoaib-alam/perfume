@@ -44,6 +44,15 @@ export function useAccountData(onLogoutCallback?: () => void) {
       setRecentProducts(localRecents);
     }
 
+    // Initialize active tab from URL query param if present
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const tabParam = params.get('tab');
+      if (tabParam && ['dashboard', 'orders', 'profile', 'wishlist', 'recently_viewed', 'password'].includes(tabParam)) {
+        setActiveTab(tabParam as TabKey);
+      }
+    }
+
     const handleUpdate = () => {
       const updated = getRecentlyViewed();
       setRecentProducts(updated);
