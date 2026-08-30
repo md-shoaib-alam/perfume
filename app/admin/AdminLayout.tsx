@@ -12,13 +12,15 @@ import { PerfumersCelebritiesManager } from './PerfumersCelebritiesManager';
 import { ReelsPressManager } from './ReelsPressManager';
 import { CouponsManager } from './CouponsManager';
 import { ReviewsManager } from './ReviewsManager';
+import { AnnouncementBarManager } from './AnnouncementBarManager';
+import { MessagesManager } from './MessagesManager';
 import { SettingsManager } from './SettingsManager';
 
 interface AdminLayoutProps {
   onBackToStore: () => void;
 }
 
-type TabType = 'overview' | 'products' | 'orders' | 'hero' | 'reels' | 'collections' | 'perfumers' | 'coupons' | 'reviews' | 'settings';
+type TabType = 'overview' | 'products' | 'orders' | 'hero' | 'announcement' | 'messages' | 'reels' | 'collections' | 'perfumers' | 'coupons' | 'reviews' | 'settings';
 
 export const AdminLayout: React.FC<AdminLayoutProps> = ({ onBackToStore }) => {
   const [activeTab, setActiveTab] = useState<TabType>('overview');
@@ -33,6 +35,8 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onBackToStore }) => {
       products: 'Products',
       orders: 'Orders',
       hero: 'Hero Banners',
+      announcement: 'Announcement Bar',
+      messages: 'Contact Inquiries',
       reels: 'Reels & Press',
       collections: 'Collections',
       perfumers: 'Perfumers',
@@ -141,6 +145,24 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onBackToStore }) => {
       icon: (
         <svg className="w-4 h-4 fill-none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+        </svg>
+      )
+    },
+    {
+      id: 'announcement',
+      name: 'Announcement Bar',
+      icon: (
+        <svg className="w-4 h-4 fill-none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
+        </svg>
+      )
+    },
+    {
+      id: 'messages',
+      name: 'Contact Inquiries',
+      icon: (
+        <svg className="w-4 h-4 fill-none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
         </svg>
       )
     },
@@ -372,6 +394,8 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onBackToStore }) => {
           {activeTab === 'products' && <ProductsManager />}
           {activeTab === 'orders' && <OrdersManager />}
           {activeTab === 'hero' && <HeroManager />}
+          {activeTab === 'announcement' && <AnnouncementBarManager />}
+          {activeTab === 'messages' && <MessagesManager />}
           {activeTab === 'reels' && <ReelsPressManager />}
           {activeTab === 'collections' && <CollectionsManager />}
           {activeTab === 'perfumers' && <PerfumersCelebritiesManager />}
