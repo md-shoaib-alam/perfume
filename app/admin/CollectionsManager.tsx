@@ -217,9 +217,9 @@ export const CollectionsManager: React.FC = () => {
       {/* Header bar */}
       <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-xl font-serif font-bold text-slate-900">Collections & Banner Manager</h2>
+          <h2 className="text-xl font-bold text-slate-900 tracking-tight">Collections & Banner Manager</h2>
           <p className="text-xs text-slate-500">
-            Upload hero lifestyle banners (16:9), circular story thumbnails, and editorial narratives. All collections are live from Appwrite.
+            Upload hero lifestyle banners (16:9), circular story thumbnails, and editorial narratives for the storefront.
           </p>
         </div>
 
@@ -239,7 +239,7 @@ export const CollectionsManager: React.FC = () => {
       {isLoading && (
         <div className="bg-white p-12 rounded-2xl border border-slate-200 text-center space-y-3">
           <div className="w-8 h-8 border-2 border-[#d6a750] border-t-transparent rounded-full animate-spin mx-auto" />
-          <p className="text-xs font-medium text-slate-600">Loading collections live from Appwrite...</p>
+          <p className="text-xs font-medium text-slate-600">Loading collections...</p>
         </div>
       )}
 
@@ -272,9 +272,9 @@ export const CollectionsManager: React.FC = () => {
             </svg>
           </div>
           <div>
-            <h3 className="font-serif font-bold text-slate-900 text-base">No Collections in Database</h3>
+            <h3 className="font-bold text-slate-900 text-base">No Collections Created</h3>
             <p className="text-xs text-slate-500 max-w-sm mx-auto mt-1">
-              There are currently no collections saved in your Appwrite database. Create your first luxury collection above.
+              There are currently no collections created. Create your first luxury collection above.
             </p>
           </div>
           <button
@@ -326,7 +326,7 @@ export const CollectionsManager: React.FC = () => {
 
                     <div>
                       <div className="flex items-center gap-2">
-                        <h4 className="font-serif font-bold text-slate-900 text-base">{item.name}</h4>
+                        <h4 className="font-bold text-slate-900 text-base">{item.name}</h4>
                         <span className="text-[11px] font-sans font-semibold text-slate-400">({item.subname || 'Collection'})</span>
                         {item.slug && (
                           <span className="px-2 py-0.5 bg-slate-100 text-slate-600 rounded text-[10px] font-mono">
@@ -443,17 +443,17 @@ export const CollectionsManager: React.FC = () => {
                       <div className="bg-white p-4 rounded-xl border border-slate-200 space-y-3">
                         <span className="font-bold text-slate-800 block">1. Hero Lifestyle Banner (16:9 / Landscape)</span>
                         <MediaUploader
-                          label="Upload High-Res Banner to Appwrite"
+                          label="Upload High-Res Banner"
                           value={item.bannerImage || ''}
                           onChange={(url) => handleUpdate(idx, 'bannerImage', url)}
-                          helperText="Recommended: 1920x1080 (16:9) lifestyle photography uploaded to Appwrite Cloud Storage."
+                          helperText="Recommended: 1920x1080 (16:9) lifestyle photography."
                         />
                       </div>
 
                       <div className="bg-white p-4 rounded-xl border border-slate-200 space-y-3">
                         <span className="font-bold text-slate-800 block">2. Homepage Story Circle Thumbnail (1:1 Square)</span>
                         <MediaUploader
-                          label="Upload Story Circle Thumbnail to Appwrite"
+                          label="Upload Story Circle Thumbnail"
                           value={item.image || ''}
                           onChange={(url) => handleUpdate(idx, 'image', url)}
                           helperText="Recommended: 400x400 (1:1) square icon thumbnail for the homepage circular stories."

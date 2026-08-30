@@ -249,7 +249,7 @@ export function AdminShell({ children }: AdminShellProps) {
               </svg>
             </button>
 
-            <h1 className="font-serif font-bold text-base sm:text-lg text-slate-900 capitalize">
+            <h1 className="font-bold text-base sm:text-lg text-slate-900 capitalize">
               {NAV_ITEMS.find((item) => item.path === pathname)?.name || 'Admin Console'}
             </h1>
           </div>

@@ -54,7 +54,7 @@ export const PerfumersCelebritiesManager: React.FC = () => {
     <div className="space-y-6 font-sans">
       <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-xl font-serif font-bold text-slate-900">Perfumers & Celebrities Manager</h2>
+          <h2 className="text-xl font-bold text-slate-900 tracking-tight">Perfumers & Celebrities Manager</h2>
           <p className="text-xs text-slate-500">Edit master nose bios, award titles, and celebrity perfume endorsements.</p>
         </div>
 
@@ -92,7 +92,7 @@ export const PerfumersCelebritiesManager: React.FC = () => {
                 <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full border-2 border-[#d6a750] p-1 overflow-hidden bg-slate-100 shadow-md">
                   <img src={p.image} alt={p.name} loading="lazy" decoding="async" className="w-full h-full object-cover rounded-full" />
                 </div>
-                <h4 className="font-serif font-bold text-slate-900 text-sm mt-3">{p.name}</h4>
+                <h4 className="font-bold text-slate-900 text-sm mt-3">{p.name}</h4>
                 <span className="text-[10px] text-amber-700 font-semibold bg-amber-50 px-2.5 py-0.5 rounded-full mt-1">
                   {p.award}
                 </span>
@@ -160,7 +160,7 @@ export const PerfumersCelebritiesManager: React.FC = () => {
               <div className="flex items-center gap-3">
                 <img src={c.image} alt={c.name} loading="lazy" decoding="async" className="w-14 h-16 object-cover rounded-xl shadow-xs bg-slate-100 border border-slate-200" />
                 <div className="flex-1 min-w-0">
-                  <h4 className="font-serif font-bold text-slate-900 text-sm truncate">{c.name}</h4>
+                  <h4 className="font-bold text-slate-900 text-sm truncate">{c.name}</h4>
                   <span className="text-[10px] uppercase tracking-wider text-[#c59b48] font-bold block mt-0.5">{c.perfume}</span>
                 </div>
               </div>

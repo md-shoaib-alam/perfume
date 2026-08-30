@@ -486,7 +486,7 @@ export default function CustomSignInPage() {
                     type="text"
                     value={mobileNumber}
                     onChange={(e) => setMobileNumber(e.target.value)}
-                    placeholder="6530003456"
+                    placeholder="name@example.com or 9876543210"
                     className="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl text-slate-900 text-sm focus:outline-none focus:border-[#d09e44] focus:ring-1 focus:ring-[#d09e44] transition-all placeholder:text-slate-400"
                     autoFocus
                   />

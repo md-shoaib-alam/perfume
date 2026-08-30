@@ -16,78 +16,21 @@ const DEFAULT_FRAGRANCE_TIERS: FragrancePyramidData = {
     duration: '0 to 30 Minutes',
     description:
       'The first olfactory impression perceived immediately upon atomization. Crisp, effervescent botanical isolates designed to captivate the senses.',
-    notes: [
-      {
-        name: 'Calabrian Bergamot',
-        role: 'Luminous Citrus Spark',
-        source: 'Hand-pressed in Calabria, Southern Italy',
-        image: 'https://images.unsplash.com/photo-1594035910387-fea47794261f?auto=format&fit=crop&w=400&q=80'
-      },
-      {
-        name: 'Saffron Absolute',
-        role: 'Regal Golden Spice Accord',
-        source: 'Harvested at dawn in Pampore, Kashmir',
-        image: 'https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?auto=format&fit=crop&w=400&q=80'
-      },
-      {
-        name: 'Taif Rose Petals',
-        role: 'Crisp Velvet Blossom',
-        source: 'Hydro-distilled in Taif Mountain Valleys',
-        image: 'https://images.unsplash.com/photo-1547887537-6158d64c35b3?auto=format&fit=crop&w=400&q=80'
-      }
-    ]
+    notes: []
   },
   heart: {
     title: 'Heart Notes — The Scent Soul',
     duration: '30 Minutes to 4 Hours',
     description:
       'The core architectural body of the perfume that unfolds as the top notes subside. Rich floral and aromatic resins defining character.',
-    notes: [
-      {
-        name: 'Bourbon Vanilla Pods',
-        role: 'Creamy Warmth & Depth',
-        source: 'Sun-cured in Madagascar',
-        image: 'https://images.unsplash.com/photo-1523293182086-7651a899d37f?auto=format&fit=crop&w=400&q=80'
-      },
-      {
-        name: 'Orris Butter',
-        role: 'Silky Powdery Richness',
-        source: 'Aged 3 Years in Florence, Italy',
-        image: 'https://images.unsplash.com/photo-1616949755610-8c9bbc08f138?auto=format&fit=crop&w=400&q=80'
-      },
-      {
-        name: 'Cardamom Co-Extract',
-        role: 'Green Warm Spicy Spark',
-        source: 'Wild-harvested in Guatemala Rainforests',
-        image: 'https://images.unsplash.com/photo-1594035910387-fea47794261f?auto=format&fit=crop&w=400&q=80'
-      }
-    ]
+    notes: []
   },
   base: {
     title: 'Base Notes — The Lingering Sillage',
     duration: '4 to 12+ Hours',
     description:
       'The foundation of high-concentration extraits. Heavy molecular resins and vintage woods that anchor the fragrance and bond with skin chemistry.',
-    notes: [
-      {
-        name: 'Aged Assam Agarwood (Oud)',
-        role: 'Smoky Balsamic Power',
-        source: 'Naturally aged wild Aquilaria from Assam',
-        image: 'https://images.unsplash.com/photo-1523293182086-7651a899d37f?auto=format&fit=crop&w=400&q=80'
-      },
-      {
-        name: 'Golden Ambergris Resin',
-        role: 'Oceanic Salty Warmth',
-        source: 'Sustainably ethically foraged coastal amber',
-        image: 'https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?auto=format&fit=crop&w=400&q=80'
-      },
-      {
-        name: 'Mysore Sandalwood',
-        role: 'Buttery Sacred Cream Wood',
-        source: 'Government-certified Santalum Album, India',
-        image: 'https://images.unsplash.com/photo-1547887537-6158d64c35b3?auto=format&fit=crop&w=400&q=80'
-      }
-    ]
+    notes: []
   }
 };
 
@@ -153,6 +96,44 @@ export const SettingsManager: React.FC = () => {
     }
   };
 
+  const [syncingUsers, setSyncingUsers] = useState(false);
+  const [syncResult, setSyncResult] = useState<{ ok: boolean; message: string } | null>(null);
+
+  const handleSyncUsers = async () => {
+    const confirmed = await showConfirm({
+      title: 'Sync Clerk Users to Appwrite',
+      message: 'This will fetch all registered Clerk users and synchronize them into your Appwrite users table. Continue?',
+      confirmText: 'Sync Users',
+      variant: 'info'
+    });
+    if (!confirmed) return;
+
+    setSyncingUsers(true);
+    setSyncResult(null);
+    try {
+      const res = await fetch('/api/users/sync-all', { method: 'POST' });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setSyncResult({
+          ok: true,
+          message: `Successfully synchronized ${data.totalClerkUsers} users from Clerk to Appwrite (${data.created} created, ${data.updated} updated).`
+        });
+      } else {
+        setSyncResult({
+          ok: false,
+          message: `Sync failed: ${data.error || 'Unknown error'}`
+        });
+      }
+    } catch (err: any) {
+      setSyncResult({
+        ok: false,
+        message: `Failed to execute sync: ${err.message}`
+      });
+    } finally {
+      setSyncingUsers(false);
+    }
+  };
+
   useEffect(() => {
     const load = async () => {
       setLoading(true);
@@ -171,9 +152,24 @@ export const SettingsManager: React.FC = () => {
             }
             if (parsed) {
               const merged: FragrancePyramidData = {
-                top: parsed.top || DEFAULT_FRAGRANCE_TIERS.top,
-                heart: parsed.heart || DEFAULT_FRAGRANCE_TIERS.heart,
-                base: parsed.base || DEFAULT_FRAGRANCE_TIERS.base
+                top: {
+                  title: parsed.top?.title || DEFAULT_FRAGRANCE_TIERS.top.title,
+                  duration: parsed.top?.duration || DEFAULT_FRAGRANCE_TIERS.top.duration,
+                  description: parsed.top?.description || DEFAULT_FRAGRANCE_TIERS.top.description,
+                  notes: parsed.top?.notes || []
+                },
+                heart: {
+                  title: parsed.heart?.title || DEFAULT_FRAGRANCE_TIERS.heart.title,
+                  duration: parsed.heart?.duration || DEFAULT_FRAGRANCE_TIERS.heart.duration,
+                  description: parsed.heart?.description || DEFAULT_FRAGRANCE_TIERS.heart.description,
+                  notes: parsed.heart?.notes || []
+                },
+                base: {
+                  title: parsed.base?.title || DEFAULT_FRAGRANCE_TIERS.base.title,
+                  duration: parsed.base?.duration || DEFAULT_FRAGRANCE_TIERS.base.duration,
+                  description: parsed.base?.description || DEFAULT_FRAGRANCE_TIERS.base.description,
+                  notes: parsed.base?.notes || []
+                }
               };
               setFragranceTiers(merged);
               setInitialFragranceTiers(JSON.parse(JSON.stringify(merged)));
@@ -303,8 +299,8 @@ export const SettingsManager: React.FC = () => {
     <div className="space-y-6 font-sans pb-12">
       <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs flex justify-between items-center">
         <div>
-          <h2 className="text-xl font-serif font-bold text-slate-900">Live Store Settings & Olfactory Config</h2>
-          <p className="text-xs text-slate-500">Configure top promotional ticker, trust claims, and the dynamic Olfactory Notes Pyramid stored in Appwrite.</p>
+          <h2 className="text-xl font-bold text-slate-900 tracking-tight">Live Store Settings & Olfactory Config</h2>
+          <p className="text-xs text-slate-500">Configure top promotional ticker, trust claims, cart gifts, and the Olfactory Notes Pyramid.</p>
         </div>
         {saved && (
           <span className="px-3 py-1 bg-emerald-100 text-emerald-800 text-xs font-semibold rounded flex items-center gap-1.5 animate-fade-in-up">
@@ -319,7 +315,7 @@ export const SettingsManager: React.FC = () => {
       <form onSubmit={handleSave} className="bg-white p-6 rounded-xl border border-slate-200 shadow-xs space-y-8">
         {/* Announcement Bar Section */}
         <div>
-          <h4 className="font-serif font-bold text-slate-900 text-sm mb-3 pb-2 border-b border-slate-100">
+          <h4 className="font-bold text-slate-900 text-sm mb-3 pb-2 border-b border-slate-100">
             Gold Top Announcement Bar
           </h4>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
@@ -349,11 +345,11 @@ export const SettingsManager: React.FC = () => {
         <div>
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 mb-4 border-b border-slate-100">
             <div>
-              <h4 className="font-serif font-bold text-slate-900 text-sm">
-                Olfactory Architecture & Fragrance Pyramid (Appwrite Dynamic)
+              <h4 className="font-bold text-slate-900 text-sm">
+                Olfactory Architecture & Fragrance Notes Pyramid
               </h4>
               <p className="text-[11px] text-slate-500">
-                Configure Top, Heart, and Base notes displayed on the homepage. Upload ingredient lifestyle photos to Appwrite Cloud Storage (`perfume_media`).
+                Configure Top, Heart, and Base notes displayed on the homepage with high-definition ingredient photos.
               </p>
             </div>
 
@@ -429,27 +425,30 @@ export const SettingsManager: React.FC = () => {
                 </button>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {currentTier.notes && currentTier.notes.map((note, noteIdx) => (
-                  <div
-                    key={noteIdx}
-                    className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs space-y-3 relative"
-                  >
-                    <div className="flex justify-between items-center">
-                      <span className="text-[10px] font-mono font-bold text-[#b58b38] bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
-                        Ingredient #{noteIdx + 1}
-                      </span>
-                      {currentTier.notes.length > 1 && (
+              {(!currentTier.notes || currentTier.notes.length === 0) ? (
+                <div className="py-8 text-center bg-white rounded-xl border border-dashed border-slate-200 text-xs text-slate-400">
+                  No ingredient notes added for this tier yet. Click &quot;+ Add Ingredient Note&quot; to add one.
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {currentTier.notes.map((note, noteIdx) => (
+                    <div
+                      key={noteIdx}
+                      className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs space-y-3 relative"
+                    >
+                      <div className="flex justify-between items-center">
+                        <span className="text-[10px] font-mono font-bold text-[#b58b38] bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
+                          Ingredient #{noteIdx + 1}
+                        </span>
                         <button
                           type="button"
                           onClick={() => handleRemoveTierNote(noteIdx)}
-                          className="text-rose-500 hover:text-rose-700 text-xs font-bold"
+                          className="text-rose-500 hover:text-rose-700 text-xs font-bold cursor-pointer"
                           title="Remove Note"
                         >
                           Remove
                         </button>
-                      )}
-                    </div>
+                      </div>
 
                     <div>
                       <label className="block text-[11px] font-semibold text-slate-600 mb-0.5">Ingredient Name *</label>
@@ -489,19 +488,20 @@ export const SettingsManager: React.FC = () => {
                         label="Ingredient Image"
                         value={note.image || ''}
                         onChange={(url) => handleUpdateTierNote(noteIdx, 'image', url)}
-                        helperText="Appwrite Storage uploaded botanical visual."
+                        helperText="Upload ingredient visual."
                       />
                     </div>
                   </div>
                 ))}
               </div>
-            </div>
+            )}
           </div>
         </div>
+      </div>
 
         {/* Gold Trust & Guarantee Banner Section */}
         <div>
-          <h4 className="font-serif font-bold text-slate-900 text-sm mb-3 pb-2 border-b border-slate-100">
+          <h4 className="font-bold text-slate-900 text-sm mb-3 pb-2 border-b border-slate-100">
             Gold Trust & Guarantee Banner Claims
           </h4>
           <div className="space-y-4 text-xs">
@@ -593,7 +593,7 @@ export const SettingsManager: React.FC = () => {
 
         {/* Free Gift Threshold & Contact */}
         <div>
-          <h4 className="font-serif font-bold text-slate-900 text-sm mb-3 pb-2 border-b border-slate-100">
+          <h4 className="font-bold text-slate-900 text-sm mb-3 pb-2 border-b border-slate-100">
             Cart Thresholds & Concierge
           </h4>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
@@ -640,18 +640,18 @@ export const SettingsManager: React.FC = () => {
         </div>
       </form>
 
-      {/* Appwrite Database Initialization / Seeder Card */}
+      {/* Store Database Initialization / Seeder Card */}
       <div className="bg-slate-900 text-white p-6 rounded-xl border border-slate-800 shadow-md space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="font-serif text-lg font-bold text-[#c59b48] flex items-center gap-2">
+            <h3 className="font-bold text-lg text-[#c59b48] flex items-center gap-2">
               <svg className="w-5 h-5 text-[#c59b48]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M13 10V3L4 14h7v7l9-11h-7z" />
               </svg>
-              <span>Appwrite Database Initialization</span>
+              <span>Store Database Initialization</span>
             </h3>
             <p className="text-xs text-slate-400 mt-1">
-              Click to seed your Appwrite database tables with initial perfumes, reviews, discount coupons, hero banners, and settings.
+              Populate catalog with default perfumes, reviews, discount coupons, hero banners, and brand settings.
             </p>
           </div>
 
@@ -665,7 +665,7 @@ export const SettingsManager: React.FC = () => {
                 : 'bg-[#c59b48] hover:bg-[#b58b38] text-black font-extrabold shadow-md'
             }`}
           >
-            {seeding ? 'Seeding Tables...' : 'Seed Appwrite Data'}
+            {seeding ? 'Seeding Catalog...' : 'Load Sample Data'}
           </button>
         </div>
 
@@ -674,6 +674,44 @@ export const SettingsManager: React.FC = () => {
             seedResult.ok ? 'bg-emerald-950/70 text-emerald-300 border border-emerald-500/40' : 'bg-rose-950/70 text-rose-300 border border-rose-500/40'
           }`}>
             {seedResult.message}
+          </div>
+        )}
+      </div>
+
+      {/* User Accounts Synchronization Card */}
+      <div className="bg-slate-900 text-white p-6 rounded-xl border border-slate-800 shadow-md space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h3 className="font-bold text-lg text-[#c59b48] flex items-center gap-2">
+              <svg className="w-5 h-5 text-[#c59b48]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+              </svg>
+              <span>Customer Accounts Synchronization</span>
+            </h3>
+            <p className="text-xs text-slate-400 mt-1">
+              Synchronize all registered user profiles for order matching, addresses, and customer profiles.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleSyncUsers}
+            disabled={syncingUsers}
+            className={`px-5 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all cursor-pointer shrink-0 ${
+              syncingUsers
+                ? 'bg-amber-600 text-white animate-pulse'
+                : 'bg-[#c59b48] hover:bg-[#b58b38] text-black font-extrabold shadow-md'
+            }`}
+          >
+            {syncingUsers ? 'Syncing Profiles...' : 'Sync Customers'}
+          </button>
+        </div>
+
+        {syncResult && (
+          <div className={`p-3 rounded-lg text-xs font-semibold ${
+            syncResult.ok ? 'bg-emerald-950/70 text-emerald-300 border border-emerald-500/40' : 'bg-rose-950/70 text-rose-300 border border-rose-500/40'
+          }`}>
+            {syncResult.message}
           </div>
         )}
       </div>

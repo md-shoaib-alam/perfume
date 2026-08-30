@@ -282,7 +282,7 @@ export const ReelsPressManager: React.FC = () => {
 
                 {/* Bottom Overlay Text */}
                 <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/95 via-black/50 to-transparent p-3 pt-6 flex flex-col justify-end">
-                  <h4 className="font-serif text-xs sm:text-sm font-bold text-white leading-tight truncate">{reel.title}</h4>
+                  <h4 className="text-xs sm:text-sm font-bold text-white leading-tight truncate">{reel.title}</h4>
                   <p className="text-[11px] sm:text-xs text-[#d6a750] font-semibold mt-0.5">{reel.price}</p>
                 </div>
               </div>
@@ -368,7 +368,7 @@ export const ReelsPressManager: React.FC = () => {
           {logos.map((logo, idx) => (
             <div
               key={idx}
-              className="flex items-center gap-2.5 px-4 py-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl transition-all shadow-2xs font-serif font-bold text-sm text-slate-800"
+              className="flex items-center gap-2.5 px-4 py-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl transition-all shadow-2xs font-bold text-sm text-slate-800"
             >
               <span>{logo}</span>
               <button
@@ -387,7 +387,7 @@ export const ReelsPressManager: React.FC = () => {
         <div className="mt-6 pt-6 border-t border-slate-100">
           <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Live Homepage Preview:</p>
           <div className="w-full bg-slate-50 p-4 rounded-xl border border-slate-200 overflow-hidden relative">
-            <div className="flex animate-marquee space-x-12 items-center text-slate-900 font-serif font-bold text-lg tracking-widest">
+            <div className="flex animate-marquee space-x-12 items-center text-slate-900 font-bold text-lg tracking-widest">
               {logos.concat(logos).map((l, i) => (
                 <span key={i} className="whitespace-nowrap uppercase text-slate-700">
                   {l}

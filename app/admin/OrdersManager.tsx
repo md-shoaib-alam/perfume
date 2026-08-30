@@ -97,7 +97,7 @@ export const OrdersManager: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-xl border border-slate-200 shadow-xs">
         <div>
-          <h2 className="text-xl font-serif font-bold text-slate-900">Customer Orders Pipeline</h2>
+          <h2 className="text-xl font-bold text-slate-900 tracking-tight">Customer Orders Pipeline</h2>
           <p className="text-xs text-slate-500">Track shipments, dispatch packages, and update live tracking URLs.</p>
         </div>
 
@@ -273,7 +273,7 @@ export const OrdersManager: React.FC = () => {
           <div className="bg-white rounded-2xl max-w-lg w-full p-6 sm:p-7 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center pb-3 border-b border-slate-100">
               <div>
-                <h3 className="font-serif text-lg font-bold text-slate-900">Order: {selectedOrder.orderNumber}</h3>
+                <h3 className="text-lg font-bold text-slate-900">Order: {selectedOrder.orderNumber}</h3>
                 <span className="text-xs text-slate-500">Payment: {selectedOrder.paymentStatus || 'Paid'}</span>
               </div>
               <button

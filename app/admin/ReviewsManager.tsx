@@ -64,7 +64,7 @@ export const ReviewsManager: React.FC = () => {
     <div className="space-y-6 font-sans">
       <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs flex justify-between items-center">
         <div>
-          <h2 className="text-xl font-serif font-bold text-slate-900">Customer Reviews & Testimonials</h2>
+          <h2 className="text-xl font-bold text-slate-900 tracking-tight">Customer Reviews & Testimonials</h2>
           <p className="text-xs text-slate-500">Moderate customer ratings and feature verified buyer reviews on product pages.</p>
         </div>
       </div>

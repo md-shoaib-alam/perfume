@@ -23,11 +23,17 @@ export async function checkRole(role: Role): Promise<boolean> {
     return sessionRole === role;
   }
 
-  // 2. Direct check from user publicMetadata in Clerk
+  // 2. Direct check from user metadata in Clerk
   const user = await currentUser();
   if (!user) return false;
 
-  const userRole = (user.publicMetadata?.role as Role | undefined) || 'customer';
+  const userRole = (
+    user.publicMetadata?.role ||
+    (user as any).unsafeMetadata?.role ||
+    (user as any).privateMetadata?.role ||
+    'customer'
+  ) as Role;
+
   return userRole === role;
 }
 
@@ -51,7 +57,12 @@ export async function getUserRole(): Promise<Role | null> {
   const user = await currentUser();
   if (!user) return null;
 
-  return (user.publicMetadata?.role as Role | undefined) || 'customer';
+  return (
+    user.publicMetadata?.role ||
+    (user as any).unsafeMetadata?.role ||
+    (user as any).privateMetadata?.role ||
+    'customer'
+  ) as Role;
 }
 
 /**

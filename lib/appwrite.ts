@@ -4,12 +4,17 @@ const APPWRITE_ENDPOINT = process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT || '';
 const APPWRITE_PROJECT_ID = process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID || '';
 const APPWRITE_DATABASE_ID = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID || '';
 const APPWRITE_BUCKET_ID = process.env.NEXT_PUBLIC_APPWRITE_BUCKET_ID || '';
+const APPWRITE_API_KEY = process.env.APPWRITE_API_KEY || process.env.APPWRITE_API_SECRET || '';
 
 const client = new Client();
 if (APPWRITE_ENDPOINT && APPWRITE_PROJECT_ID) {
   client
     .setEndpoint(APPWRITE_ENDPOINT)
     .setProject(APPWRITE_PROJECT_ID);
+
+  if (APPWRITE_API_KEY && typeof window === 'undefined') {
+    client.setKey(APPWRITE_API_KEY);
+  }
 }
 
 const account = new Account(client);

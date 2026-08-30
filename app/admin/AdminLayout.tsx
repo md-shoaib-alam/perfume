@@ -210,11 +210,11 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onBackToStore }) => {
           {/* Brand Header */}
           <div className="h-16 px-5 border-b border-slate-100 flex items-center justify-between bg-white">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-xl bg-[#d6a750] border border-[#caa04c] flex items-center justify-center text-white font-serif font-bold text-xs tracking-wider shadow-xs shrink-0">
+              <div className="w-8 h-8 rounded-xl bg-[#d6a750] border border-[#caa04c] flex items-center justify-center text-white font-bold text-xs tracking-wider shadow-xs shrink-0">
                 BB
               </div>
               <div className="leading-none">
-                <span className="font-serif font-bold text-sm tracking-wide text-slate-900 block">
+                <span className="font-bold text-sm tracking-wide text-slate-900 block">
                   BakhoorBliss
                 </span>
                 <span className="text-[8.5px] font-sans font-semibold tracking-[0.16em] text-slate-400 uppercase block mt-1">
@@ -309,7 +309,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onBackToStore }) => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
               </svg>
             </button>
-            <h1 className="font-serif text-lg sm:text-xl font-bold text-slate-800">
+            <h1 className="text-lg sm:text-xl font-bold text-slate-800">
               {TABS.find(t => t.id === activeTab)?.name}
             </h1>
           </div>
@@ -397,11 +397,11 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onBackToStore }) => {
               {/* Brand & Close Header */}
               <div className="p-5 border-b border-slate-100 flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-xl bg-[#d6a750] border border-[#caa04c] flex items-center justify-center text-white font-serif font-bold text-xs tracking-wider shadow-xs shrink-0">
+                  <div className="w-8 h-8 rounded-xl bg-[#d6a750] border border-[#caa04c] flex items-center justify-center text-white font-bold text-xs tracking-wider shadow-xs shrink-0">
                     BB
                   </div>
                   <div className="leading-none">
-                    <span className="font-serif font-bold text-sm tracking-wide text-slate-900 block">
+                    <span className="font-bold text-sm tracking-wide text-slate-900 block">
                       BakhoorBliss
                     </span>
                     <span className="text-[8.5px] font-sans font-semibold tracking-[0.16em] text-slate-400 uppercase block mt-1">

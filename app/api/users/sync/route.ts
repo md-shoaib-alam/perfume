@@ -26,15 +26,12 @@ export async function POST(req: Request) {
       throw new Error('APPWRITE_DATABASE_ID is not configured');
     }
 
-    const appwritePayload = {
+    const appwritePayload: Record<string, any> = {
       userId: userData.userId,
       email: userData.email,
       name: userData.name,
       phone: userData.phone,
-      address: userData.address,
-      city: userData.city,
-      pincode: userData.pincode,
-      lastLoginAt: userData.lastLoginAt
+      address: userData.address || ''
     };
 
     const existingDocs = await databases.listDocuments(

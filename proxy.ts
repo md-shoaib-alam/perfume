@@ -24,8 +24,10 @@ export default clerkMiddleware(async (auth, req) => {
       (sessionClaims as any)?.publicMetadata?.role ||
       (sessionClaims as any)?.role;
 
-    // Deny unless role is explicitly 'admin' — undefined/null role is NOT admin
-    if (role !== 'admin') {
+    // If session claims explicitly specify a non-admin role (e.g. 'customer'), redirect.
+    // If undefined in session JWT (not yet refreshed in browser cookies), allow through
+    // to app/admin/layout.tsx where checkRole('admin') performs the live check against currentUser().
+    if (role && role !== 'admin') {
       return NextResponse.redirect(new URL('/', req.url));
     }
   }

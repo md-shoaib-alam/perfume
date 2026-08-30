@@ -63,7 +63,7 @@ export const DashboardOverview: React.FC<{ onNavigateTo?: (tab: string) => void 
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
           </svg>
         </div>
-        <h3 className="font-serif font-bold text-lg text-slate-900">Unable to Load Dashboard Data</h3>
+        <h3 className="font-bold text-lg text-slate-900">Unable to Load Dashboard Data</h3>
         <p className="text-xs text-slate-500 max-w-md mx-auto">{error}</p>
         <button
           onClick={load}
@@ -94,7 +94,7 @@ export const DashboardOverview: React.FC<{ onNavigateTo?: (tab: string) => void 
       {/* Top Welcome & Quick Actions */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[#1e1e1e] text-white p-6 rounded-xl border border-white/10 shadow-lg">
         <div>
-          <h2 className="text-2xl font-serif font-bold text-[#d6a750]">Store Performance Hub</h2>
+          <h2 className="text-2xl font-bold text-[#d6a750] tracking-tight">Store Performance Hub</h2>
           <p className="text-xs text-slate-300 mt-1">
             Real-time analytics and inventory status from Appwrite & Storefront.
           </p>
@@ -124,7 +124,7 @@ export const DashboardOverview: React.FC<{ onNavigateTo?: (tab: string) => void 
             <span className="p-2 bg-amber-50 text-amber-600 rounded-lg text-sm font-bold">₹</span>
           </div>
           <div className="mt-3">
-            <h3 className="text-2xl font-bold text-slate-900 font-serif">
+            <h3 className="text-2xl font-bold text-slate-900">
               ₹{Number(stats.totalRevenue).toLocaleString('en-IN')}
             </h3>
             <span className="inline-block mt-1 text-[11px] text-emerald-600 font-medium">
@@ -144,7 +144,7 @@ export const DashboardOverview: React.FC<{ onNavigateTo?: (tab: string) => void 
             </span>
           </div>
           <div className="mt-3">
-            <h3 className="text-2xl font-bold text-slate-900 font-serif">{stats.totalOrders}</h3>
+            <h3 className="text-2xl font-bold text-slate-900">{stats.totalOrders}</h3>
             <span className="inline-block mt-1 text-[11px] text-amber-600 font-medium">
               {stats.pendingOrders} pending dispatch
             </span>
@@ -162,7 +162,7 @@ export const DashboardOverview: React.FC<{ onNavigateTo?: (tab: string) => void 
             </span>
           </div>
           <div className="mt-3">
-            <h3 className="text-2xl font-bold text-slate-900 font-serif">{stats.totalProducts} Fragrances</h3>
+            <h3 className="text-2xl font-bold text-slate-900">{stats.totalProducts} Fragrances</h3>
             <span className="inline-block mt-1 text-[11px] text-slate-500 font-medium">
               {stats.lowStockProducts > 0 ? `${stats.lowStockProducts} low stock alerts` : 'All stock healthy'}
             </span>
@@ -180,7 +180,7 @@ export const DashboardOverview: React.FC<{ onNavigateTo?: (tab: string) => void 
             </span>
           </div>
           <div className="mt-3">
-            <h3 className="text-2xl font-bold text-slate-900 font-serif">4.9 / 5.0</h3>
+            <h3 className="text-2xl font-bold text-slate-900">4.9 / 5.0</h3>
             <span className="inline-block mt-1 text-[11px] text-emerald-600 font-medium">
               Based on {stats.totalReviews} verified reviews
             </span>
@@ -193,7 +193,7 @@ export const DashboardOverview: React.FC<{ onNavigateTo?: (tab: string) => void 
         <div className="lg:col-span-2 bg-white p-6 rounded-xl border border-slate-200 shadow-xs">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h4 className="font-serif text-base font-bold text-slate-900">Revenue & Order Trends</h4>
+              <h4 className="text-base font-bold text-slate-900">Revenue & Order Trends</h4>
               <p className="text-xs text-slate-500">Weekly sales breakdown</p>
             </div>
             <span className="text-xs bg-slate-100 text-slate-600 px-3 py-1 rounded-full font-medium">
@@ -222,7 +222,7 @@ export const DashboardOverview: React.FC<{ onNavigateTo?: (tab: string) => void 
         <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-xs flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between mb-1">
-              <h4 className="font-serif text-base font-bold text-slate-900">Pre-order & Stock Alert</h4>
+              <h4 className="text-base font-bold text-slate-900">Pre-order & Stock Alert</h4>
               <span className="text-[10px] bg-slate-100 px-2 py-0.5 rounded text-slate-600 font-bold">
                 {stats.totalProducts} In Catalog
               </span>

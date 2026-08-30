@@ -118,7 +118,7 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
           <div className="flex items-center gap-2 w-full min-w-0">
             <input
               type="text"
-              value={value}
+              value={value || ''}
               onChange={(e) => onChange(e.target.value)}
               placeholder="Paste URL or upload file"
               className="flex-1 min-w-0 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-[#d6a750] focus:bg-white transition-all font-mono text-[11px]"

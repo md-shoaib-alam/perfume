@@ -97,7 +97,7 @@ export const ProductsManager: React.FC = () => {
     }
   };
 
-  // Derive collection options dynamically from Appwrite collections
+  // Derive collection options dynamically from Appwrite collections (no fake fallback data)
   const collectionOptions = useMemo(() => {
     if (collections && collections.length > 0) {
       return collections
@@ -115,18 +115,47 @@ export const ProductsManager: React.FC = () => {
           };
         });
     }
-    return [
-      { slug: 'haute', name: 'Haute Collection' },
-      { slug: 'bureau', name: 'Bureau Collection' },
-      { slug: 'luxe', name: 'Luxe Collection' },
-      { slug: 'miss_neesh', name: 'Miss NEESH Collection' },
-      { slug: 'for-her', name: 'Pour Femme (For Her)' },
-      { slug: 'for-him', name: 'Pour Homme (For Him)' }
-    ];
+    return [];
   }, [collections]);
 
+  // Derive categories dynamically from catalog products + defaults
+  const availableCategories = useMemo(() => {
+    const defaultCats = [
+      { slug: 'extrait-de-parfum', name: 'Extrait De Parfum' },
+      { slug: 'attar', name: 'Imperial Attar' },
+      { slug: 'discovery-set', name: 'Discovery Set' },
+      { slug: 'gift-set', name: 'Luxury Gift Set' }
+    ];
+    const map = new Map<string, string>();
+    defaultCats.forEach((c) => map.set(c.slug, c.name));
+
+    (products || []).forEach((p) => {
+      if (p.category && !map.has(p.category)) {
+        const formattedName = p.category
+          .split(/[-_]/)
+          .map((w: string) => w.charAt(0).toUpperCase() + w.slice(1))
+          .join(' ');
+        map.set(p.category, formattedName);
+      }
+    });
+
+    return Array.from(map.entries()).map(([slug, name]) => ({ slug, name }));
+  }, [products]);
+
+  const [isCustomCategory, setIsCustomCategory] = useState(false);
+
+  const formatCategoryName = (cat?: string) => {
+    if (!cat) return 'Extrait De Parfum';
+    const match = availableCategories.find((c) => c.slug === cat);
+    if (match) return match.name;
+    return cat
+      .split(/[-_]/)
+      .map((w: string) => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(' ');
+  };
+
   const getCollectionName = (colSlug?: string) => {
-    if (!colSlug) return 'Haute Collection';
+    if (!colSlug) return 'Standalone';
     const match = collectionOptions.find(
       (c) => c.slug === colSlug || c.slug === colSlug.replace('-collection', '')
     );
@@ -139,12 +168,13 @@ export const ProductsManager: React.FC = () => {
 
   const handleOpenAdd = () => {
     setEditingProduct(null);
+    setIsCustomCategory(false);
     setFormData({
       name: '',
       subtitle: 'Extrait De Parfum',
       category: 'extrait-de-parfum',
       gender: 'For Him',
-      collection: 'haute',
+      collection: '',
       price: 3600,
       originalPrice: 4200,
       volume: '100ml',
@@ -168,10 +198,12 @@ export const ProductsManager: React.FC = () => {
 
   const handleOpenEdit = (product: Product) => {
     setEditingProduct(product);
+    const isStandard = ['extrait-de-parfum', 'attar', 'discovery-set', 'gift-set'].includes(product.category || '');
+    setIsCustomCategory(!isStandard && Boolean(product.category));
     setFormData({
       ...product,
       gender: product.gender || 'For Him',
-      collection: product.collection || 'haute',
+      collection: product.collection || '',
       sizeOptions: product.sizeOptions && product.sizeOptions.length > 0 
         ? product.sizeOptions 
         : [
@@ -344,7 +376,7 @@ export const ProductsManager: React.FC = () => {
       {/* Header & Controls */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-xl border border-slate-200 shadow-xs">
         <div>
-          <h2 className="text-xl font-serif font-bold text-slate-900">Fragrance Catalog Manager</h2>
+          <h2 className="text-xl font-bold text-slate-900 tracking-tight">Fragrance Catalog Manager</h2>
           <p className="text-xs text-slate-500">Configure fragrance collections, gender targeting, multi-volume pricing, and inventory.</p>
         </div>
 
@@ -399,10 +431,11 @@ export const ProductsManager: React.FC = () => {
           className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-[#d6a750]"
         >
           <option value="all">All Categories</option>
-          <option value="extrait-de-parfum">Extrait De Parfum</option>
-          <option value="attar">Imperial Attar</option>
-          <option value="discovery-set">Discovery Set</option>
-          <option value="gift-set">Luxury Gift Set</option>
+          {availableCategories.map((cat) => (
+            <option key={cat.slug} value={cat.slug}>
+              {cat.name}
+            </option>
+          ))}
         </select>
       </div>
 
@@ -433,7 +466,7 @@ export const ProductsManager: React.FC = () => {
                 />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-2">
-                    <h4 className="font-serif text-sm font-bold text-slate-900 truncate">
+                    <h4 className="font-bold text-sm text-slate-900 truncate">
                       {prod.name}
                     </h4>
                     <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold shrink-0 ${
@@ -557,7 +590,7 @@ export const ProductsManager: React.FC = () => {
                           className="w-11 h-11 object-cover rounded border border-slate-200 shrink-0 bg-slate-100"
                         />
                         <div className="min-w-0">
-                          <div className="font-bold text-slate-900 font-serif text-sm truncate max-w-xs">{prod.name}</div>
+                          <div className="font-bold text-slate-900 text-sm truncate max-w-xs">{prod.name}</div>
                           <div className="text-[11px] text-slate-500 truncate max-w-xs">{prod.subtitle}</div>
                         </div>
                       </div>
@@ -569,15 +602,7 @@ export const ProductsManager: React.FC = () => {
                     </td>
                     <td className="px-4 py-3.5 align-middle whitespace-nowrap">
                       <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200 capitalize">
-                        {prod.category === 'extrait-de-parfum'
-                          ? 'Extrait De Parfum'
-                          : prod.category === 'attar'
-                          ? 'Imperial Attar'
-                          : prod.category === 'discovery-set'
-                          ? 'Discovery Set'
-                          : prod.category === 'gift-set'
-                          ? 'Gift Set'
-                          : prod.category || 'Extrait De Parfum'}
+                        {formatCategoryName(prod.category)}
                       </span>
                     </td>
                     <td className="px-4 py-3.5 align-middle whitespace-nowrap">
@@ -651,7 +676,7 @@ export const ProductsManager: React.FC = () => {
           <div className="bg-white rounded-2xl max-w-3xl w-full p-6 sm:p-8 shadow-2xl my-8 max-h-[90vh] overflow-y-auto border border-slate-100">
             <div className="flex justify-between items-center pb-4 border-b border-slate-100 mb-6">
               <div>
-                <h3 className="font-serif text-2xl font-bold text-slate-900">
+                <h3 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
                   {editingProduct ? `Edit Fragrance` : 'Add New Fragrance'}
                 </h3>
                 <p className="text-xs text-slate-500 mt-0.5">
@@ -701,32 +726,85 @@ export const ProductsManager: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">Collection / Story Line *</label>
-                  <select
-                    value={formData.collection || 'haute'}
-                    onChange={(e) => setFormData({ ...formData, collection: e.target.value })}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-900 focus:outline-none focus:border-[#d6a750] focus:bg-white transition-all cursor-pointer"
-                  >
-                    {collectionOptions.map((col) => (
-                      <option key={col.slug} value={col.slug}>
-                        {col.name}
-                      </option>
-                    ))}
-                  </select>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">Collection / Story Line</label>
+                  {collectionOptions.length > 0 ? (
+                    <select
+                      value={formData.collection || ''}
+                      onChange={(e) => setFormData({ ...formData, collection: e.target.value })}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-900 focus:outline-none focus:border-[#d6a750] focus:bg-white transition-all cursor-pointer"
+                    >
+                      <option value="">None / Standalone</option>
+                      {collectionOptions.map((col) => (
+                        <option key={col.slug} value={col.slug}>
+                          {col.name}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <div>
+                      <input
+                        type="text"
+                        value={formData.collection || ''}
+                        onChange={(e) => setFormData({ ...formData, collection: e.target.value })}
+                        placeholder="e.g. signature-line, attar-collection"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-[#d6a750] focus:bg-white transition-all"
+                      />
+                      <p className="text-[10px] text-slate-400 mt-1">No collection</p>
+                    </div>
+                  )}
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">Product Category *</label>
-                  <select
-                    value={formData.category || 'extrait-de-parfum'}
-                    onChange={(e) => setFormData({ ...formData, category: e.target.value as any })}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-900 focus:outline-none focus:border-[#d6a750] focus:bg-white transition-all cursor-pointer"
-                  >
-                    <option value="extrait-de-parfum">Extrait De Parfum</option>
-                    <option value="attar">Imperial Attar</option>
-                    <option value="discovery-set">Discovery Set</option>
-                    <option value="gift-set">Luxury Gift Set</option>
-                  </select>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-xs font-semibold text-slate-700">Product Category *</label>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsCustomCategory(!isCustomCategory);
+                        if (!isCustomCategory) {
+                          setFormData({ ...formData, category: '' });
+                        } else {
+                          setFormData({ ...formData, category: 'extrait-de-parfum' });
+                        }
+                      }}
+                      className="text-[10px] text-[#916618] hover:underline font-bold cursor-pointer"
+                    >
+                      {isCustomCategory ? '← Choose from Preset List' : '+ Enter Custom Category'}
+                    </button>
+                  </div>
+                  {isCustomCategory ? (
+                    <div>
+                      <input
+                        type="text"
+                        value={formData.category || ''}
+                        onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                        placeholder="e.g. Body Mist, Hair Fragrance, Candle, Solid Perfume"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 font-bold focus:outline-none focus:border-[#d6a750] focus:bg-white transition-all"
+                        required
+                      />
+                      <p className="text-[10px] text-slate-400 mt-1">Enter your custom category name.</p>
+                    </div>
+                  ) : (
+                    <select
+                      value={formData.category || 'extrait-de-parfum'}
+                      onChange={(e) => {
+                        if (e.target.value === '__custom__') {
+                          setIsCustomCategory(true);
+                          setFormData({ ...formData, category: '' });
+                        } else {
+                          setFormData({ ...formData, category: e.target.value as any });
+                        }
+                      }}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-900 focus:outline-none focus:border-[#d6a750] focus:bg-white transition-all cursor-pointer"
+                    >
+                      {availableCategories.map((cat) => (
+                        <option key={cat.slug} value={cat.slug}>
+                          {cat.name}
+                        </option>
+                      ))}
+                      <option value="__custom__">+ Add New Custom Category...</option>
+                    </select>
+                  )}
                 </div>
 
                 <div>
@@ -759,7 +837,7 @@ export const ProductsManager: React.FC = () => {
               <div className="p-5 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-3.5">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                   <div>
-                    <h4 className="font-serif font-bold text-slate-900 text-xs uppercase tracking-wider">
+                    <h4 className="font-bold text-slate-900 text-xs uppercase tracking-wider">
                       Volume Sizes & Pricing Matrix
                     </h4>
                     <p className="text-[11px] text-slate-500 mt-0.5">Configure bottle volumes (15ml, 50ml, 100ml), individual prices, and stock availability.</p>
@@ -861,7 +939,7 @@ export const ProductsManager: React.FC = () => {
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                   <div>
                     <div className="flex items-center gap-2">
-                      <h4 className="font-serif font-bold text-slate-900 text-xs uppercase tracking-wider">
+                      <h4 className="font-bold text-slate-900 text-xs uppercase tracking-wider">
                         Product Story & Detail Gallery (Max 10)
                       </h4>
                       <span className="px-2 py-0.5 bg-amber-100 text-amber-900 rounded-full text-[10px] font-bold">
@@ -896,7 +974,7 @@ export const ProductsManager: React.FC = () => {
                     {formData.storyBlocks.map((block, idx) => (
                       <div key={idx} className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs space-y-3">
                         <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-                          <span className="font-serif font-bold text-slate-900 text-xs uppercase tracking-wider">
+                          <span className="font-bold text-slate-900 text-xs uppercase tracking-wider">
                             Story Block #{idx + 1}
                           </span>
                           <button

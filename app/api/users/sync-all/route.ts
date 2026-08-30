@@ -18,15 +18,12 @@ export async function POST() {
       const phone = u.phoneNumbers?.[0]?.phoneNumber || '';
       const name = `${u.firstName || ''} ${u.lastName || ''}`.trim() || email.split('@')[0] || 'Customer';
 
-      const appwritePayload = {
+      const appwritePayload: Record<string, any> = {
         userId: u.id,
         email,
         name,
         phone,
-        address: '',
-        city: '',
-        pincode: '',
-        lastLoginAt: u.lastSignInAt ? new Date(u.lastSignInAt).toISOString() : new Date().toISOString()
+        address: ''
       };
 
       try {

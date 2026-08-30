@@ -28,7 +28,27 @@ export const HeroManager: React.FC = () => {
         queryClient.invalidateQueries({ queryKey: queryKeys.heroSlides });
         return;
       }
-    } catch (e) {}
+      // If no slides in database, create 1 editable slide in state
+      const defaultSlide: HeroSlide = {
+        id: '',
+        name: 'New Slide',
+        desktopImage: '',
+        mobileImage: '',
+        linkUrl: '#bestsellers'
+      };
+      setSlides([defaultSlide]);
+      setInitialSlides([]);
+    } catch (e) {
+      const defaultSlide: HeroSlide = {
+        id: '',
+        name: 'New Slide',
+        desktopImage: '',
+        mobileImage: '',
+        linkUrl: '#bestsellers'
+      };
+      setSlides([defaultSlide]);
+      setInitialSlides([]);
+    }
   };
 
   useEffect(() => {
@@ -44,11 +64,13 @@ export const HeroManager: React.FC = () => {
   };
 
   const handleUpdateCurrent = (field: keyof HeroSlide, val: string | number) => {
-    const updated = [...slides];
-    if (updated[activeSlideIdx]) {
-      updated[activeSlideIdx] = { ...updated[activeSlideIdx], [field]: val };
-      setSlides(updated);
+    const updated = slides.length > 0 ? [...slides] : [{ ...currentSlide }];
+    const targetIdx = Math.max(0, activeSlideIdx);
+    if (!updated[targetIdx]) {
+      updated[targetIdx] = { ...currentSlide };
     }
+    updated[targetIdx] = { ...updated[targetIdx], [field]: val };
+    setSlides(updated);
   };
 
   const handleSave = async (e?: React.FormEvent) => {
@@ -169,7 +191,7 @@ export const HeroManager: React.FC = () => {
       <div className="bg-white p-5 sm:p-6 rounded-2xl border border-slate-200 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <h2 className="text-xl font-serif font-bold text-slate-900">Hero Carousel Banners</h2>
+            <h2 className="text-xl font-bold text-slate-900 tracking-tight">Hero Carousel Banners</h2>
             <span className="px-2.5 py-0.5 bg-[#c59b48]/15 text-[#b58b38] text-[10px] font-bold rounded-full">
               Desktop & Mobile Dual Images
             </span>
@@ -262,7 +284,7 @@ export const HeroManager: React.FC = () => {
           {/* Slide Editor Form */}
           <form onSubmit={handleSave} className="bg-white p-5 sm:p-7 rounded-2xl border border-slate-200 shadow-xs space-y-5 text-xs">
             <div className="flex justify-between items-center pb-3 border-b border-slate-100">
-              <h3 className="font-serif font-bold text-base text-slate-900">
+              <h3 className="font-bold text-base text-slate-900">
                 Configure Slide #{activeSlideIdx + 1}: {currentSlide.name}
               </h3>
               <span className="text-[11px] text-slate-400 font-medium">Pure Image Banner</span>
@@ -286,7 +308,7 @@ export const HeroManager: React.FC = () => {
                 label="Desktop Banner Image (16:9 Landscape - Min 1920x1080) *"
                 value={currentSlide.desktopImage || ''}
                 onChange={(url) => handleUpdateCurrent('desktopImage', url)}
-                helperText="Appwrite Cloud Storage uploaded high-res landscape banner for laptops and desktops."
+                helperText="High-resolution landscape banner (1920x1080) for laptops and desktops."
               />
 
               <MediaUploader
@@ -352,8 +374,8 @@ export const HeroManager: React.FC = () => {
           </form>
         </div>
 
-        {/* Right Side: Sticky Live Preview Panel (5 Columns) */}
-        <div className="lg:col-span-5 lg:sticky lg:top-24 space-y-4">
+        {/* Right Side: Live Preview Panel (5 Columns) */}
+        <div className="lg:col-span-5 space-y-4">
           <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-xs space-y-3">
             <div className="flex items-center justify-between pb-2 border-b border-slate-100">
               <div>

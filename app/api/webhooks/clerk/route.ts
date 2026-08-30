@@ -51,14 +51,12 @@ export async function POST(req: Request) {
     const name   = `${data.first_name || ''} ${data.last_name || ''}`.trim() || email.split('@')[0] || 'Customer';
 
     if (type === 'user.created' || type === 'user.updated') {
-      const userData = {
+      const userData: Record<string, any> = {
         userId,
         email,
         name,
         phone,
-        lastLoginAt: data.last_sign_in_at
-          ? new Date(data.last_sign_in_at).toISOString()
-          : new Date().toISOString()
+        address: ''
       };
 
       if (APPWRITE_DATABASE_ID) {

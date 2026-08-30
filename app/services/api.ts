@@ -577,16 +577,74 @@ export const api = {
         return res.documents.map(d => ({
           id: d.$id,
           code: d.code,
-          discountPercentage: d.discountPercentage,
-          discountAmount: d.discountAmount,
-          minOrderAmount: d.minOrderAmount,
-          isActive: d.isActive
+          discountPercentage: Number(d.discountPercentage || 0),
+          discountAmount: Number(d.discountAmount || 0),
+          minOrderAmount: Number(d.minOrderAmount || 0),
+          isActive: d.isActive !== false
         }));
       }
     } catch (err) {
       console.warn('Appwrite getCoupons error:', err);
     }
     return [];
+  },
+
+  async createCoupon(data: {
+    code: string;
+    discountPercentage?: number;
+    discountAmount?: number;
+    minOrderAmount?: number;
+    isActive?: boolean;
+  }): Promise<any> {
+    try {
+      const res = await databases.createDocument(
+        APPWRITE_DATABASE_ID,
+        'coupons',
+        ID.unique(),
+        {
+          code: data.code.trim().toUpperCase(),
+          discountPercentage: Number(data.discountPercentage || 0),
+          discountAmount: Number(data.discountAmount || 0),
+          minOrderAmount: Number(data.minOrderAmount || 0),
+          isActive: data.isActive !== false
+        }
+      );
+      return res;
+    } catch (err: any) {
+      console.error('Failed to create coupon in Appwrite:', err);
+      throw err;
+    }
+  },
+
+  async updateCoupon(id: string, data: Partial<{
+    code: string;
+    discountPercentage: number;
+    discountAmount: number;
+    minOrderAmount: number;
+    isActive: boolean;
+  }>): Promise<any> {
+    try {
+      const res = await databases.updateDocument(
+        APPWRITE_DATABASE_ID,
+        'coupons',
+        id,
+        data
+      );
+      return res;
+    } catch (err: any) {
+      console.error('Failed to update coupon in Appwrite:', err);
+      throw err;
+    }
+  },
+
+  async deleteCoupon(id: string): Promise<boolean> {
+    try {
+      await databases.deleteDocument(APPWRITE_DATABASE_ID, 'coupons', id);
+      return true;
+    } catch (err: any) {
+      console.error('Failed to delete coupon from Appwrite:', err);
+      throw err;
+    }
   },
 
   async validateCoupon(code: string, orderTotal: number): Promise<{ valid: boolean; discount: number; message: string }> {
