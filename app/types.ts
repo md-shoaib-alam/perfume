@@ -16,6 +16,7 @@ export interface ProductStoryBlock {
   title?: string;
   subtitle?: string;
   description?: string;
+  content?: string;
 }
 
 export interface Product {
