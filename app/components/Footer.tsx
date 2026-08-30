@@ -42,7 +42,7 @@ export const Footer: React.FC = () => {
           <div className="md:col-span-3 flex justify-start items-center pb-2 md:pb-0">
             <Link href="/" className="inline-block">
               <Image
-                src="/assets/bakhoorbliss.avif"
+                src="/assets/bakhoorblissnav.avif"
                 alt="Bakhoor Bliss"
                 width={160}
                 height={80}

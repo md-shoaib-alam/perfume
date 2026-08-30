@@ -150,7 +150,7 @@ export function AdminShell({ children }: AdminShellProps) {
           <div className="h-20 flex items-center justify-between px-6 border-b border-slate-100 bg-white">
             <Link href="/admin" className="flex items-center gap-2.5 group">
               <img 
-                src="/assets/bakhoorbliss.avif" 
+                src="/assets/bakhoorblissnav.avif" 
                 alt="Bakhoor Bliss" 
                 loading="lazy"
                 decoding="async"
@@ -276,7 +276,7 @@ export function AdminShell({ children }: AdminShellProps) {
                 <div className="flex items-center justify-between pb-4 border-b border-slate-100 mb-4">
                   <Link href="/admin" className="flex items-center gap-2">
                     <img 
-                      src="/assets/bakhoorbliss.avif" 
+                      src="/assets/bakhoorblissnav.avif" 
                       alt="Bakhoor Bliss" 
                       loading="lazy"
                       decoding="async"

@@ -22,7 +22,7 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({ isLoading }) => {
           <div className="absolute inset-0 rounded-full border-[2.5px] border-transparent border-t-[#d6a750] border-r-[#caa04c] animate-spin" />
           <div className="w-24 h-24 sm:w-28 sm:h-28 flex items-center justify-center relative z-10">
             <Image
-              src="/assets/bakhoorbliss.avif"
+              src="/assets/bakhoorblissnav.avif"
               alt="Bakhoor Bliss"
               width={140}
               height={140}

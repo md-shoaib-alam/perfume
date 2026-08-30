@@ -271,7 +271,7 @@ export const SearchDrawer: React.FC<SearchDrawerProps> = ({
             className="shrink-0 flex items-center cursor-pointer py-1"
           >
             <Image 
-              src="/assets/bakhoorbliss.avif" 
+              src="/assets/bakhoorblissnav.avif" 
               alt="Bakhoor Bliss" 
               width={120}
               height={48}

@@ -641,16 +641,18 @@ export const SettingsManager: React.FC = () => {
       </form>
 
       {/* Store Database Initialization / Seeder Card */}
-      <div className="bg-slate-900 text-white p-6 rounded-xl border border-slate-800 shadow-md space-y-4">
-        <div className="flex items-center justify-between">
+      <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h3 className="font-bold text-lg text-[#c59b48] flex items-center gap-2">
-              <svg className="w-5 h-5 text-[#c59b48]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M13 10V3L4 14h7v7l9-11h-7z" />
-              </svg>
+            <h3 className="font-bold text-base text-slate-900 flex items-center gap-2.5">
+              <span className="w-8 h-8 rounded-xl bg-amber-50 border border-amber-200/80 flex items-center justify-center text-[#caa04c] shrink-0">
+                <svg className="w-4 h-4 text-[#caa04c]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+              </span>
               <span>Store Database Initialization</span>
             </h3>
-            <p className="text-xs text-slate-400 mt-1">
+            <p className="text-xs text-slate-500 mt-1.5 ml-10">
               Populate catalog with default perfumes, reviews, discount coupons, hero banners, and brand settings.
             </p>
           </div>
@@ -659,10 +661,10 @@ export const SettingsManager: React.FC = () => {
             type="button"
             onClick={handleSeedDatabase}
             disabled={seeding}
-            className={`px-5 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all cursor-pointer shrink-0 ${
+            className={`px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all cursor-pointer shrink-0 shadow-xs ${
               seeding
-                ? 'bg-amber-600 text-white animate-pulse'
-                : 'bg-[#c59b48] hover:bg-[#b58b38] text-black font-extrabold shadow-md'
+                ? 'bg-amber-100 text-amber-800 border border-amber-300 animate-pulse'
+                : 'bg-slate-900 hover:bg-black text-white'
             }`}
           >
             {seeding ? 'Seeding Catalog...' : 'Load Sample Data'}
@@ -670,8 +672,8 @@ export const SettingsManager: React.FC = () => {
         </div>
 
         {seedResult && (
-          <div className={`p-3 rounded-lg text-xs font-semibold ${
-            seedResult.ok ? 'bg-emerald-950/70 text-emerald-300 border border-emerald-500/40' : 'bg-rose-950/70 text-rose-300 border border-rose-500/40'
+          <div className={`p-3.5 rounded-xl text-xs font-semibold border ${
+            seedResult.ok ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-rose-50 text-rose-800 border-rose-200'
           }`}>
             {seedResult.message}
           </div>
@@ -679,16 +681,18 @@ export const SettingsManager: React.FC = () => {
       </div>
 
       {/* User Accounts Synchronization Card */}
-      <div className="bg-slate-900 text-white p-6 rounded-xl border border-slate-800 shadow-md space-y-4">
+      <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h3 className="font-bold text-lg text-[#c59b48] flex items-center gap-2">
-              <svg className="w-5 h-5 text-[#c59b48]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-              </svg>
+            <h3 className="font-bold text-base text-slate-900 flex items-center gap-2.5">
+              <span className="w-8 h-8 rounded-xl bg-amber-50 border border-amber-200/80 flex items-center justify-center text-[#caa04c] shrink-0">
+                <svg className="w-4 h-4 text-[#caa04c]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                </svg>
+              </span>
               <span>Customer Accounts Synchronization</span>
             </h3>
-            <p className="text-xs text-slate-400 mt-1">
+            <p className="text-xs text-slate-500 mt-1.5 ml-10">
               Synchronize all registered user profiles for order matching, addresses, and customer profiles.
             </p>
           </div>
@@ -697,10 +701,10 @@ export const SettingsManager: React.FC = () => {
             type="button"
             onClick={handleSyncUsers}
             disabled={syncingUsers}
-            className={`px-5 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all cursor-pointer shrink-0 ${
+            className={`px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all cursor-pointer shrink-0 shadow-xs ${
               syncingUsers
-                ? 'bg-amber-600 text-white animate-pulse'
-                : 'bg-[#c59b48] hover:bg-[#b58b38] text-black font-extrabold shadow-md'
+                ? 'bg-amber-100 text-amber-800 border border-amber-300 animate-pulse'
+                : 'bg-slate-900 hover:bg-black text-white'
             }`}
           >
             {syncingUsers ? 'Syncing Profiles...' : 'Sync Customers'}
@@ -708,8 +712,8 @@ export const SettingsManager: React.FC = () => {
         </div>
 
         {syncResult && (
-          <div className={`p-3 rounded-lg text-xs font-semibold ${
-            syncResult.ok ? 'bg-emerald-950/70 text-emerald-300 border border-emerald-500/40' : 'bg-rose-950/70 text-rose-300 border border-rose-500/40'
+          <div className={`p-3.5 rounded-xl text-xs font-semibold border ${
+            syncResult.ok ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-rose-50 text-rose-800 border-rose-200'
           }`}>
             {syncResult.message}
           </div>

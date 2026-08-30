@@ -397,7 +397,7 @@ export default function CustomSignInPage() {
         <header className="px-6 py-6 max-w-7xl mx-auto w-full flex items-center justify-between z-10">
           <Link href="/" className="flex items-center gap-2 group cursor-pointer">
             <Image 
-              src="/assets/bakhoorbliss.avif" 
+              src="/assets/bakhoorblissnav.avif" 
               alt="Bakhoor Bliss" 
               width={120}
               height={40}
@@ -433,7 +433,7 @@ export default function CustomSignInPage() {
         <header className="px-6 py-6 max-w-7xl mx-auto w-full flex items-center justify-between z-10">
         <Link href="/" className="flex items-center gap-2 group cursor-pointer">
           <Image 
-            src="/assets/bakhoorbliss.avif" 
+            src="/assets/bakhoorblissnav.avif" 
             alt="Bakhoor Bliss" 
             width={120}
             height={40}

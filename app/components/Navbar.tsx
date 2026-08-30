@@ -83,7 +83,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           <div className="absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 z-10 flex justify-center items-center">
             <Link href="/" className="flex items-center group cursor-pointer">
               <Image 
-                src="/assets/bakhoorbliss.avif" 
+                src="/assets/bakhoorblissnav.avif" 
                 alt="Bakhoor Bliss" 
                 width={120}
                 height={48}

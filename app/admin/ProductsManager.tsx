@@ -118,24 +118,18 @@ export const ProductsManager: React.FC = () => {
     return [];
   }, [collections]);
 
-  // Derive categories dynamically from catalog products + defaults
+  // Derive categories dynamically ONLY from database catalog products (no mock categories)
   const availableCategories = useMemo(() => {
-    const defaultCats = [
-      { slug: 'extrait-de-parfum', name: 'Extrait De Parfum' },
-      { slug: 'attar', name: 'Imperial Attar' },
-      { slug: 'discovery-set', name: 'Discovery Set' },
-      { slug: 'gift-set', name: 'Luxury Gift Set' }
-    ];
     const map = new Map<string, string>();
-    defaultCats.forEach((c) => map.set(c.slug, c.name));
 
     (products || []).forEach((p) => {
-      if (p.category && !map.has(p.category)) {
-        const formattedName = p.category
+      if (p.category && p.category.trim() && !map.has(p.category.trim())) {
+        const catKey = p.category.trim();
+        const formattedName = catKey
           .split(/[-_]/)
           .map((w: string) => w.charAt(0).toUpperCase() + w.slice(1))
           .join(' ');
-        map.set(p.category, formattedName);
+        map.set(catKey, formattedName);
       }
     });
 
@@ -145,7 +139,7 @@ export const ProductsManager: React.FC = () => {
   const [isCustomCategory, setIsCustomCategory] = useState(false);
 
   const formatCategoryName = (cat?: string) => {
-    if (!cat) return 'Extrait De Parfum';
+    if (!cat) return 'Uncategorized';
     const match = availableCategories.find((c) => c.slug === cat);
     if (match) return match.name;
     return cat
@@ -168,11 +162,11 @@ export const ProductsManager: React.FC = () => {
 
   const handleOpenAdd = () => {
     setEditingProduct(null);
-    setIsCustomCategory(false);
+    setIsCustomCategory(availableCategories.length === 0);
     setFormData({
       name: '',
-      subtitle: 'Extrait De Parfum',
-      category: 'extrait-de-parfum',
+      subtitle: '',
+      category: availableCategories[0]?.slug || '',
       gender: 'For Him',
       collection: '',
       price: 3600,
@@ -198,12 +192,13 @@ export const ProductsManager: React.FC = () => {
 
   const handleOpenEdit = (product: Product) => {
     setEditingProduct(product);
-    const isStandard = ['extrait-de-parfum', 'attar', 'discovery-set', 'gift-set'].includes(product.category || '');
-    setIsCustomCategory(!isStandard && Boolean(product.category));
+    const inDbCategories = availableCategories.some((c) => c.slug === product.category);
+    setIsCustomCategory(!inDbCategories || !product.category);
     setFormData({
       ...product,
       gender: product.gender || 'For Him',
       collection: product.collection || '',
+      category: product.category || '',
       sizeOptions: product.sizeOptions && product.sizeOptions.length > 0 
         ? product.sizeOptions 
         : [
@@ -755,38 +750,44 @@ export const ProductsManager: React.FC = () => {
                 </div>
 
                 <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <label className="block text-xs font-semibold text-slate-700">Product Category *</label>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsCustomCategory(!isCustomCategory);
-                        if (!isCustomCategory) {
-                          setFormData({ ...formData, category: '' });
-                        } else {
-                          setFormData({ ...formData, category: 'extrait-de-parfum' });
-                        }
-                      }}
-                      className="text-[10px] text-[#916618] hover:underline font-bold cursor-pointer"
-                    >
-                      {isCustomCategory ? '← Choose from Preset List' : '+ Enter Custom Category'}
-                    </button>
+                  <div className="flex items-center justify-between mb-1.5 min-w-0">
+                    <label className="block text-xs font-semibold text-slate-700 whitespace-nowrap">
+                      Product Category <span className="text-rose-500">*</span>
+                    </label>
+                    {availableCategories.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsCustomCategory(!isCustomCategory);
+                          if (!isCustomCategory) {
+                            setFormData({ ...formData, category: '' });
+                          } else {
+                            setFormData({ ...formData, category: availableCategories[0]?.slug || '' });
+                          }
+                        }}
+                        className="text-[10.5px] text-[#916618] hover:underline font-bold cursor-pointer whitespace-nowrap shrink-0 ml-1"
+                      >
+                        {isCustomCategory ? '← Choose Category' : '+ Custom Category'}
+                      </button>
+                    )}
                   </div>
-                  {isCustomCategory ? (
+                  {availableCategories.length === 0 || isCustomCategory ? (
                     <div>
                       <input
                         type="text"
                         value={formData.category || ''}
                         onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                        placeholder="e.g. Body Mist, Hair Fragrance, Candle, Solid Perfume"
+                        placeholder="e.g. Extrait De Parfum, Attar, Gift Set"
                         className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 font-bold focus:outline-none focus:border-[#d6a750] focus:bg-white transition-all"
                         required
                       />
-                      <p className="text-[10px] text-slate-400 mt-1">Enter your custom category name.</p>
+                      {availableCategories.length === 0 && (
+                        <p className="text-[10px] text-slate-400 mt-1">No category</p>
+                      )}
                     </div>
                   ) : (
                     <select
-                      value={formData.category || 'extrait-de-parfum'}
+                      value={formData.category || availableCategories[0]?.slug || ''}
                       onChange={(e) => {
                         if (e.target.value === '__custom__') {
                           setIsCustomCategory(true);
