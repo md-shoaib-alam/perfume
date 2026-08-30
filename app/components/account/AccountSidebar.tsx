@@ -59,7 +59,7 @@ export const AccountSidebar: React.FC<AccountSidebarProps> = ({
           {email}
         </p>
 
-        {/* Social Icons - opens official NEESH Instagram & Facebook */}
+        {/* Social Icons - opens official BakhoorBliss Instagram & Facebook */}
         <div className="flex items-center gap-3 mt-3 text-slate-400 text-xs">
           <a
             href="https://www.instagram.com/neeshperfumes"

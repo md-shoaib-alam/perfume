@@ -1,5 +1,5 @@
 /**
- * NEESH™ Luxury Perfumery - Central Authoritative Pricing & Product Engine
+ * BakhoorBliss™ Luxury Perfumery - Central Authoritative Pricing & Product Engine
  * 
  * This module acts as the SINGLE SOURCE OF TRUTH across the entire application
  * for product size variant resolution, unit pricing, and order calculations.

@@ -18,7 +18,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
   - `proxy.ts` must export a function (either as default export or named `proxy` export), e.g. `export default clerkMiddleware(async (auth, req) => { ... })`.
   - The `config` matcher must be defined and exported directly inside `proxy.ts` (not re-exported from another file), e.g. `export const config = { matcher: [...] }`.
 
-# NEESH™ Luxury Perfumery - Agent & Development Guidelines
+# BakhoorBliss™ Luxury Perfumery - Agent & Development Guidelines
 
 ## 1. Zero Emoji Policy (Strict)
 - **NEVER use raw Unicode emojis anywhere in the UI** (e.g. 🗑️, ⚠️, ✨, ✦, 🛍️, etc.).

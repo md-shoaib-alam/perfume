@@ -9,7 +9,7 @@ import { queryKeys } from '../hooks/useQueries';
 
 const DEFAULT_SETTINGS = {
   freeGiftThreshold: 3500,
-  contactEmail: 'wecare@neeshperfumes.com',
+  contactEmail: 'wecare@bakhoorbliss.com',
   contactPhone: '+91 72062 77777'
 };
 
@@ -208,7 +208,7 @@ export const SettingsManager: React.FC = () => {
                 type="email"
                 value={settings.contactEmail}
                 onChange={(e) => setSettings({ ...settings, contactEmail: e.target.value })}
-                placeholder="wecare@neeshperfumes.com"
+                placeholder="wecare@bakhoorbliss.com"
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-[#d6a750] focus:bg-white transition-all"
               />
               <span className="text-[10.5px] text-slate-400 mt-1 block">

@@ -274,7 +274,7 @@ export default function ContactPage() {
                 <h3 className="font-serif text-sm font-bold text-slate-900 tracking-tight">
                   Address
                 </h3>
-                <p className="font-medium text-slate-700">NEESH Perfumes Private Limited</p>
+                <p className="font-medium text-slate-700">BakhoorBliss Perfumes Private Limited</p>
                 <p className="leading-relaxed text-slate-500">
                   Plot No. 31, HSIIDC Industrial Estate, Jagadhari Road, Ambala, Haryana, 133006
                 </p>

@@ -175,7 +175,7 @@ export const INITIAL_SEED_PRODUCTS: Partial<Product>[] = [
       heart: ['Haute Vetiver', 'Signature Scent'],
       base: ['Collector Box', 'Certificate of Authenticity']
     },
-    description: 'The ultimate luxury gifting set containing 5 iconic NEESH extrait de parfum miniatures.',
+    description: 'The ultimate luxury gifting set containing 5 iconic BakhoorBliss extrait de parfum miniatures.',
     sizeOptions: [
       { size: '5 x 15ml Box', price: 3490, originalPrice: 4500, isSoldOut: false }
     ]
