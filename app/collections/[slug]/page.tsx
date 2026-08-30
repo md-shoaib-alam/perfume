@@ -399,10 +399,10 @@ export default function CollectionPage() {
             <p className="font-serif text-sm">Presenting curated collection from Appwrite...</p>
           </div>
         ) : filteredProducts.length === 0 ? (
-          <div className="py-12 sm:py-16 px-6 text-center max-w-lg mx-auto space-y-3 my-2">
+          <div className="pt-2 pb-10 sm:pt-4 sm:pb-14 px-6 text-center max-w-lg mx-auto space-y-3">
             <div className="w-36 h-36 sm:w-48 sm:h-48 md:w-52 md:h-52 mx-auto flex items-center justify-center">
               <img
-                src="/empty-fragrance.jpg"
+                src="/assets/empty-fragrance.avif"
                 alt="No fragrance found"
                 loading="lazy"
                 decoding="async"
