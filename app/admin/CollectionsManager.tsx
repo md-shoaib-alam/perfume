@@ -103,7 +103,7 @@ export const CollectionsManager: React.FC = () => {
   const [initialGenderPages, setInitialGenderPages] = useState<CollectionItem[]>([]);
   const [savingGenderSlug, setSavingGenderSlug] = useState<string | null>(null);
   const [savedGenderSlug, setSavedGenderSlug] = useState<string | null>(null);
-  const [activeGenderEditSlug, setActiveGenderEditSlug] = useState<string | null>('for-him');
+  const [activeGenderEditSlug, setActiveGenderEditSlug] = useState<string | null>(null);
 
   const loadCollections = useCallback(async () => {
     setIsLoading(true);
@@ -117,9 +117,6 @@ export const CollectionsManager: React.FC = () => {
         );
         setCollections(storyCols);
         setInitialCollections(JSON.parse(JSON.stringify(storyCols)));
-        if (storyCols.length > 0) {
-          setActiveEditIndex(0);
-        }
 
         // Gender & Category landing pages merged with live DB items
         const mergedGenderPages = STANDARD_LANDING_PAGES.map((preset) => {
