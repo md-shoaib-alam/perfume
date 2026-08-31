@@ -32,7 +32,6 @@ import { useProductsQuery } from './hooks/useQueries';
 export default function Page() {
   const router = useRouter();
   const { data: queryProducts = [], isLoading: isQueryLoading } = useProductsQuery();
-  const [initialLoading, setInitialLoading] = useState<boolean>(true);
   const [activeTab, setActiveTab] = useState<'For Him' | 'For Her' | 'Gift Sets'>('For Him');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
@@ -42,7 +41,9 @@ export default function Page() {
   const [selectedProductModal, setSelectedProductModal] = useState<Product | null>(null);
 
   const productsList = queryProducts;
-  const loading = isQueryLoading;
+  const loading = isQueryLoading && productsList.length === 0;
+  // Only show loading screen if cold cache and data is actively fetching for the very first time
+  const showLoadingScreen = isQueryLoading && queryProducts.length === 0;
 
   const {
     cartItems,
@@ -59,23 +60,6 @@ export default function Page() {
   useEffect(() => {
     document.title = 'BakhoorBliss | Luxury Extrait De Parfum & Attars';
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
-  }, []);
-
-  // Initial loading timer (1.5-second presentation)
-  useEffect(() => {
-    let isMounted = true;
-    const MIN_LOAD_TIME_MS = 1500;
-
-    const timer = setTimeout(() => {
-      if (isMounted) {
-        setInitialLoading(false);
-      }
-    }, MIN_LOAD_TIME_MS);
-
-    return () => {
-      isMounted = false;
-      clearTimeout(timer);
-    };
   }, []);
 
   // Filter products by activeTab gender & search query
@@ -108,7 +92,7 @@ export default function Page() {
 
   return (
     <div className="min-h-screen bg-white text-slate-900 font-sans selection:bg-[#d6a13d] selection:text-black relative">
-      <LoadingScreen isLoading={initialLoading} />
+      <LoadingScreen isLoading={showLoadingScreen} />
       
       {/* 1. Gold Announcement Offer Bar */}
       <AnnouncementBar />
@@ -182,7 +166,7 @@ export default function Page() {
             {[1, 2, 3, 4].map((item) => (
               <div
                 key={item}
-                className="w-[72vw] max-w-[260px] flex-shrink-0 snap-center sm:w-auto sm:max-w-none bg-white p-1 sm:p-2 rounded-xl flex flex-col justify-between"
+                className="w-[72vw] max-w-[260px] shrink-0 snap-center sm:w-auto sm:max-w-none bg-white p-1 sm:p-2 rounded-xl flex flex-col justify-between"
               >
                 <div className="w-full flex flex-col items-center">
                   {/* Square Image Skeleton */}
@@ -246,7 +230,7 @@ export default function Page() {
         ) : (
           <div className="flex flex-nowrap overflow-x-auto snap-x snap-mandatory gap-3 sm:gap-6 pb-4 no-scrollbar sm:grid sm:grid-cols-2 lg:grid-cols-4 sm:overflow-x-visible sm:pb-0">
             {filteredProducts.map((product) => (
-              <div key={product.id} className="w-[72vw] max-w-[260px] flex-shrink-0 snap-center sm:w-auto sm:max-w-none">
+              <div key={product.id} className="w-[72vw] max-w-[260px] shrink-0 snap-center sm:w-auto sm:max-w-none">
                 <ProductCard
                   product={product}
                   onAddToCart={addToCart}
