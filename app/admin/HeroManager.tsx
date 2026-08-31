@@ -158,8 +158,10 @@ export const HeroManager: React.FC = () => {
       if (slideToDelete?.desktopImage) deleteMediaFromAppwrite(slideToDelete.desktopImage).catch(() => {});
       if (slideToDelete?.mobileImage) deleteMediaFromAppwrite(slideToDelete.mobileImage).catch(() => {});
 
-      await loadSlides();
+      setSlides((prev) => prev.filter((_, i) => i !== idx));
+      setInitialSlides((prev) => prev.filter((_, i) => i !== idx));
       setActiveSlideIdx(Math.max(0, idx - 1));
+      queryClient.invalidateQueries({ queryKey: queryKeys.heroSlides });
     } catch (err: any) {
       await showAlert({
         title: 'Error Deleting Slide',

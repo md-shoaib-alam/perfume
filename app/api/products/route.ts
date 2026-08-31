@@ -103,6 +103,36 @@ export async function GET(req: Request) {
     if (category) queries.push(Query.equal('category', category));
     if (gender && gender !== 'All') queries.push(Query.equal('gender', gender));
 
+    // Field-level selection: for catalog listings, select only essential display columns to prevent over-fetching
+    const isSummary = searchParams.get('summary') === 'true';
+    if (isSummary) {
+      queries.push(
+        Query.select([
+          '$id',
+          'name',
+          'subtitle',
+          'category',
+          'gender',
+          'price',
+          'originalPrice',
+          'rating',
+          'reviewsCount',
+          'volume',
+          'image',
+          'hoverImage',
+          'isBestseller',
+          'isNew',
+          'isPreOrder',
+          'shippingNote',
+          'badgeText',
+          'badgeSubtext',
+          'collection',
+          'sizeOptions',
+          'stock'
+        ])
+      );
+    }
+
     const res = await databases.listDocuments(APPWRITE_DATABASE_ID, 'products', queries);
     const products = (res.documents || []).map(formatProductDoc);
     return NextResponse.json(products, {

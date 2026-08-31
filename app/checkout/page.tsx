@@ -97,6 +97,7 @@ export default function CheckoutPage() {
   const [showMobileBreakdown, setShowMobileBreakdown] = useState(false);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const isSubmittingRef = useRef<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   // Success Confirmation State
@@ -606,9 +607,11 @@ export default function CheckoutPage() {
   // Submit Final Checkout (Step 2)
   const handleSubmitCheckout = async (e: React.FormEvent) => {
     e.preventDefault();
-    setErrorMsg(null);
-
+    // Synchronous transaction lock to prevent duplicate clicks on slow networks
+    if (isSubmittingRef.current || isSubmitting) return;
+    isSubmittingRef.current = true;
     setIsSubmitting(true);
+    setErrorMsg(null);
 
     try {
       if (paymentMethod === 'razorpay') {
@@ -657,6 +660,7 @@ export default function CheckoutPage() {
           },
           modal: {
             ondismiss: () => {
+              isSubmittingRef.current = false;
               setIsSubmitting(false);
             }
           },
@@ -683,6 +687,7 @@ export default function CheckoutPage() {
               console.error('Payment verification failed:', verErr);
               setErrorMsg(verErr.message || 'Payment verification failed. Please contact support.');
             } finally {
+              isSubmittingRef.current = false;
               setIsSubmitting(false);
             }
           }
@@ -692,6 +697,7 @@ export default function CheckoutPage() {
           const rzpInstance = new (window as any).Razorpay(options);
           rzpInstance.on('payment.failed', (failResp: any) => {
             setErrorMsg(failResp?.error?.description || 'Payment transaction failed');
+            isSubmittingRef.current = false;
             setIsSubmitting(false);
           });
           rzpInstance.open();
@@ -713,6 +719,7 @@ export default function CheckoutPage() {
               customer: formData,
               items: cartItems
             });
+            isSubmittingRef.current = false;
             setIsSubmitting(false);
           }, 1000);
         }
@@ -748,11 +755,13 @@ export default function CheckoutPage() {
           customer: formData,
           items: cartItems
         });
+        isSubmittingRef.current = false;
         setIsSubmitting(false);
       }
     } catch (err: any) {
       console.error('Checkout error:', err);
       setErrorMsg(err.message || 'An error occurred during checkout. Please try again.');
+      isSubmittingRef.current = false;
       setIsSubmitting(false);
     }
   };
@@ -1747,7 +1756,7 @@ export default function CheckoutPage() {
                   type="submit"
                   form="payment-step-form"
                   disabled={isSubmitting}
-                  className="w-full py-3.5 bg-slate-900 hover:bg-black text-white text-xs font-semibold uppercase tracking-wider rounded-xl transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
+                  className="w-full py-3.5 bg-slate-900 hover:bg-black text-white text-xs font-semibold uppercase tracking-wider rounded-xl transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 disabled:pointer-events-none disabled:cursor-not-allowed"
                 >
                   {isSubmitting ? (
                     <>
@@ -1843,7 +1852,7 @@ export default function CheckoutPage() {
             type="submit"
             form="payment-step-form"
             disabled={isSubmitting}
-            className="px-5 py-2.5 bg-slate-900 active:bg-black text-white text-xs font-semibold uppercase tracking-wider rounded-xl shadow-md cursor-pointer transition-all flex items-center gap-1.5 shrink-0 disabled:opacity-60"
+            className="px-5 py-2.5 bg-slate-900 active:bg-black text-white text-xs font-semibold uppercase tracking-wider rounded-xl shadow-md cursor-pointer transition-all flex items-center gap-1.5 shrink-0 disabled:opacity-60 disabled:pointer-events-none disabled:cursor-not-allowed"
           >
             {isSubmitting ? (
               <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />

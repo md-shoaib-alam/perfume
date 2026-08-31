@@ -55,6 +55,7 @@ export function useCart() {
   const [isCartOpen, setIsCartOpen] = useState<boolean>(false);
   const [isLoaded, setIsLoaded] = useState<boolean>(false);
   const prevUserIdRef = useRef<string | null>(null);
+  const lastAddTimestampRef = useRef<{ [key: string]: number }>({});
 
   // 1. Initial Client-Side Load from localStorage
   useEffect(() => {

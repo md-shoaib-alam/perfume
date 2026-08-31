@@ -9,8 +9,10 @@ export const ReviewsManager: React.FC = () => {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const loadReviews = async () => {
-    setLoading(true);
+  const loadReviews = async (isInitial = false) => {
+    if (isInitial || reviews.length === 0) {
+      setLoading(true);
+    }
     try {
       const data = await api.getReviews();
       setReviews(data || []);
@@ -22,15 +24,24 @@ export const ReviewsManager: React.FC = () => {
   };
 
   useEffect(() => {
-    loadReviews();
+    loadReviews(true);
   }, []);
 
   const toggleApproval = async (rev: Review) => {
     const nextApproved = rev.approved === false ? true : false;
+    // 1. In-place instant state update
+    setReviews((prev) =>
+      prev.map((r) => (r.id === rev.id ? { ...r, approved: nextApproved } : r))
+    );
+
+    // 2. Persist in background
     try {
       await api.updateReview(rev.id, { approved: nextApproved });
-      await loadReviews();
     } catch (err: any) {
+      // Revert if failed
+      setReviews((prev) =>
+        prev.map((r) => (r.id === rev.id ? { ...r, approved: rev.approved } : r))
+      );
       await showAlert({
         title: 'Error Updating Review',
         message: `Failed to update approval status: ${err.message}`,
@@ -48,10 +59,16 @@ export const ReviewsManager: React.FC = () => {
     });
     if (!confirmed) return;
 
+    // 1. In-place instant removal from table
+    const previousList = [...reviews];
+    setReviews((prev) => prev.filter((r) => r.id !== id));
+
+    // 2. Persist in background
     try {
       await api.deleteReview(id);
-      await loadReviews();
     } catch (err: any) {
+      // Revert on error
+      setReviews(previousList);
       await showAlert({
         title: 'Error Deleting Review',
         message: `Failed to delete review: ${err.message}`,

@@ -81,8 +81,10 @@ export const ProductsManager: React.FC = () => {
     storyBlocks: []
   });
 
-  const loadData = async () => {
-    setLoading(true);
+  const loadData = async (isInitial = false) => {
+    if (isInitial || products.length === 0) {
+      setLoading(true);
+    }
     try {
       const [prodsData, colsData] = await Promise.all([
         api.getProducts(),
@@ -291,6 +293,11 @@ export const ProductsManager: React.FC = () => {
     if (!confirmed) return;
 
     const productToDelete = products.find(p => p.id === id);
+    const previousProducts = [...products];
+
+    // 1. In-place instant removal from table
+    setProducts((prev) => prev.filter((p) => p.id !== id));
+
     try {
       await api.deleteProduct(id);
       
@@ -305,8 +312,11 @@ export const ProductsManager: React.FC = () => {
         }
       }
 
-      await loadData();
+      queryClient.invalidateQueries({ queryKey: queryKeys.allProducts });
+      queryClient.invalidateQueries({ queryKey: queryKeys.collections });
     } catch (err: any) {
+      // Revert if failed
+      setProducts(previousProducts);
       await showAlert({
         title: 'Error Deleting Product',
         message: `Failed to delete product: ${err.message}`,

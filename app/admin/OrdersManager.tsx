@@ -34,8 +34,10 @@ export const OrdersManager: React.FC = () => {
   });
   const [copiedAddress, setCopiedAddress] = useState(false);
 
-  const loadOrders = async () => {
-    setLoading(true);
+  const loadOrders = async (isInitial = false) => {
+    if (isInitial || orders.length === 0) {
+      setLoading(true);
+    }
     try {
       const data = await api.getOrders();
       setOrders(data);
@@ -45,7 +47,7 @@ export const OrdersManager: React.FC = () => {
   };
 
   useEffect(() => {
-    loadOrders();
+    loadOrders(true);
   }, []);
 
   // Reset to page 1 whenever filter or page size changes
@@ -77,8 +79,22 @@ export const OrdersManager: React.FC = () => {
   }, [selectedOrder]);
 
   const handleStatusChange = async (orderId: string, newStatus: string) => {
-    await api.updateOrderStatus(orderId, newStatus);
-    await loadOrders();
+    // 1. In-place instant state update (no full-table refetch or loading skeleton)
+    setOrders((prev) =>
+      prev.map((o) =>
+        (o._id === orderId || o.id === orderId || o.orderNumber === orderId)
+          ? { ...o, status: newStatus, orderStatus: newStatus }
+          : o
+      )
+    );
+
+    // 2. Persist in background
+    try {
+      await api.updateOrderStatus(orderId, newStatus);
+    } catch (err: any) {
+      console.error('Failed to update order status:', err);
+      loadOrders(false);
+    }
   };
 
   const handleSaveOrderTracking = async (e: React.FormEvent) => {
@@ -95,9 +111,30 @@ export const OrdersManager: React.FC = () => {
         modalTrackingUrl,
         isEditingAddress ? editCustomer : undefined
       );
-      setModalSuccessMsg('Order updated successfully!');
-      await loadOrders();
-      // Update local selectedOrder state
+
+      // 1. In-place instant state update for the specific order in the table
+      setOrders((prev) =>
+        prev.map((o) =>
+          (o._id === orderId || o.id === orderId || o.orderNumber === orderId)
+            ? {
+                ...o,
+                status: modalStatus,
+                orderStatus: modalStatus,
+                trackingNumber: modalTrackingNumber,
+                trackingUrl: modalTrackingUrl,
+                customerName: editCustomer.name || o.customerName,
+                customerEmail: editCustomer.email || o.customerEmail,
+                customerPhone: editCustomer.phone || o.customerPhone,
+                customer: {
+                  ...o.customer,
+                  ...(isEditingAddress ? editCustomer : {})
+                }
+              }
+            : o
+        )
+      );
+
+      // 2. Update modal's selectedOrder state in-place
       setSelectedOrder((prev: any) => prev ? {
         ...prev,
         status: modalStatus,
@@ -109,9 +146,11 @@ export const OrdersManager: React.FC = () => {
         customerPhone: editCustomer.phone || prev.customerPhone,
         customer: {
           ...prev.customer,
-          ...editCustomer
+          ...(isEditingAddress ? editCustomer : {})
         }
       } : null);
+
+      setModalSuccessMsg('Order updated successfully!');
       setIsEditingAddress(false);
     } catch (err: any) {
       alert(err.message || 'Failed to update order details');

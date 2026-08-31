@@ -24,8 +24,10 @@ export const CouponsManager: React.FC = () => {
   const [newType, setNewType] = useState<'percentage' | 'fixed'>('percentage');
   const [newMinOrder, setNewMinOrder] = useState(0);
 
-  const loadCoupons = async () => {
-    setLoading(true);
+  const loadCoupons = async (isInitial = false) => {
+    if (isInitial || coupons.length === 0) {
+      setLoading(true);
+    }
     try {
       const data = await api.getCoupons();
       setCoupons(data || []);
@@ -37,7 +39,7 @@ export const CouponsManager: React.FC = () => {
   };
 
   useEffect(() => {
-    loadCoupons();
+    loadCoupons(true);
   }, []);
 
   const handleAddCoupon = async (e: React.FormEvent) => {
@@ -47,7 +49,7 @@ export const CouponsManager: React.FC = () => {
 
     setSubmitting(true);
     try {
-      await api.createCoupon({
+      const created = await api.createCoupon({
         code: cleanCode,
         discountPercentage: newType === 'percentage' ? newDiscount : 0,
         discountAmount: newType === 'fixed' ? newDiscount : 0,
@@ -57,7 +59,11 @@ export const CouponsManager: React.FC = () => {
       setNewCode('');
       setNewDiscount(10);
       setNewMinOrder(0);
-      await loadCoupons();
+      if (created) {
+        setCoupons((prev) => [created, ...prev.filter((c) => c.id !== created.id)]);
+      } else {
+        loadCoupons(false);
+      }
       await showAlert({
         title: 'Coupon Created',
         message: `Promo code "${cleanCode}" has been published to Appwrite database.`,
