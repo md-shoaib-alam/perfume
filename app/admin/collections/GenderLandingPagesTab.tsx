@@ -207,17 +207,17 @@ export const GenderLandingPagesTab: React.FC<GenderLandingPagesTabProps> = ({
                       />
                     </div>
 
-                    {/* 2. Homepage Campaign Card (4:5) */}
+                    {/* 2. Homepage Campaign Card (2:3) */}
                     <div className="bg-white p-4 rounded-xl border border-slate-200 space-y-3">
                       <div>
                         <span className="font-bold text-slate-900 block text-xs">2. Homepage Campaign Card</span>
-                        <span className="text-[10.5px] text-slate-500 block">4:5 vertical portrait image for homepage campaign discover card</span>
+                        <span className="text-[10.5px] text-slate-500 block">2:3 vertical portrait image for homepage campaign discover card</span>
                       </div>
                       <MediaUploader
-                        label="Campaign Card (4:5)"
+                        label="Campaign Card (2:3)"
                         value={page.campaignImage || ''}
                         onChange={(url) => onUpdatePage(page.slug!, 'campaignImage', url)}
-                        helperText="Recommended: 1080x1350 (4:5) vertical portrait photo."
+                        helperText="Recommended: 1000x1500 (2:3) vertical portrait photo."
                       />
                     </div>
 

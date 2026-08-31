@@ -45,9 +45,9 @@ export const CelebritySection: React.FC = () => {
         </h2>
       </div>
 
-      {/* Cards Container (Horizontal Slider on Mobile, 4-Col Grid on Desktop) */}
+      {/* Cards Container (Horizontal Slider on Mobile, 4-Col Grid on Tablet & Desktop) */}
       <div className="max-w-[1680px] mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-nowrap overflow-x-auto snap-x snap-mandatory gap-4 pb-4 no-scrollbar sm:grid sm:grid-cols-2 lg:grid-cols-4 sm:gap-6 sm:overflow-x-visible sm:pb-0">
+        <div className="flex flex-nowrap overflow-x-auto snap-x snap-mandatory gap-3 sm:gap-4 md:gap-4 lg:gap-6 pb-4 no-scrollbar sm:grid sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-4 sm:overflow-x-visible sm:pb-0">
           {celebrities.map((celeb: any, idx: number) => {
             const targetPath = celeb.targetUrl || (celeb.productId ? `/products/${celeb.productId}` : (celeb.perfume ? `/products/${slugify(celeb.perfume)}` : ''));
             const CardWrapper = targetPath ? Link : 'div';
@@ -71,27 +71,27 @@ export const CelebritySection: React.FC = () => {
                   />
                   
                   {/* Bottom Overlay Gradient with White Thumbnail Badge */}
-                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/95 via-black/60 to-transparent p-4 sm:p-5 flex items-center gap-3.5 sm:gap-4">
-                    {/* White Thumbnail Box for Fragrance Bottle */}
+                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/95 via-black/60 to-transparent p-3 sm:p-3.5 md:p-3.5 lg:p-4.5 flex items-center gap-2.5 sm:gap-3 md:gap-3 lg:gap-4">
+                    {/* Fixed Square Thumbnail Box for Fragrance Bottle */}
                     {(celeb.bottleThumb || celeb.productImage) && (
-                      <div className="bg-white rounded-2xl shadow-md w-[60px] h-[60px] md:w-[65px] md:h-[65px] xl:w-[70px] xl:h-[70px] flex items-center justify-center shrink-0 border border-white/40 overflow-hidden p-0.5">
+                      <div className="bg-white rounded-xl shadow-md w-[60px] h-[60px] md:w-[65px] md:h-[65px] xl:w-[70px] xl:h-[70px] aspect-square flex items-center justify-center shrink-0 border border-white/60 overflow-hidden">
                         <img
                           src={celeb.bottleThumb || celeb.productImage}
                           alt={celeb.perfume || 'Fragrance bottle'}
                           loading="lazy"
                           decoding="async"
-                          className="w-full h-full object-cover rounded-xl"
+                          className="w-full h-full object-cover"
                         />
                       </div>
                     )}
 
                     {/* Name and Fragrance Title */}
                     <div className="text-left min-w-0 flex-1">
-                      <h3 className="font-serif text-lg sm:text-xl font-bold text-white leading-tight tracking-wide drop-shadow-sm truncate">
+                      <h3 className="font-serif text-sm sm:text-base md:text-base lg:text-xl font-bold text-white leading-tight tracking-wide drop-shadow-sm truncate">
                         {celeb.name}
                       </h3>
                       {celeb.perfume && (
-                        <span className="font-sans text-xs sm:text-sm uppercase tracking-widest text-slate-100 font-semibold block mt-1 drop-shadow-xs truncate">
+                        <span className="font-sans text-[10px] sm:text-[11px] md:text-[11px] lg:text-xs uppercase tracking-widest text-slate-100 font-semibold block mt-0.5 sm:mt-1 drop-shadow-xs truncate">
                           {celeb.perfume}
                         </span>
                       )}

@@ -160,9 +160,9 @@ export default function Page() {
           )}
         </div>
 
-        {/* Product Cards Container */}
+        {/* Product Cards Container (4 per row on Tablets and Desktops) */}
         {loading ? (
-          <div className="flex flex-nowrap overflow-x-auto snap-x snap-mandatory gap-3 sm:gap-6 pb-4 no-scrollbar sm:grid sm:grid-cols-2 lg:grid-cols-4 sm:overflow-x-visible sm:pb-0">
+          <div className="flex flex-nowrap overflow-x-auto snap-x snap-mandatory gap-3 sm:gap-4 md:gap-4 lg:gap-6 pb-4 no-scrollbar sm:grid sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-4 sm:overflow-x-visible sm:pb-0">
             {[1, 2, 3, 4].map((item) => (
               <div
                 key={item}
@@ -228,7 +228,7 @@ export default function Page() {
             )}
           </div>
         ) : (
-          <div className="flex flex-nowrap overflow-x-auto snap-x snap-mandatory gap-3 sm:gap-6 pb-4 no-scrollbar sm:grid sm:grid-cols-2 lg:grid-cols-4 sm:overflow-x-visible sm:pb-0">
+          <div className="flex flex-nowrap overflow-x-auto snap-x snap-mandatory gap-3 sm:gap-4 md:gap-4 lg:gap-6 pb-4 no-scrollbar sm:grid sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-4 sm:overflow-x-visible sm:pb-0">
             {filteredProducts.map((product) => (
               <div key={product.id} className="w-[72vw] max-w-[260px] shrink-0 snap-center sm:w-auto sm:max-w-none">
                 <ProductCard

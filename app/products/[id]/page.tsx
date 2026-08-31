@@ -308,7 +308,7 @@ export default function ProductDetailPage() {
                     key={idx}
                     type="button"
                     onClick={() => setSelectedImage(img)}
-                    className={`w-16 h-16 sm:w-18 sm:h-18 md:w-20 md:h-20 rounded-xl overflow-hidden border-2 transition-all cursor-pointer shrink-0 bg-slate-50 ${
+                    className={`w-16 h-16 sm:w-18 sm:h-18 md:w-20 md:h-20 rounded-none overflow-hidden border-2 transition-all cursor-pointer shrink-0 bg-slate-50 ${
                       (selectedImage || product.image) === img
                         ? 'border-[#c59b48] shadow-sm ring-1 ring-[#c59b48]'
                         : 'border-slate-200 opacity-70 hover:opacity-100 hover:border-slate-300'
@@ -326,8 +326,8 @@ export default function ProductDetailPage() {
               </div>
             )}
 
-            {/* Main Featured Image Display */}
-            <div className="relative aspect-square w-full flex-1 rounded-2xl overflow-hidden bg-slate-50 border border-slate-200/80 shadow-xs">
+            {/* Main Featured Image Display (Hard/Square Corners, Discount Badge Removed) */}
+            <div className="relative aspect-square w-full flex-1 rounded-none overflow-hidden bg-slate-50 border border-slate-200/80 shadow-xs">
               <img
                 src={selectedImage || product.image}
                 alt={product.name}
@@ -335,12 +335,6 @@ export default function ProductDetailPage() {
                 decoding="async"
                 className="w-full h-full object-cover"
               />
-
-              {discountPercent > 0 && (
-                <div className="absolute top-4 left-4 bg-red-600 text-white font-sans text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider shadow-sm">
-                  {discountPercent}% OFF
-                </div>
-              )}
 
               {product.isBestseller && (
                 <div className="absolute top-4 right-4 bg-[#c59b48] text-white font-sans text-[11px] font-bold px-3 py-1 rounded-full uppercase tracking-wider shadow-sm">

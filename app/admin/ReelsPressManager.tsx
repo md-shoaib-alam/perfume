@@ -314,14 +314,14 @@ export const ReelsPressManager: React.FC = () => {
         </div>
 
         {/* Horizontal Swipe Reel Cards Container */}
-        <div className="overflow-x-auto pb-4 pt-1 select-none flex gap-4 sm:gap-5 [scrollbar-width:thin] scrollbar-thumb-slate-300">
+        <div className="overflow-x-auto pb-4 pt-1 select-none flex items-stretch gap-3.5 sm:gap-4 [scrollbar-width:thin] scrollbar-thumb-slate-300">
           {reels.map((reel) => (
             <div
               key={reel.id}
-              className="w-40 sm:w-52 bg-white rounded-2xl overflow-hidden shadow-sm border border-slate-200/90 flex flex-col justify-between group shrink-0"
+              className="w-36 sm:w-44 bg-white rounded-2xl overflow-hidden shadow-xs border border-slate-200/90 flex flex-col justify-between group shrink-0"
             >
-              {/* Top Media Preview with 9:16 ratio */}
-              <div className="relative aspect-[9/16] overflow-hidden bg-slate-900">
+              {/* Top Media Preview (Compact Proportion) */}
+              <div className="relative aspect-[9/13] overflow-hidden bg-slate-900">
                 <img
                   src={reel.image}
                   alt={reel.title}
@@ -332,38 +332,38 @@ export const ReelsPressManager: React.FC = () => {
               </div>
 
               {/* Bottom White Product Details Section */}
-              <div className="bg-white px-3.5 pb-3.5 pt-1 text-center relative flex flex-col items-center border-t border-slate-100">
-                {/* Product Thumbnail (Overlaps the bottom edge of the 9:16 media) */}
+              <div className="bg-white px-2.5 pb-2 pt-0.5 text-center relative flex flex-col items-center border-t border-slate-100 flex-1 justify-end">
+                {/* Product Thumbnail */}
                 {reel.productImage && (
-                  <div className="w-14 h-14 rounded-xl bg-white border border-slate-200 shadow-md -mt-7 mb-2 overflow-hidden flex items-center justify-center shrink-0 z-10 p-0.5">
+                  <div className="w-10 h-10 rounded-lg bg-white border border-slate-200 shadow-md -mt-5 mb-1.5 overflow-hidden flex items-center justify-center shrink-0 z-10 p-0.5">
                     <img
                       src={reel.productImage}
                       alt={reel.title}
-                      className="w-full h-full object-cover rounded-lg"
+                      className="w-full h-full object-cover rounded-md"
                       loading="lazy"
                     />
                   </div>
                 )}
 
                 {/* Fragrance Title */}
-                <h4 className="font-serif text-sm font-bold text-slate-900 leading-snug truncate max-w-full px-1">
+                <h4 className="font-serif text-xs font-bold text-slate-900 leading-tight truncate max-w-full px-0.5">
                   {reel.title}
                 </h4>
 
                 {/* Price Tag */}
-                <p className="font-sans text-xs text-slate-600 font-semibold mt-0.5">
+                <p className="font-sans text-[11px] text-slate-500 font-semibold mt-0.5">
                   {reel.price}
                 </p>
               </div>
 
               {/* Bottom Integrated Action Bar */}
-              <div className="p-2 sm:p-2.5 bg-slate-50 flex items-center gap-1.5 sm:gap-2 border-t border-slate-200/80">
+              <div className="p-1.5 sm:p-2 bg-slate-50 flex items-center gap-1.5 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => handleOpenEditModal(reel)}
-                  className="flex-1 py-1.5 px-2 bg-slate-900 hover:bg-black text-white text-[11px] font-bold rounded-lg flex items-center justify-center gap-1 transition-colors cursor-pointer shadow-xs"
+                  className="flex-1 py-1 px-1.5 bg-slate-900 hover:bg-black text-white text-[11px] font-bold rounded-lg flex items-center justify-center gap-1 transition-colors cursor-pointer shadow-xs"
                 >
-                  <svg className="w-3.5 h-3.5 fill-none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <svg className="w-3 h-3 fill-none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                   </svg>
                   <span>Edit</span>
@@ -372,10 +372,10 @@ export const ReelsPressManager: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => handleDeleteReel(reel.id)}
-                  className="p-1.5 bg-slate-200 hover:bg-rose-600 text-slate-600 hover:text-white rounded-lg transition-colors cursor-pointer"
+                  className="p-1 bg-slate-200 hover:bg-rose-600 text-slate-600 hover:text-white rounded-lg transition-colors cursor-pointer"
                   title="Delete Reel"
                 >
-                  <svg className="w-3.5 h-3.5 fill-none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <svg className="w-3 h-3 fill-none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                   </svg>
                 </button>
@@ -387,17 +387,17 @@ export const ReelsPressManager: React.FC = () => {
           <button
             type="button"
             onClick={handleOpenAddModal}
-            className="w-38 sm:w-48 aspect-[9/16] rounded-2xl border-2 border-dashed border-slate-300 hover:border-[#c59b48] bg-slate-50/60 hover:bg-[#c59b48]/5 flex flex-col items-center justify-center p-4 text-center transition-all duration-300 group cursor-pointer shrink-0"
+            className="w-36 sm:w-44 rounded-2xl border-2 border-dashed border-slate-300 hover:border-[#c59b48] bg-slate-50/60 hover:bg-[#c59b48]/5 flex flex-col items-center justify-center p-4 text-center transition-all duration-300 group cursor-pointer shrink-0 min-h-[250px]"
           >
-            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white group-hover:bg-[#c59b48] text-slate-400 group-hover:text-white flex items-center justify-center shadow-xs mb-2 sm:mb-3 transition-colors">
-              <svg className="w-5 h-5 sm:w-6 sm:h-6 fill-none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white group-hover:bg-[#c59b48] text-slate-400 group-hover:text-white flex items-center justify-center shadow-xs mb-2 transition-colors">
+              <svg className="w-5 h-5 fill-none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
               </svg>
             </div>
-            <span className="text-[11px] sm:text-xs font-bold text-slate-700 group-hover:text-[#c59b48] transition-colors">
+            <span className="font-bold text-slate-700 group-hover:text-[#c59b48] text-xs transition-colors">
               Add New Reel
             </span>
-            <span className="text-[9px] sm:text-[10px] text-slate-400 mt-0.5">
+            <span className="text-[10px] text-slate-400 mt-0.5">
               9:16 Vertical Card
             </span>
           </button>
