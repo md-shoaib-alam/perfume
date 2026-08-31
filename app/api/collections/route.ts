@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { adminGuard } from '@/lib/roles';
 import { databases, APPWRITE_DATABASE_ID } from '@/lib/appwrite';
 import { ID, Query } from 'appwrite';
 
@@ -37,6 +38,9 @@ const sanitizeUrl = (val: any) => {
 };
 
 export async function POST(req: Request) {
+  const guard = await adminGuard();
+  if (guard) return guard;
+
   try {
     const body = await req.json();
     const cleanData: any = {
@@ -88,6 +92,9 @@ export async function POST(req: Request) {
 }
 
 export async function PUT(req: Request) {
+  const guard = await adminGuard();
+  if (guard) return guard;
+
   try {
     const { id, updates } = await req.json();
     const cleanUpdates: any = {};
@@ -136,6 +143,9 @@ export async function PUT(req: Request) {
 }
 
 export async function DELETE(req: Request) {
+  const guard = await adminGuard();
+  if (guard) return guard;
+
   try {
     const { searchParams } = new URL(req.url);
     const id = searchParams.get('id');

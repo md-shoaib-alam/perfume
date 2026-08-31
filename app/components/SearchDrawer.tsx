@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
-import { api } from '../services/api';
+import { useProductsQuery } from '../hooks/useQueries';
 import { getProductSlug } from '../utils/slug';
 import type { Product } from '../types';
 
@@ -38,8 +38,8 @@ export const SearchDrawer: React.FC<SearchDrawerProps> = ({
   const [rawQuery, setRawQuery] = useState(initialQuery);
   const [debouncedQuery, setDebouncedQuery] = useState(initialQuery);
   const [isSearching, setIsSearching] = useState(false);
-  const [catalog, setCatalog] = useState<Product[]>([]);
-  const [isCatalogLoading, setIsCatalogLoading] = useState(false);
+  const { data: cachedProducts = [], isLoading: isCatalogLoading } = useProductsQuery();
+  const catalog = cachedProducts;
   const [highlightedIndex, setHighlightedIndex] = useState<number>(-1);
   const [isMounted, setIsMounted] = useState(isOpen);
   const [isVisible, setIsVisible] = useState(false);
@@ -129,20 +129,6 @@ export const SearchDrawer: React.FC<SearchDrawerProps> = ({
     };
   }, [isOpen]);
 
-  // Pre-load catalog dynamically from Appwrite when search drawer is opened
-  useEffect(() => {
-    if (isOpen && catalog.length === 0 && !isCatalogLoading) {
-      setIsCatalogLoading(true);
-      api.getProducts()
-        .then((items) => {
-          if (items && items.length > 0) {
-            setCatalog(items);
-          }
-        })
-        .catch((err) => console.warn('Search catalog load failed:', err))
-        .finally(() => setIsCatalogLoading(false));
-    }
-  }, [isOpen, catalog.length, isCatalogLoading]);
 
   // Close on Escape key
   useEffect(() => {

@@ -98,6 +98,7 @@ export default function AccountPage() {
         onUpdateQuantity={updateQuantity}
         onRemoveItem={removeItem}
         onClearCart={clearCart}
+        onOpenAuth={() => setIsAuthModalOpen(true)}
       />
 
       {/* 5. Mobile Menu Drawer */}

@@ -286,6 +286,10 @@ export default function Page() {
         onUpdateQuantity={updateQuantity}
         onRemoveItem={removeItem}
         onClearCart={clearCart}
+        onOpenAuth={(selectedMode) => {
+          setAuthMode(selectedMode || 'signin');
+          setIsAuthModalOpen(true);
+        }}
       />
 
       {/* 10.5 Sliding Hamburger Menu Drawer */}

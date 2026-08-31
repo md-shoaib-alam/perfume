@@ -112,6 +112,10 @@ export default function ContactPage() {
         onRemoveItem={removeItem}
         onUpdateQuantity={updateQuantity}
         onClearCart={clearCart}
+        onOpenAuth={(mode) => {
+          setAuthMode(mode || 'signin');
+          setIsAuthOpen(true);
+        }}
       />
 
       {/* Menu Drawer */}

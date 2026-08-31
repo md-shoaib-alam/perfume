@@ -1,6 +1,7 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useUser } from '@clerk/nextjs';
 import type { CartItem } from '../types';
 
 interface CartDrawerProps {
@@ -10,6 +11,7 @@ interface CartDrawerProps {
   onUpdateQuantity: (productId: string, delta: number, size?: string) => void;
   onRemoveItem: (productId: string, size?: string) => void;
   onClearCart?: () => void;
+  onOpenAuth?: (mode?: 'signin' | 'signup') => void;
 }
 
 const FREE_GIFT_THRESHOLD = 5000;
@@ -20,9 +22,11 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
   cartItems,
   onUpdateQuantity,
   onRemoveItem,
-  onClearCart
+  onClearCart,
+  onOpenAuth
 }) => {
   const router = useRouter();
+  const { user } = useUser();
   const [isScrolled, setIsScrolled] = useState(false);
 
   // Prevent background page scrolling when cart drawer is open
@@ -59,6 +63,20 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
 
   const topPositionClass = isScrolled ? 'top-[56px] sm:top-[64px]' : 'top-[88px] sm:top-[96px]';
 
+  const handleCheckoutClick = () => {
+    if (!user) {
+      onClose();
+      if (onOpenAuth) {
+        onOpenAuth('signin');
+      } else {
+        router.push('/auth/sign-in?redirect_url=/checkout');
+      }
+      return;
+    }
+    onClose();
+    router.push('/checkout');
+  };
+
   return (
     <div className={`fixed inset-0 z-40 overflow-hidden font-sans transition-all duration-300 pointer-events-none ${isOpen ? 'visible' : 'invisible delay-300'}`}>
       {/* Dimmed Backdrop */}
@@ -71,7 +89,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
       <div className={`fixed ${topPositionClass} bottom-0 right-0 max-w-full flex transition-transform duration-300 ease-in-out pointer-events-auto ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
         <div className="w-[82vw] sm:w-[380px] md:w-[420px] max-w-full bg-white border-l border-slate-200 text-slate-900 shadow-2xl flex flex-col justify-between overflow-hidden">
           
-          {/* Header (Clean title & item badge - closed by Navbar cross directly above) */}
+          {/* Header */}
           <div className="px-4 sm:px-6 py-3.5 sm:py-4.5 border-b border-slate-100 flex items-center justify-between bg-white shrink-0">
             <div className="flex items-center gap-2">
               <h2 className="font-serif text-base sm:text-lg font-bold text-slate-900 tracking-tight">
@@ -124,8 +142,8 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
               </div>
             ) : (
               cartItems.map((item) => {
-                const itemKey = `${item.product.id || item.product.name}__${item.selectedSize || 'default'}`;
-                const itemId = item.product.id || item.product.name;
+                const itemId = String(item.product.id || (item.product as any)?.$id || item.product.name || 'item');
+                const itemKey = `${itemId}__${item.selectedSize || 'default'}`;
 
                 return (
                   <div
@@ -204,14 +222,20 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                 </div>
               </div>
 
+              {!user && (
+                <div className="flex items-center gap-1.5 text-[11px] text-[#916618] bg-amber-50/80 px-3 py-1.5 rounded-lg border border-amber-200/60">
+                  <svg className="w-3.5 h-3.5 text-[#caa04c] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  </svg>
+                  <span>Sign in required to checkout and pay</span>
+                </div>
+              )}
+
               <button
-                onClick={() => {
-                  onClose();
-                  router.push('/checkout');
-                }}
+                onClick={handleCheckoutClick}
                 className="w-full py-3.5 bg-[#caa04c] hover:bg-[#b88f3e] text-white font-bold uppercase tracking-widest text-xs rounded-lg shadow-sm transition-colors cursor-pointer flex items-center justify-center gap-2"
               >
-                <span>PROCEED TO CHECKOUT</span>
+                <span>{user ? 'PROCEED TO CHECKOUT' : 'SIGN IN TO CHECKOUT'}</span>
                 <svg className="w-4 h-4 stroke-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
                 </svg>

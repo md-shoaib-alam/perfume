@@ -69,6 +69,10 @@ export async function GET(req: Request) {
     const userIdParam = searchParams.get('userId');
 
     const { userId: authUserId } = await auth();
+    if (!authUserId) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+    }
+
     let isAdmin = false;
     try {
       isAdmin = await checkRole('admin');
@@ -78,14 +82,17 @@ export async function GET(req: Request) {
 
     const queries: string[] = [Query.limit(100), Query.orderDesc('$createdAt')];
 
-    // Filter by specific user if provided
     if (userIdParam) {
+      // Only admins may query another user's orders
+      if (!isAdmin && userIdParam !== authUserId) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      }
       queries.push(Query.equal('userId', userIdParam));
-    } else if (!isAdmin && authUserId) {
-      // If customer requests without query param, restrict to their orders
+    } else if (!isAdmin) {
+      // Non-admins without a param only ever see their own orders
       queries.push(Query.equal('userId', authUserId));
     }
-    // If admin or general pipeline query, return all orders across all users
+    // Admins without a param see all orders
 
     const res = await databases.listDocuments(APPWRITE_DATABASE_ID, 'orders', queries);
     const orders = (res.documents || []).map(formatOrderDoc);
@@ -102,7 +109,13 @@ export async function POST(req: Request) {
     
     // 1. Resolve user ID from authenticated request session
     const { userId: authUserId } = await auth();
-    const resolvedUserId = authUserId || 'guest';
+    if (!authUserId) {
+      return NextResponse.json(
+        { error: 'Authentication required to place an order. Please sign in.' },
+        { status: 401 }
+      );
+    }
+    const resolvedUserId = authUserId;
 
     // 2. Validate items
     const rawItems = Array.isArray(body.items) 

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
+import { adminGuard } from '@/lib/roles';
 
 const DATA_FILE = path.join(process.cwd(), 'data_perfumers.json');
 
@@ -31,6 +32,9 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
+  const guard = await adminGuard();
+  if (guard) return guard;
+
   try {
     const body = await req.json();
     writePerfumers(body);

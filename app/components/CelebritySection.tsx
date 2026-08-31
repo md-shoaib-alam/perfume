@@ -1,28 +1,10 @@
 'use client';
-import React, { useState, useEffect } from 'react';
-import { api } from '../services/api';
+
+import React from 'react';
+import { useCelebritiesQuery } from '../hooks/useQueries';
 
 export const CelebritySection: React.FC = () => {
-  const [celebrities, setCelebrities] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const data = await api.getCelebrities();
-        setCelebrities(data || []);
-      } catch (e) {
-        console.error('Failed to load celebrities:', e);
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
-    window.addEventListener('focus', load);
-    return () => {
-      window.removeEventListener('focus', load);
-    };
-  }, []);
+  const { data: celebrities = [], isLoading: loading } = useCelebritiesQuery();
 
   if (!loading && celebrities.length === 0) {
     return null;
@@ -45,7 +27,7 @@ export const CelebritySection: React.FC = () => {
       {/* Cards Container (Horizontal Slider on Mobile, 4-Col Grid on Desktop) */}
       <div className="max-w-[1680px] mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-nowrap overflow-x-auto snap-x snap-mandatory gap-4 pb-4 no-scrollbar sm:grid sm:grid-cols-2 lg:grid-cols-4 sm:gap-6 sm:overflow-x-visible sm:pb-0">
-          {celebrities.map((celeb, idx) => (
+          {celebrities.map((celeb: any, idx: number) => (
             <div 
               key={celeb.id || idx} 
               className="w-[76vw] max-w-[290px] flex-shrink-0 snap-center sm:w-auto sm:max-w-none"

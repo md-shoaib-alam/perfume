@@ -1,5 +1,6 @@
 import { auth, currentUser } from '@clerk/nextjs/server';
 import { clerkClient } from '@clerk/nextjs/server';
+import { NextResponse } from 'next/server';
 
 export type Role = 'admin' | 'customer';
 
@@ -23,13 +24,13 @@ export async function checkRole(role: Role): Promise<boolean> {
     return sessionRole === role;
   }
 
-  // 2. Direct check from user metadata in Clerk
+  // 2. Direct check from user metadata in Clerk (server-controlled fields only;
+  // unsafeMetadata is client-writable and must never grant roles)
   const user = await currentUser();
   if (!user) return false;
 
   const userRole = (
     user.publicMetadata?.role ||
-    (user as any).unsafeMetadata?.role ||
     (user as any).privateMetadata?.role ||
     'customer'
   ) as Role;
@@ -59,7 +60,6 @@ export async function getUserRole(): Promise<Role | null> {
 
   return (
     user.publicMetadata?.role ||
-    (user as any).unsafeMetadata?.role ||
     (user as any).privateMetadata?.role ||
     'customer'
   ) as Role;
@@ -74,6 +74,21 @@ export async function requireAdmin() {
   if (!isAdmin) {
     throw new Error('Unauthorized: Admin role required');
   }
+}
+
+/**
+ * Route-handler guard: returns a 401/403 response for unauthenticated or
+ * non-admin callers, or null when the request may proceed.
+ */
+export async function adminGuard(): Promise<NextResponse | null> {
+  const { userId } = await auth();
+  if (!userId) {
+    return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+  }
+  if (!(await checkRole('admin'))) {
+    return NextResponse.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
+  }
+  return null;
 }
 
 /**

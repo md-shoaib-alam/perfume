@@ -1,11 +1,36 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { adminGuard } from '@/lib/roles';
 import { databases, APPWRITE_DATABASE_ID } from '@/lib/appwrite';
 import { ID, Query } from 'appwrite';
 
 const COLLECTION_NAME = 'contact_messages';
 
+const RATE_LIMIT_MAX = 5;
+const RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000;
+const rateLimitHits = new Map<string, number[]>();
+
+function isRateLimited(req: NextRequest): boolean {
+  const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
+  const now = Date.now();
+  const hits = (rateLimitHits.get(ip) || []).filter((t) => now - t < RATE_LIMIT_WINDOW_MS);
+  if (hits.length >= RATE_LIMIT_MAX) {
+    rateLimitHits.set(ip, hits);
+    return true;
+  }
+  hits.push(now);
+  rateLimitHits.set(ip, hits);
+  return false;
+}
+
 export async function POST(req: NextRequest) {
   try {
+    if (isRateLimited(req)) {
+      return NextResponse.json(
+        { error: 'Too many messages submitted. Please try again later.' },
+        { status: 429 }
+      );
+    }
+
     const body = await req.json();
     const { name, email, phone, message } = body;
 
@@ -54,8 +79,11 @@ export async function POST(req: NextRequest) {
   }
 }
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   try {
+    const guard = await adminGuard();
+    if (guard) return guard;
+
     try {
       const res = await databases.listDocuments(
         APPWRITE_DATABASE_ID,
@@ -85,6 +113,9 @@ export async function GET(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   try {
+    const guard = await adminGuard();
+    if (guard) return guard;
+
     const { searchParams } = new URL(req.url);
     const id = searchParams.get('id');
 

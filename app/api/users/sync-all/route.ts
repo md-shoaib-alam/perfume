@@ -1,10 +1,14 @@
 import { NextResponse } from 'next/server';
 import { clerkClient } from '@clerk/nextjs/server';
+import { adminGuard } from '@/lib/roles';
 import { databases, APPWRITE_DATABASE_ID } from '@/lib/appwrite';
 import { ID, Query } from 'appwrite';
 
 export async function POST() {
   try {
+    const guard = await adminGuard();
+    if (guard) return guard;
+
     const client = await clerkClient();
     const clerkUsersResponse = await client.users.getUserList({ limit: 500 });
     const clerkUsers = clerkUsersResponse.data || [];

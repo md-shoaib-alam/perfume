@@ -10,14 +10,15 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { items = [], customer = {}, couponCode = '' } = body;
 
-    // 1. Resolve User session if available
-    let resolvedUserId = 'guest';
-    try {
-      const { userId: authUserId } = await auth();
-      if (authUserId) resolvedUserId = authUserId;
-    } catch (e) {
-      // Allow guest checkout
+    // 1. Resolve User session
+    const { userId: authUserId } = await auth();
+    if (!authUserId) {
+      return NextResponse.json(
+        { error: 'Authentication required to initialize checkout order. Please sign in.' },
+        { status: 401 }
+      );
     }
+    const resolvedUserId = authUserId;
 
     // 2. Validate Items
     const rawItems = Array.isArray(items) ? items : [];

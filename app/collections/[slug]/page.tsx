@@ -534,6 +534,10 @@ export default function CollectionPage() {
         onUpdateQuantity={updateQuantity}
         onRemoveItem={removeItem}
         onClearCart={clearCart}
+        onOpenAuth={(selectedMode) => {
+          setAuthMode(selectedMode || 'signin');
+          setIsAuthModalOpen(true);
+        }}
       />
 
       <MenuDrawer

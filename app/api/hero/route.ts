@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { adminGuard } from '@/lib/roles';
 import { databases, APPWRITE_DATABASE_ID } from '@/lib/appwrite';
 import { ID, Query } from 'appwrite';
 
@@ -26,6 +27,9 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
+  const guard = await adminGuard();
+  if (guard) return guard;
+
   try {
     const body = await req.json();
     const doc = await databases.createDocument(
@@ -46,6 +50,9 @@ export async function POST(req: Request) {
 }
 
 export async function DELETE(req: Request) {
+  const guard = await adminGuard();
+  if (guard) return guard;
+
   try {
     const { searchParams } = new URL(req.url);
     const id = searchParams.get('id');

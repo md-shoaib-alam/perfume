@@ -3,16 +3,12 @@ import { auth } from '@clerk/nextjs/server';
 import { databases, APPWRITE_DATABASE_ID } from '@/lib/appwrite';
 import { ID, Query } from 'appwrite';
 
-export async function GET(req: Request) {
+export async function GET() {
   try {
-    const { searchParams } = new URL(req.url);
-    const queryUserId = searchParams.get('userId');
-
-    let resolvedUserId = queryUserId;
-    if (!resolvedUserId) {
-      const { userId: authUserId } = await auth();
-      resolvedUserId = authUserId;
-    }
+    // Only the authenticated user's own profile may be read — never trust a
+    // client-supplied userId param.
+    const { userId: authUserId } = await auth();
+    const resolvedUserId = authUserId;
 
     if (!resolvedUserId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -73,7 +69,8 @@ export async function POST(req: Request) {
   try {
     const { userId: authUserId } = await auth();
     const body = await req.json();
-    const resolvedUserId = authUserId || body.userId;
+    // Writes are limited to the caller's own record; body.userId is ignored.
+    const resolvedUserId = authUserId;
 
     if (!resolvedUserId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

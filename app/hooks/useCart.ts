@@ -1,10 +1,12 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { useUser } from '@clerk/nextjs';
 import type { Product, CartItem } from '../types';
 import { resolveProductUnitPrice, resolveProductSizeOptions } from '@/lib/pricing';
 
 const CART_STORAGE_KEY = 'neesh_cart_items_v1';
+const getUserCartStorageKey = (userId: string) => `neesh_user_cart_${userId}`;
 
 const getCleanProductId = (product: Product | { id?: string; name?: string }): string => {
   return String((product as any)?.id || (product as any)?.$id || (product as any)?.name || 'item')
@@ -18,12 +20,43 @@ const getItemCompositeKey = (productId: string, size?: string): string => {
   return `${cleanId}::${cleanSize}`;
 };
 
+/**
+ * Intelligent Cart Merging:
+ * 1. Keeps the exact quantity of items currently in the active local cart (so 1 piece never doubles to 2).
+ * 2. Seamlessly restores any additional fragrances saved in the user account from other sessions/devices.
+ */
+const mergeCartLists = (activeLocalList: CartItem[], savedAccountList: CartItem[]): CartItem[] => {
+  const mergedMap = new Map<string, CartItem>();
+
+  // 1. First add all active local items (preserves user's exact current chosen quantity)
+  activeLocalList.forEach((item) => {
+    if (!item?.product) return;
+    const cleanId = getCleanProductId(item.product);
+    const key = getItemCompositeKey(cleanId, item.selectedSize);
+    mergedMap.set(key, { ...item });
+  });
+
+  // 2. Add any account items that are not in the local cart (e.g. from another device/session)
+  savedAccountList.forEach((item) => {
+    if (!item?.product) return;
+    const cleanId = getCleanProductId(item.product);
+    const key = getItemCompositeKey(cleanId, item.selectedSize);
+    if (!mergedMap.has(key)) {
+      mergedMap.set(key, { ...item });
+    }
+  });
+
+  return Array.from(mergedMap.values());
+};
+
 export function useCart() {
+  const { user, isLoaded: isUserLoaded } = useUser();
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState<boolean>(false);
   const [isLoaded, setIsLoaded] = useState<boolean>(false);
+  const prevUserIdRef = useRef<string | null>(null);
 
-  // Load from localStorage on client mount
+  // 1. Initial Client-Side Load from localStorage
   useEffect(() => {
     try {
       const stored = localStorage.getItem(CART_STORAGE_KEY);
@@ -51,20 +84,57 @@ export function useCart() {
     };
 
     window.addEventListener('storage', handleSync);
+    window.addEventListener('neesh_cart_updated', handleSync);
     return () => {
       window.removeEventListener('storage', handleSync);
+      window.removeEventListener('neesh_cart_updated', handleSync);
     };
   }, []);
 
-  // Persist cart to localStorage whenever cartItems change after initial load
+  // 2. Intelligent User Login/Logout Cart Merge & Sync
+  useEffect(() => {
+    if (!isLoaded || !isUserLoaded) return;
+
+    const currentUserId = user?.id || null;
+    const prevUserId = prevUserIdRef.current;
+
+    // Trigger merge only when transitioning from unauthenticated -> authenticated
+    if (currentUserId && prevUserId !== currentUserId) {
+      try {
+        const userSavedKey = getUserCartStorageKey(currentUserId);
+        const userSavedRaw = localStorage.getItem(userSavedKey);
+        const userSavedItems: CartItem[] = userSavedRaw ? JSON.parse(userSavedRaw) : [];
+
+        const currentLocalRaw = localStorage.getItem(CART_STORAGE_KEY);
+        const currentLocalItems: CartItem[] = currentLocalRaw ? JSON.parse(currentLocalRaw) : [];
+
+        if (userSavedItems.length > 0 || currentLocalItems.length > 0) {
+          // Merge non-destructively: keep exact active quantities without doubling
+          const merged = mergeCartLists(currentLocalItems, userSavedItems);
+          setCartItems(merged);
+          localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(merged));
+          localStorage.setItem(userSavedKey, JSON.stringify(merged));
+        }
+      } catch (err) {
+        console.warn('Cart login merge error:', err);
+      }
+    }
+
+    prevUserIdRef.current = currentUserId;
+  }, [user, isLoaded, isUserLoaded]);
+
+  // 3. Persist cart to active storage and user-scoped storage whenever cartItems change
   useEffect(() => {
     if (!isLoaded) return;
     try {
       localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cartItems));
+      if (user?.id) {
+        localStorage.setItem(getUserCartStorageKey(user.id), JSON.stringify(cartItems));
+      }
     } catch (e) {
       console.warn('Failed to save cart to storage:', e);
     }
-  }, [cartItems, isLoaded]);
+  }, [cartItems, isLoaded, user]);
 
   const addToCart = useCallback((product: Product, size?: string, unitPrice?: number, quantity: number = 1) => {
     const cleanId = getCleanProductId(product);
@@ -82,8 +152,9 @@ export function useCart() {
         return getItemCompositeKey(itemCleanId, item.selectedSize) === targetKey;
       });
 
+      let nextItems: CartItem[];
       if (existingIndex > -1) {
-        return prev.map((item, idx) =>
+        nextItems = prev.map((item, idx) =>
           idx === existingIndex
             ? { ...item, quantity: item.quantity + quantity, unitPrice: resolvedPrice }
             : item
@@ -93,11 +164,17 @@ export function useCart() {
           ...product,
           id: product.id || cleanId
         };
-        return [
+        nextItems = [
           ...prev,
           { product: cleanProduct, quantity, selectedSize: resolvedSize, unitPrice: resolvedPrice }
         ];
       }
+
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(nextItems));
+        window.dispatchEvent(new Event('neesh_cart_updated'));
+      }
+      return nextItems;
     });
 
     setIsCartOpen(true);
@@ -107,8 +184,8 @@ export function useCart() {
     const targetCleanId = productId.toLowerCase().trim();
     const targetSize = size ? size.toLowerCase().trim() : undefined;
 
-    setCartItems((prev) =>
-      prev
+    setCartItems((prev) => {
+      const nextItems = prev
         .map((item) => {
           const itemCleanId = getCleanProductId(item.product);
           const itemSize = (item.selectedSize || '').toLowerCase().trim();
@@ -121,30 +198,48 @@ export function useCart() {
           }
           return item;
         })
-        .filter(Boolean) as CartItem[]
-    );
+        .filter(Boolean) as CartItem[];
+
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(nextItems));
+        window.dispatchEvent(new Event('neesh_cart_updated'));
+      }
+      return nextItems;
+    });
   }, []);
 
   const removeItem = useCallback((productId: string, size?: string) => {
     const targetCleanId = productId.toLowerCase().trim();
     const targetSize = size ? size.toLowerCase().trim() : undefined;
 
-    setCartItems((prev) =>
-      prev.filter((item) => {
+    setCartItems((prev) => {
+      const nextItems = prev.filter((item) => {
         const itemCleanId = getCleanProductId(item.product);
         const itemSize = (item.selectedSize || '').toLowerCase().trim();
         const isSameProduct = itemCleanId === targetCleanId;
         const isSameSize = targetSize === undefined || itemSize === targetSize;
 
-        // Keep item if it does not match both product ID and size
         return !(isSameProduct && isSameSize);
-      })
-    );
+      });
+
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(nextItems));
+        window.dispatchEvent(new Event('neesh_cart_updated'));
+      }
+      return nextItems;
+    });
   }, []);
 
   const clearCart = useCallback(() => {
     setCartItems([]);
-  }, []);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(CART_STORAGE_KEY, JSON.stringify([]));
+      if (user?.id) {
+        localStorage.setItem(getUserCartStorageKey(user.id), JSON.stringify([]));
+      }
+      window.dispatchEvent(new Event('neesh_cart_updated'));
+    }
+  }, [user]);
 
   const totalCartCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
   const subtotal = cartItems.reduce(

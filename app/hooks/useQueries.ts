@@ -18,6 +18,7 @@ export const queryKeys = {
   reviews: (productName: string) => ['reviews', productName] as const,
   reels: ['reels'] as const,
   perfumers: ['perfumers'] as const,
+  celebrities: ['celebrities'] as const,
   coupons: ['coupons'] as const,
 };
 
@@ -147,6 +148,20 @@ export function usePerfumersQuery() {
     queryKey: queryKeys.perfumers,
     queryFn: async () => {
       const data = await api.getPerfumers();
+      return data || [];
+    },
+    staleTime: 1000 * 60 * 20,
+  });
+}
+
+// ---------------------------------------------------------------------------
+// 8. Celebrities Query
+// ---------------------------------------------------------------------------
+export function useCelebritiesQuery() {
+  return useQuery({
+    queryKey: queryKeys.celebrities,
+    queryFn: async () => {
+      const data = await api.getCelebrities();
       return data || [];
     },
     staleTime: 1000 * 60 * 20,

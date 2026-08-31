@@ -1,18 +1,23 @@
 import { NextResponse } from 'next/server';
+import { auth } from '@clerk/nextjs/server';
+import { adminGuard } from '@/lib/roles';
 import { databases, APPWRITE_DATABASE_ID } from '@/lib/appwrite';
 import { ID, Query } from 'appwrite';
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
-    const { userId, email, firstName, lastName, phone, address, city, pincode } = body;
-
-    if (!userId && !email && !phone) {
-      return NextResponse.json({ error: 'Missing user identifier' }, { status: 400 });
+    const { userId: authUserId } = await auth();
+    if (!authUserId) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
 
+    const body = await req.json();
+    const { email, firstName, lastName, phone, address, city, pincode } = body;
+
+    // The synced record always belongs to the authenticated caller; any
+    // client-supplied userId is ignored.
     const userData = {
-      userId: userId || `user-${Date.now()}`,
+      userId: authUserId,
       email: email || '',
       name: `${firstName || ''} ${lastName || ''}`.trim() || email?.split('@')[0] || 'Customer',
       phone: phone || '',
@@ -66,6 +71,9 @@ export async function POST(req: Request) {
 
 export async function GET() {
   try {
+    const guard = await adminGuard();
+    if (guard) return guard;
+
     if (!APPWRITE_DATABASE_ID) {
       throw new Error('APPWRITE_DATABASE_ID is not configured');
     }
