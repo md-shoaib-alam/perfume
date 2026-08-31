@@ -232,38 +232,34 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
               </h4>
             </div>
 
-            {/* Subheader: Product Stage & ETA */}
-            <div className="flex items-center justify-between text-xs sm:text-sm">
-              <span className="font-medium text-slate-800">
-                {isCancelled
-                  ? 'Order Cancelled'
-                  : isDelivered
-                  ? 'Product Delivered'
-                  : isInTransit
-                  ? 'Product in Transit'
-                  : 'Package Ready for Dispatch'}
-              </span>
-              <span className="text-[11px] sm:text-xs font-normal text-slate-400">
-                {isCancelled ? (
-                  <span className="text-rose-600 font-medium">Status: Void</span>
-                ) : (
-                  <>EST: <span className="font-medium text-slate-600">3–5 days</span></>
-                )}
-              </span>
-            </div>
+            {/* Subheader: Product Stage & ETA (Active Orders only) */}
+            {!isCancelled && (
+              <div className="flex items-center justify-between text-xs sm:text-sm">
+                <span className="font-medium text-slate-800">
+                  {isDelivered
+                    ? 'Product Delivered'
+                    : isInTransit
+                    ? 'Product in Transit'
+                    : 'Package Ready for Dispatch'}
+                </span>
+                <span className="text-[11px] sm:text-xs font-normal text-slate-400">
+                  EST: <span className="font-medium text-slate-600">3–5 days</span>
+                </span>
+              </div>
+            )}
 
-            {/* If Cancelled: Show Cancelled Alert Box */}
+            {/* If Cancelled: Show Clean Simple Cancelled Alert */}
             {isCancelled ? (
-              <div className="bg-rose-50/70 rounded-2xl p-5 sm:p-6 border border-rose-200 flex items-start gap-4">
-                <div className="w-10 h-10 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center shrink-0">
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <div className="bg-rose-50 border border-rose-200/80 rounded-2xl p-4 sm:p-5 flex items-center gap-3.5">
+                <div className="w-9 h-9 rounded-xl bg-rose-100/90 text-rose-600 flex items-center justify-center shrink-0">
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </div>
-                <div className="space-y-1">
-                  <h5 className="text-xs sm:text-sm font-bold text-rose-900">Order Cancellation Notice</h5>
-                  <p className="text-xs text-rose-700 leading-relaxed">
-                    This order has been cancelled and will not be dispatched. If payment was made online, a refund will automatically process to your original source within 3–5 business days.
+                <div className="space-y-0.5 min-w-0">
+                  <h5 className="text-xs sm:text-sm font-bold text-rose-900">Order Cancelled</h5>
+                  <p className="text-xs text-rose-700 leading-normal">
+                    This order was cancelled. Online payments will be refunded to your source account within 3–5 business days.
                   </p>
                 </div>
               </div>

@@ -384,9 +384,6 @@ export const HeroManager: React.FC = () => {
                 <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
                   Live Banner Preview
                 </h3>
-                <span className="text-[11px] text-slate-400">
-                  Target: <span className="font-mono text-[#c59b48] font-bold">{currentSlide.linkUrl || '#'}</span>
-                </span>
               </div>
 
               {/* Desktop / Mobile Switcher */}

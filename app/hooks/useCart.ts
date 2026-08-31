@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useEffect, useCallback, useRef, useSyncExternalStore } from 'react';
 import { useUser } from '@clerk/nextjs';
 import type { Product, CartItem } from '../types';
 import { resolveProductUnitPrice, resolveProductSizeOptions } from '@/lib/pricing';
@@ -49,72 +49,135 @@ const mergeCartLists = (activeLocalList: CartItem[], savedAccountList: CartItem[
   return Array.from(mergedMap.values());
 };
 
-export function useCart() {
-  const { user, isLoaded: isUserLoaded } = useUser();
-  const [cartItems, setCartItems] = useState<CartItem[]>([]);
-  const [isCartOpen, setIsCartOpen] = useState<boolean>(false);
-  const [isLoaded, setIsLoaded] = useState<boolean>(false);
-  const prevUserIdRef = useRef<string | null>(null);
-  const lastAddTimestampRef = useRef<{ [key: string]: number }>({});
+// ==========================================
+// Module-level Single Source of Truth Cart Store
+// ==========================================
+let cartStore: CartItem[] = [];
+let isStoreLoaded = false;
+const storeListeners = new Set<() => void>();
 
-  // 1. Initial Client-Side Load from localStorage
-  useEffect(() => {
+let isCartOpenStore = false;
+const cartOpenListeners = new Set<() => void>();
+
+function initStoreIfNeeded() {
+  if (isStoreLoaded || typeof window === 'undefined') return;
+  try {
+    const stored = localStorage.getItem(CART_STORAGE_KEY);
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      if (Array.isArray(parsed)) {
+        cartStore = parsed;
+      }
+    }
+  } catch (e) {
+    console.warn('Failed to load cart from localStorage:', e);
+  }
+  isStoreLoaded = true;
+}
+
+function emitStoreChange() {
+  for (const listener of storeListeners) {
+    listener();
+  }
+}
+
+function emitCartOpenChange() {
+  for (const listener of cartOpenListeners) {
+    listener();
+  }
+}
+
+function setCartStore(nextCart: CartItem[], userId?: string | null) {
+  cartStore = nextCart;
+  if (typeof window !== 'undefined') {
     try {
-      const stored = localStorage.getItem(CART_STORAGE_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed)) {
-          setCartItems(parsed);
-        }
+      localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(nextCart));
+      if (userId) {
+        localStorage.setItem(getUserCartStorageKey(userId), JSON.stringify(nextCart));
       }
     } catch (e) {
-      console.warn('Failed to load cart from storage:', e);
+      console.warn('Failed to save cart to localStorage:', e);
     }
-    setIsLoaded(true);
+  }
+  emitStoreChange();
+}
 
-    const handleSync = () => {
+function subscribeToStore(callback: () => void) {
+  storeListeners.add(callback);
+  return () => {
+    storeListeners.delete(callback);
+  };
+}
+
+function getStoreSnapshot(): CartItem[] {
+  initStoreIfNeeded();
+  return cartStore;
+}
+
+const SERVER_EMPTY_CART: CartItem[] = [];
+function getServerSnapshot(): CartItem[] {
+  return SERVER_EMPTY_CART;
+}
+
+function subscribeCartOpen(callback: () => void) {
+  cartOpenListeners.add(callback);
+  return () => {
+    cartOpenListeners.delete(callback);
+  };
+}
+
+function getCartOpenSnapshot(): boolean {
+  return isCartOpenStore;
+}
+
+function getServerCartOpenSnapshot(): boolean {
+  return false;
+}
+
+// Cross-tab synchronization
+if (typeof window !== 'undefined') {
+  window.addEventListener('storage', (e) => {
+    if (e.key === CART_STORAGE_KEY && e.newValue) {
       try {
-        const stored = localStorage.getItem(CART_STORAGE_KEY);
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          if (Array.isArray(parsed)) {
-            setCartItems(parsed);
-          }
+        const parsed = JSON.parse(e.newValue);
+        if (Array.isArray(parsed)) {
+          cartStore = parsed;
+          emitStoreChange();
         }
-      } catch (e) {}
-    };
+      } catch (err) {}
+    }
+  });
+}
 
-    window.addEventListener('storage', handleSync);
-    window.addEventListener('neesh_cart_updated', handleSync);
-    return () => {
-      window.removeEventListener('storage', handleSync);
-      window.removeEventListener('neesh_cart_updated', handleSync);
-    };
+export function useCart() {
+  const { user, isLoaded: isUserLoaded } = useUser();
+  const cartItems = useSyncExternalStore(subscribeToStore, getStoreSnapshot, getServerSnapshot);
+  const isCartOpen = useSyncExternalStore(subscribeCartOpen, getCartOpenSnapshot, getServerCartOpenSnapshot);
+  const prevUserIdRef = useRef<string | null>(null);
+
+  const setIsCartOpen = useCallback((open: boolean) => {
+    isCartOpenStore = open;
+    emitCartOpenChange();
   }, []);
 
-  // 2. Intelligent User Login/Logout Cart Merge & Sync
+  // Account Cart Synchronization & Login Merge
   useEffect(() => {
-    if (!isLoaded || !isUserLoaded) return;
+    if (!isStoreLoaded || !isUserLoaded) return;
 
     const currentUserId = user?.id || null;
     const prevUserId = prevUserIdRef.current;
 
-    // Trigger merge only when transitioning from unauthenticated -> authenticated
+    // Merge when transitioning from unauthenticated -> authenticated
     if (currentUserId && prevUserId !== currentUserId) {
       try {
         const userSavedKey = getUserCartStorageKey(currentUserId);
         const userSavedRaw = localStorage.getItem(userSavedKey);
         const userSavedItems: CartItem[] = userSavedRaw ? JSON.parse(userSavedRaw) : [];
-
-        const currentLocalRaw = localStorage.getItem(CART_STORAGE_KEY);
-        const currentLocalItems: CartItem[] = currentLocalRaw ? JSON.parse(currentLocalRaw) : [];
+        const currentLocalItems = cartStore;
 
         if (userSavedItems.length > 0 || currentLocalItems.length > 0) {
-          // Merge non-destructively: keep exact active quantities without doubling
           const merged = mergeCartLists(currentLocalItems, userSavedItems);
-          setCartItems(merged);
-          localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(merged));
-          localStorage.setItem(userSavedKey, JSON.stringify(merged));
+          setCartStore(merged, currentUserId);
         }
       } catch (err) {
         console.warn('Cart login merge error:', err);
@@ -122,22 +185,10 @@ export function useCart() {
     }
 
     prevUserIdRef.current = currentUserId;
-  }, [user, isLoaded, isUserLoaded]);
-
-  // 3. Persist cart to active storage and user-scoped storage whenever cartItems change
-  useEffect(() => {
-    if (!isLoaded) return;
-    try {
-      localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cartItems));
-      if (user?.id) {
-        localStorage.setItem(getUserCartStorageKey(user.id), JSON.stringify(cartItems));
-      }
-    } catch (e) {
-      console.warn('Failed to save cart to storage:', e);
-    }
-  }, [cartItems, isLoaded, user]);
+  }, [user, isUserLoaded]);
 
   const addToCart = useCallback((product: Product, size?: string, unitPrice?: number, quantity: number = 1) => {
+    initStoreIfNeeded();
     const cleanId = getCleanProductId(product);
     const sizeOpts = resolveProductSizeOptions(product);
     const resolvedSize = size || (sizeOpts.length > 0 ? sizeOpts[0].size : product.volume || '100ml');
@@ -147,108 +198,76 @@ export function useCart() {
 
     const targetKey = getItemCompositeKey(cleanId, resolvedSize);
 
-    // Double-click throttle lock: ignore accidental rapid double-taps within 250ms
-    const now = Date.now();
-    const lastAdd = lastAddTimestampRef.current[targetKey] || 0;
-    if (now - lastAdd < 250) {
-      return;
-    }
-    lastAddTimestampRef.current[targetKey] = now;
-
-    setCartItems((prev) => {
-      const existingIndex = prev.findIndex((item) => {
-        const itemCleanId = getCleanProductId(item.product);
-        return getItemCompositeKey(itemCleanId, item.selectedSize) === targetKey;
-      });
-
-      let nextItems: CartItem[];
-      if (existingIndex > -1) {
-        nextItems = prev.map((item, idx) =>
-          idx === existingIndex
-            ? { ...item, quantity: item.quantity + quantity, unitPrice: resolvedPrice }
-            : item
-        );
-      } else {
-        const cleanProduct: Product = {
-          ...product,
-          id: product.id || cleanId
-        };
-        nextItems = [
-          ...prev,
-          { product: cleanProduct, quantity, selectedSize: resolvedSize, unitPrice: resolvedPrice }
-        ];
-      }
-
-      if (typeof window !== 'undefined') {
-        localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(nextItems));
-        window.dispatchEvent(new Event('neesh_cart_updated'));
-      }
-      return nextItems;
+    const existingIndex = cartStore.findIndex((item) => {
+      const itemCleanId = getCleanProductId(item.product);
+      return getItemCompositeKey(itemCleanId, item.selectedSize) === targetKey;
     });
 
+    let nextItems: CartItem[];
+    if (existingIndex > -1) {
+      nextItems = cartStore.map((item, idx) =>
+        idx === existingIndex
+          ? { ...item, quantity: item.quantity + quantity, unitPrice: resolvedPrice }
+          : item
+      );
+    } else {
+      const cleanProduct: Product = {
+        ...product,
+        id: product.id || cleanId
+      };
+      nextItems = [
+        ...cartStore,
+        { product: cleanProduct, quantity, selectedSize: resolvedSize, unitPrice: resolvedPrice }
+      ];
+    }
+
+    setCartStore(nextItems, user?.id);
     setIsCartOpen(true);
-  }, []);
+  }, [user?.id, setIsCartOpen]);
 
   const updateQuantity = useCallback((productId: string, delta: number, size?: string) => {
+    initStoreIfNeeded();
     const targetCleanId = productId.toLowerCase().trim();
     const targetSize = size ? size.toLowerCase().trim() : undefined;
 
-    setCartItems((prev) => {
-      const nextItems = prev
-        .map((item) => {
-          const itemCleanId = getCleanProductId(item.product);
-          const itemSize = (item.selectedSize || '').toLowerCase().trim();
-          const isSameProduct = itemCleanId === targetCleanId;
-          const isSameSize = targetSize === undefined || itemSize === targetSize;
-
-          if (isSameProduct && isSameSize) {
-            const newQty = item.quantity + delta;
-            return newQty > 0 ? { ...item, quantity: newQty } : null;
-          }
-          return item;
-        })
-        .filter(Boolean) as CartItem[];
-
-      if (typeof window !== 'undefined') {
-        localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(nextItems));
-        window.dispatchEvent(new Event('neesh_cart_updated'));
-      }
-      return nextItems;
-    });
-  }, []);
-
-  const removeItem = useCallback((productId: string, size?: string) => {
-    const targetCleanId = productId.toLowerCase().trim();
-    const targetSize = size ? size.toLowerCase().trim() : undefined;
-
-    setCartItems((prev) => {
-      const nextItems = prev.filter((item) => {
+    const nextItems = cartStore
+      .map((item) => {
         const itemCleanId = getCleanProductId(item.product);
         const itemSize = (item.selectedSize || '').toLowerCase().trim();
         const isSameProduct = itemCleanId === targetCleanId;
         const isSameSize = targetSize === undefined || itemSize === targetSize;
 
-        return !(isSameProduct && isSameSize);
-      });
+        if (isSameProduct && isSameSize) {
+          const newQty = item.quantity + delta;
+          return newQty > 0 ? { ...item, quantity: newQty } : null;
+        }
+        return item;
+      })
+      .filter(Boolean) as CartItem[];
 
-      if (typeof window !== 'undefined') {
-        localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(nextItems));
-        window.dispatchEvent(new Event('neesh_cart_updated'));
-      }
-      return nextItems;
+    setCartStore(nextItems, user?.id);
+  }, [user?.id]);
+
+  const removeItem = useCallback((productId: string, size?: string) => {
+    initStoreIfNeeded();
+    const targetCleanId = productId.toLowerCase().trim();
+    const targetSize = size ? size.toLowerCase().trim() : undefined;
+
+    const nextItems = cartStore.filter((item) => {
+      const itemCleanId = getCleanProductId(item.product);
+      const itemSize = (item.selectedSize || '').toLowerCase().trim();
+      const isSameProduct = itemCleanId === targetCleanId;
+      const isSameSize = targetSize === undefined || itemSize === targetSize;
+
+      return !(isSameProduct && isSameSize);
     });
-  }, []);
+
+    setCartStore(nextItems, user?.id);
+  }, [user?.id]);
 
   const clearCart = useCallback(() => {
-    setCartItems([]);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(CART_STORAGE_KEY, JSON.stringify([]));
-      if (user?.id) {
-        localStorage.setItem(getUserCartStorageKey(user.id), JSON.stringify([]));
-      }
-      window.dispatchEvent(new Event('neesh_cart_updated'));
-    }
-  }, [user]);
+    setCartStore([], user?.id);
+  }, [user?.id]);
 
   const totalCartCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
   const subtotal = cartItems.reduce(
@@ -266,6 +285,6 @@ export function useCart() {
     updateQuantity,
     removeItem,
     clearCart,
-    isLoaded
+    isLoaded: isStoreLoaded
   };
 }
