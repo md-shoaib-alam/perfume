@@ -41,7 +41,7 @@ export const MasterPerfumersSection: React.FC = () => {
               <button
                 key={p.id || idx}
                 onClick={() => setActiveIndex(idx)}
-                className={`relative w-14 h-14 rounded-full overflow-hidden transition-all p-[2px] cursor-pointer ${
+                className={`relative w-14 h-14 rounded-full overflow-hidden transition-all p-[2px] cursor-pointer shrink-0 ${
                   activeIndex === idx
                     ? 'border-2 border-[#d6a750] shadow-md ring-2 ring-[#d6a750]/20 bg-white'
                     : 'border border-slate-200 opacity-60 hover:opacity-100'
@@ -114,15 +114,15 @@ export const MasterPerfumersSection: React.FC = () => {
               {current.quote || current.bio}
             </p>
 
-            {/* Desktop Carousel Indicators */}
-            <div className="hidden md:flex items-center gap-3">
+            {/* Desktop Carousel Indicators (70x70) */}
+            <div className="hidden md:flex items-center gap-3.5">
               {perfumers.map((p, idx) => (
                 <button
                   key={p.id || idx}
                   onClick={() => setActiveIndex(idx)}
-                  className={`relative w-12 h-12 rounded-full overflow-hidden transition-all p-[2px] cursor-pointer ${
+                  className={`relative w-[70px] h-[70px] rounded-full overflow-hidden transition-all p-[2.5px] cursor-pointer shrink-0 ${
                     activeIndex === idx
-                      ? 'border-2 border-[#d6a750] shadow-md ring-2 ring-[#d6a750]/20 bg-white'
+                      ? 'border-2 border-[#d6a750] shadow-md ring-2 ring-[#d6a750]/25 bg-white'
                       : 'border border-slate-200 opacity-60 hover:opacity-100'
                   }`}
                 >
