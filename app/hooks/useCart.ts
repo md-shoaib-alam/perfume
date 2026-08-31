@@ -147,6 +147,14 @@ export function useCart() {
 
     const targetKey = getItemCompositeKey(cleanId, resolvedSize);
 
+    // Double-click throttle lock: ignore accidental rapid double-taps within 250ms
+    const now = Date.now();
+    const lastAdd = lastAddTimestampRef.current[targetKey] || 0;
+    if (now - lastAdd < 250) {
+      return;
+    }
+    lastAddTimestampRef.current[targetKey] = now;
+
     setCartItems((prev) => {
       const existingIndex = prev.findIndex((item) => {
         const itemCleanId = getCleanProductId(item.product);
