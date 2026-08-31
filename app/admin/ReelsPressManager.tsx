@@ -6,43 +6,58 @@ import { deleteMediaFromAppwrite } from '@/lib/appwrite';
 import { MediaUploader } from '../components/MediaUploader';
 import { useConfirm } from '../components/CustomConfirmModal';
 
+import { Product } from '../types';
+
 export interface ReelShort {
   id: string;
   title: string;
   price: string;
-  subtitle: string;
+  subtitle?: string;
   image: string;
+  productId?: string;
+  productImage?: string;
+}
+
+export interface PressPublication {
+  id?: string;
+  name: string;
+  image?: string;
 }
 
 export const ReelsPressManager: React.FC = () => {
   const { showConfirm, showAlert } = useConfirm();
   const [reels, setReels] = useState<ReelShort[]>([]);
-  const [logos, setLogos] = useState<string[]>([]);
+  const [logos, setLogos] = useState<(string | PressPublication)[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   
   // Edit / Modal State
   const [editingReel, setEditingReel] = useState<ReelShort | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newLogoName, setNewLogoName] = useState('');
+  const [newLogoImage, setNewLogoImage] = useState('');
   const [saveToast, setSaveToast] = useState('');
 
   // Form Fields
   const [title, setTitle] = useState('');
-  const [subtitle, setSubtitle] = useState('');
   const [price, setPrice] = useState('');
   const [image, setImage] = useState('');
+  const [selectedProductId, setSelectedProductId] = useState('');
+  const [productImage, setProductImage] = useState('');
 
   const loadData = async () => {
     setLoading(true);
     try {
-      const [reelsData, logosData] = await Promise.all([
+      const [reelsData, logosData, prodsData] = await Promise.all([
         api.getReels(),
-        api.getPressLogos()
+        api.getPressLogos(),
+        api.getProducts()
       ]);
       setReels(reelsData || []);
       setLogos(logosData || []);
+      setProducts(prodsData || []);
     } catch (e) {
-      console.error('Failed to load reels/press:', e);
+      console.error('Failed to load reels/press/products:', e);
     } finally {
       setLoading(false);
     }
@@ -74,7 +89,7 @@ export const ReelsPressManager: React.FC = () => {
     }
   };
 
-  const saveLogosToStorage = async (updated: string[]) => {
+  const saveLogosToStorage = async (updated: (string | PressPublication)[]) => {
     try {
       await api.savePressLogos(updated);
       setLogos(updated);
@@ -93,20 +108,34 @@ export const ReelsPressManager: React.FC = () => {
 
   const handleOpenAddModal = () => {
     setEditingReel(null);
+    setSelectedProductId('');
     setTitle('');
-    setSubtitle('By Midnight');
     setPrice('Rs. 8,500');
     setImage('');
+    setProductImage('');
     setIsModalOpen(true);
   };
 
   const handleOpenEditModal = (reel: ReelShort) => {
     setEditingReel(reel);
+    setSelectedProductId(reel.productId || '');
     setTitle(reel.title);
-    setSubtitle(reel.subtitle);
     setPrice(reel.price);
     setImage(reel.image);
+    setProductImage(reel.productImage || '');
     setIsModalOpen(true);
+  };
+
+  const handleSelectProduct = (prodId: string) => {
+    setSelectedProductId(prodId);
+    if (!prodId) return;
+    const prod = products.find((p) => String(p.id) === String(prodId));
+    if (prod) {
+      setTitle(prod.name);
+      setPrice(`Rs. ${Number(prod.price || 0).toLocaleString()}`);
+      const thumb = (prod.images && prod.images.length > 0) ? prod.images[0] : (prod.image || '');
+      setProductImage(thumb);
+    }
   };
 
   const handleSaveReel = async (e: React.FormEvent) => {
@@ -123,7 +152,16 @@ export const ReelsPressManager: React.FC = () => {
     if (editingReel) {
       const oldImage = editingReel.image;
       const updated = reels.map((r) =>
-        r.id === editingReel.id ? { ...r, title, subtitle, price, image } : r
+        r.id === editingReel.id
+          ? {
+              ...r,
+              title,
+              price,
+              image,
+              productId: selectedProductId || undefined,
+              productImage: productImage || undefined
+            }
+          : r
       );
       const success = await saveReelsToStorage(updated);
       if (success) {
@@ -136,9 +174,10 @@ export const ReelsPressManager: React.FC = () => {
       const newReel: ReelShort = {
         id: `reel-${Date.now()}`,
         title,
-        subtitle,
         price,
-        image
+        image,
+        productId: selectedProductId || undefined,
+        productImage: productImage || undefined
       };
       const success = await saveReelsToStorage([...reels, newReel]);
       if (success) setIsModalOpen(false);
@@ -164,24 +203,41 @@ export const ReelsPressManager: React.FC = () => {
 
   const handleAddLogo = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newLogoName.trim()) return;
-    const upper = newLogoName.trim().toUpperCase();
-    if (logos.includes(upper)) {
+    const name = newLogoName.trim();
+    const image = newLogoImage.trim();
+
+    if (!name && !image) {
       await showAlert({
-        title: 'Duplicate Logo',
-        message: 'This publication is already in the list.',
+        title: 'Publication Required',
+        message: 'Please enter a brand/magazine name or upload a logo image.',
         variant: 'warning'
       });
       return;
     }
-    const updated = [...logos, upper];
+
+    const newItem: PressPublication = {
+      id: `press-${Date.now()}`,
+      name: name || 'FEATURED',
+      ...(image ? { image } : {})
+    };
+
+    const updated = [...logos, newItem];
     await saveLogosToStorage(updated);
     setNewLogoName('');
+    setNewLogoImage('');
   };
 
   const handleRemoveLogo = async (index: number) => {
+    const target = logos[index];
     const updated = logos.filter((_, i) => i !== index);
-    await saveLogosToStorage(updated);
+    const success = await saveLogosToStorage(updated);
+    if (success) {
+      if (typeof target === 'object' && target?.image) {
+        deleteMediaFromAppwrite(target.image).catch(() => {});
+      } else if (typeof target === 'string' && (target.startsWith('http') || target.startsWith('/'))) {
+        deleteMediaFromAppwrite(target).catch(() => {});
+      }
+    }
   };
 
   const handleResetDefaults = async () => {
@@ -262,9 +318,9 @@ export const ReelsPressManager: React.FC = () => {
           {reels.map((reel) => (
             <div
               key={reel.id}
-              className="w-38 sm:w-48 bg-slate-950 rounded-2xl overflow-hidden shadow-lg border border-slate-200/80 flex flex-col justify-between group shrink-0 transition-all duration-300 hover:shadow-xl hover:border-[#c59b48]/50"
+              className="w-40 sm:w-52 bg-white rounded-2xl overflow-hidden shadow-sm border border-slate-200/90 flex flex-col justify-between group shrink-0"
             >
-              {/* Image Preview with 9:16 ratio */}
+              {/* Top Media Preview with 9:16 ratio */}
               <div className="relative aspect-[9/16] overflow-hidden bg-slate-900">
                 <img
                   src={reel.image}
@@ -272,26 +328,40 @@ export const ReelsPressManager: React.FC = () => {
                   loading="lazy"
                   decoding="async"
                   className="w-full h-full object-cover"
-                />                
-                {/* Top Subtitle Badge */}
-                <div className="absolute top-2.5 left-2.5 z-10">
-                  <span className="inline-block bg-black/75 backdrop-blur-md text-[#d6a750] px-2 py-0.5 rounded-full text-[8px] sm:text-[9px] font-bold tracking-widest uppercase border border-[#d6a750]/30 shadow-xs">
-                    {reel.subtitle}
-                  </span>
-                </div>
+                />
+              </div>
 
-                {/* Bottom Overlay Text */}
-                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/95 via-black/50 to-transparent p-3 pt-6 flex flex-col justify-end">
-                  <h4 className="text-xs sm:text-sm font-bold text-white leading-tight truncate">{reel.title}</h4>
-                  <p className="text-[11px] sm:text-xs text-[#d6a750] font-semibold mt-0.5">{reel.price}</p>
-                </div>
+              {/* Bottom White Product Details Section */}
+              <div className="bg-white px-3.5 pb-3.5 pt-1 text-center relative flex flex-col items-center border-t border-slate-100">
+                {/* Product Thumbnail (Overlaps the bottom edge of the 9:16 media) */}
+                {reel.productImage && (
+                  <div className="w-14 h-14 rounded-xl bg-white border border-slate-200 shadow-md -mt-7 mb-2 overflow-hidden flex items-center justify-center shrink-0 z-10 p-0.5">
+                    <img
+                      src={reel.productImage}
+                      alt={reel.title}
+                      className="w-full h-full object-cover rounded-lg"
+                      loading="lazy"
+                    />
+                  </div>
+                )}
+
+                {/* Fragrance Title */}
+                <h4 className="font-serif text-sm font-bold text-slate-900 leading-snug truncate max-w-full px-1">
+                  {reel.title}
+                </h4>
+
+                {/* Price Tag */}
+                <p className="font-sans text-xs text-slate-600 font-semibold mt-0.5">
+                  {reel.price}
+                </p>
               </div>
 
               {/* Bottom Integrated Action Bar */}
-              <div className="p-2 sm:p-2.5 bg-slate-900 flex items-center gap-1.5 sm:gap-2 border-t border-slate-800">
+              <div className="p-2 sm:p-2.5 bg-slate-50 flex items-center gap-1.5 sm:gap-2 border-t border-slate-200/80">
                 <button
+                  type="button"
                   onClick={() => handleOpenEditModal(reel)}
-                  className="flex-1 py-1.5 px-2.5 bg-[#c59b48] hover:bg-[#b58b38] text-white text-[11px] sm:text-xs font-bold rounded-lg flex items-center justify-center gap-1 transition-colors cursor-pointer shadow-xs"
+                  className="flex-1 py-1.5 px-2 bg-slate-900 hover:bg-black text-white text-[11px] font-bold rounded-lg flex items-center justify-center gap-1 transition-colors cursor-pointer shadow-xs"
                 >
                   <svg className="w-3.5 h-3.5 fill-none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
@@ -300,8 +370,9 @@ export const ReelsPressManager: React.FC = () => {
                 </button>
 
                 <button
+                  type="button"
                   onClick={() => handleDeleteReel(reel.id)}
-                  className="p-1.5 bg-slate-800 hover:bg-rose-600 text-slate-300 hover:text-white rounded-lg transition-colors cursor-pointer"
+                  className="p-1.5 bg-slate-200 hover:bg-rose-600 text-slate-600 hover:text-white rounded-lg transition-colors cursor-pointer"
                   title="Delete Reel"
                 >
                   <svg className="w-3.5 h-3.5 fill-none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
@@ -342,58 +413,139 @@ export const ReelsPressManager: React.FC = () => {
             2. &quot;Featured In&quot; Press Publications Ticker ({logos.length} Publications)
           </h3>
           <p className="text-xs text-slate-400 mt-0.5">
-            Add or remove fashion magazines and press features that continuously scroll on your homepage ticker.
+            Add fashion magazines, press features, or brand logo images that continuously scroll on your homepage ticker.
           </p>
         </div>
 
         {/* Add Logo Form */}
-        <form onSubmit={handleAddLogo} className="flex gap-3 max-w-md">
-          <input
-            type="text"
-            value={newLogoName}
-            onChange={(e) => setNewLogoName(e.target.value)}
-            placeholder="e.g. GQ, VOGUE, FORBES, MEN'S HEALTH"
-            className="flex-1 px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold uppercase focus:outline-none focus:border-[#c59b48]"
-          />
-          <button
-            type="submit"
-            className="px-5 py-2.5 bg-[#c59b48] hover:bg-[#b58b38] text-white text-xs font-bold rounded-xl shadow-xs transition-all cursor-pointer shrink-0"
-          >
-            + Add Publication
-          </button>
+        <form onSubmit={handleAddLogo} className="bg-slate-50 p-4 sm:p-5 rounded-2xl border border-slate-200/80 space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                Publication / Brand Name
+              </label>
+              <input
+                type="text"
+                value={newLogoName}
+                onChange={(e) => setNewLogoName(e.target.value)}
+                placeholder="e.g. GQ, VOGUE, FORBES, MEN'S HEALTH"
+                className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-[#c59b48]"
+              />
+              <p className="text-[11px] text-slate-400 mt-1">
+                Displays as text in ticker or used as image alt tag.
+              </p>
+            </div>
+
+            <div>
+              <MediaUploader
+                label="Brand Logo Image (Optional)"
+                value={newLogoImage}
+                onChange={(url) => setNewLogoImage(url)}
+                helperText="Upload transparent PNG/SVG/WebP/AVIF. Auto-compressed & stored in Appwrite."
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-end pt-2 border-t border-slate-200/60">
+            <button
+              type="submit"
+              className="px-6 py-2.5 bg-[#c59b48] hover:bg-[#b58b38] text-white text-xs font-bold rounded-xl shadow-xs transition-all cursor-pointer flex items-center gap-2"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+              </svg>
+              <span>Add Publication</span>
+            </button>
+          </div>
         </form>
 
-        {/* Existing Logos Grid / Pills */}
-        <div className="flex flex-wrap gap-3 pt-2">
-          {logos.map((logo, idx) => (
-            <div
-              key={idx}
-              className="flex items-center gap-2.5 px-4 py-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl transition-all shadow-2xs font-bold text-sm text-slate-800"
-            >
-              <span>{logo}</span>
-              <button
-                type="button"
-                onClick={() => handleRemoveLogo(idx)}
-                className="w-4 h-4 rounded-full bg-slate-200 hover:bg-red-500 hover:text-white text-slate-500 flex items-center justify-center text-[10px] cursor-pointer transition-colors"
-                title="Remove"
-              >
-                ✕
-              </button>
+        {/* Existing Logos Grid */}
+        <div className="space-y-2">
+          <p className="text-xs font-bold text-slate-600 uppercase tracking-wider">Active Ticker Items:</p>
+          {logos.length === 0 ? (
+            <p className="text-xs text-slate-400 italic py-2">No publications added yet. Add your first brand logo or text above.</p>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 pt-1">
+              {logos.map((item, idx) => {
+                const isObj = typeof item === 'object' && item !== null;
+                const name = isObj ? item.name : item;
+                const image = isObj ? item.image : (typeof item === 'string' && (item.startsWith('http') || item.startsWith('/')) ? item : undefined);
+
+                return (
+                  <div
+                    key={idx}
+                    className="flex items-center justify-between gap-2 p-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl transition-all shadow-2xs group"
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      {image ? (
+                        <div className="w-10 h-7 bg-white rounded border border-slate-200 p-1 flex items-center justify-center shrink-0">
+                          <img src={image} alt={name} className="max-w-full max-h-full object-contain" />
+                        </div>
+                      ) : (
+                        <div className="w-6 h-6 rounded-md bg-amber-100 text-[#916618] flex items-center justify-center text-[10px] font-bold shrink-0">
+                          T
+                        </div>
+                      )}
+                      <div className="min-w-0">
+                        <p className="text-xs font-bold text-slate-800 truncate uppercase">{name || 'Logo'}</p>
+                        <span className="text-[9.5px] font-medium text-slate-400">
+                          {image ? 'Image Logo' : 'Text Only'}
+                        </span>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveLogo(idx)}
+                      className="w-5 h-5 rounded-full bg-slate-200 hover:bg-rose-500 hover:text-white text-slate-500 flex items-center justify-center text-[11px] cursor-pointer transition-colors shrink-0"
+                      title="Remove Publication"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                );
+              })}
             </div>
-          ))}
+          )}
         </div>
 
         {/* Marquee Live Simulation Preview */}
         <div className="mt-6 pt-6 border-t border-slate-100">
           <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Live Homepage Preview:</p>
-          <div className="w-full bg-slate-50 p-4 rounded-xl border border-slate-200 overflow-hidden relative">
-            <div className="flex animate-marquee space-x-12 items-center text-slate-900 font-bold text-lg tracking-widest">
-              {logos.concat(logos).map((l, i) => (
-                <span key={i} className="whitespace-nowrap uppercase text-slate-700">
-                  {l}
-                </span>
-              ))}
-            </div>
+          <div className="w-full bg-white p-6 rounded-xl border border-slate-200 overflow-hidden relative shadow-2xs">
+            {/* @ts-ignore */}
+            <marquee
+              behavior="scroll"
+              direction="left"
+              scrollamount="6"
+              className="w-full overflow-hidden py-1"
+              onMouseEnter={(e: any) => e.currentTarget?.stop && e.currentTarget.stop()}
+              onMouseLeave={(e: any) => e.currentTarget?.start && e.currentTarget.start()}
+            >
+              <div className="inline-flex items-center gap-16 sm:gap-24">
+                {logos.map((item, i) => {
+                  const isObj = typeof item === 'object' && item !== null;
+                  const name = isObj ? item.name : item;
+                  const image = isObj ? item.image : (typeof item === 'string' && (item.startsWith('http') || item.startsWith('/')) ? item : undefined);
+
+                  return (
+                    <div key={i} className="inline-flex items-center mx-8 sm:mx-14 select-none">
+                      {image ? (
+                        <img
+                          src={image}
+                          alt={name}
+                          className="h-[30px] md:h-[40px] xl:h-[50px] max-w-[220px] object-contain hover:opacity-90 transition-all"
+                        />
+                      ) : (
+                        <span className="whitespace-nowrap uppercase font-serif font-black text-xl md:text-2xl xl:text-3xl tracking-widest text-slate-900">
+                          {name}
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </marquee>
           </div>
         </div>
       </div>
@@ -417,7 +569,29 @@ export const ReelsPressManager: React.FC = () => {
               </button>
             </div>
 
-            <form onSubmit={handleSaveReel} className="space-y-4">
+            <form onSubmit={handleSaveReel} className="space-y-4 max-h-[80vh] overflow-y-auto pr-1">
+              {/* Product Selector Dropdown */}
+              <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+                <label className="block text-xs font-bold text-slate-800 mb-1">
+                  Link Store Product (Auto-Fill Content)
+                </label>
+                <select
+                  value={selectedProductId}
+                  onChange={(e) => handleSelectProduct(e.target.value)}
+                  className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 focus:outline-none focus:border-[#c59b48]"
+                >
+                  <option value="">-- Select a Product to Auto-Fill (Optional) --</option>
+                  {products.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name} — Rs. {Number(p.price || 0).toLocaleString()}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-[11px] text-slate-400 mt-1">
+                  Selecting a product automatically fills the name, price, and thumbnail image below.
+                </p>
+              </div>
+
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">Fragrance Name (Title)</label>
                 <input
@@ -430,33 +604,29 @@ export const ReelsPressManager: React.FC = () => {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Top Badge / Subtitle</label>
-                  <input
-                    type="text"
-                    required
-                    value={subtitle}
-                    onChange={(e) => setSubtitle(e.target.value)}
-                    placeholder="e.g. By Midnight, Wild Roots"
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:border-[#c59b48]"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Price Tag</label>
-                  <input
-                    type="text"
-                    required
-                    value={price}
-                    onChange={(e) => setPrice(e.target.value)}
-                    placeholder="e.g. Rs. 8,500"
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:border-[#c59b48]"
-                  />
-                </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Price Tag</label>
+                <input
+                  type="text"
+                  required
+                  value={price}
+                  onChange={(e) => setPrice(e.target.value)}
+                  placeholder="e.g. Rs. 8,500"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:border-[#c59b48]"
+                />
               </div>
 
+              {/* Product Thumbnail Image (Bottle / Box) */}
               <MediaUploader
-                label="Vertical Cover Media (Image or Video) *"
+                label="Product Bottle Thumbnail (Shows below the reel video)"
+                value={productImage}
+                onChange={(url) => setProductImage(url)}
+                helperText="Square bottle thumbnail displayed overlapping the bottom card."
+              />
+
+              {/* 9:16 Vertical Reel Video/Photo */}
+              <MediaUploader
+                label="Vertical Cover Media (9:16 Video or Photo) *"
                 value={image}
                 onChange={(url) => setImage(url)}
                 helperText="Upload vertical video or 9:16 cover photo."

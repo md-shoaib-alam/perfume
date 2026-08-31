@@ -10,12 +10,26 @@ function readCelebrities() {
     if (fs.existsSync(DATA_FILE)) {
       const raw = fs.readFileSync(DATA_FILE, 'utf-8');
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed)) return parsed;
+      if (Array.isArray(parsed)) {
+        return {
+          title: 'Worn by 100k+ fragheads, including',
+          items: parsed
+        };
+      }
+      if (parsed && typeof parsed === 'object') {
+        return {
+          title: parsed.title || 'Worn by 100k+ fragheads, including',
+          items: Array.isArray(parsed.items) ? parsed.items : []
+        };
+      }
     }
   } catch (e) {
     console.error('Error reading data_celebrities.json:', e);
   }
-  return [];
+  return {
+    title: 'Worn by 100k+ fragheads, including',
+    items: []
+  };
 }
 
 function writeCelebrities(data: any) {
@@ -33,8 +47,27 @@ export async function POST(req: Request) {
 
   try {
     const body = await req.json();
-    writeCelebrities(body);
-    return NextResponse.json({ success: true, data: body });
+    let dataToSave;
+    if (Array.isArray(body)) {
+      const existing = readCelebrities();
+      dataToSave = {
+        title: existing.title || 'Worn by 100k+ fragheads, including',
+        items: body
+      };
+    } else if (body && typeof body === 'object') {
+      dataToSave = {
+        title: body.title || 'Worn by 100k+ fragheads, including',
+        items: Array.isArray(body.items) ? body.items : (Array.isArray(body.celebrities) ? body.celebrities : [])
+      };
+    } else {
+      dataToSave = {
+        title: 'Worn by 100k+ fragheads, including',
+        items: []
+      };
+    }
+
+    writeCelebrities(dataToSave);
+    return NextResponse.json({ success: true, data: dataToSave });
   } catch (err: any) {
     return NextResponse.json({ error: err.message || 'Failed to save celebrities data' }, { status: 500 });
   }

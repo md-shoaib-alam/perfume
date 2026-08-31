@@ -177,37 +177,37 @@ export const ConfirmProvider: React.FC<{ children: ReactNode }> = ({ children })
           aria-describedby="dialog-description"
           className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
         >
-          {/* Backdrop with Subtle Luxury Blur */}
+          {/* Backdrop with Subtle Blur */}
           <div
             onClick={!isAlertMode ? handleCancel : handleConfirm}
-            className="absolute inset-0 bg-slate-900/50 backdrop-blur-[2px] transition-opacity animate-fade-in"
+            className="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px] transition-opacity animate-fade-in"
           />
 
-          {/* Luxury Light Mode Dialog Card */}
-          <div className="relative bg-white border border-slate-200/90 text-slate-900 w-full max-w-md rounded-2xl p-6 shadow-2xl shadow-slate-900/20 font-sans z-10 animate-scale-up space-y-5">
+          {/* Simple Clean Modern Dialog Card */}
+          <div className="relative bg-white border border-slate-200 text-slate-900 w-full max-w-sm rounded-2xl p-5 shadow-2xl shadow-slate-900/15 font-sans z-10 animate-scale-up space-y-4">
             
-            {/* Header with Precision SVG Icon */}
-            <div className="flex items-start gap-3.5">
+            {/* Header with Icon and Simplified Text */}
+            <div className="flex items-start gap-3">
               <DialogIcon variant={variant} />
 
               <div className="flex-1 min-w-0 pt-0.5">
-                <h3 id="dialog-title" className="font-serif text-lg font-bold text-slate-900 tracking-wide">
+                <h3 id="dialog-title" className="text-sm sm:text-base font-bold text-slate-900 tracking-tight">
                   {title}
                 </h3>
-                <p id="dialog-description" className="text-xs text-slate-600 mt-1.5 leading-relaxed font-sans">
+                <p id="dialog-description" className="text-xs text-slate-600 mt-1 leading-relaxed">
                   {message}
                 </p>
               </div>
             </div>
 
             {/* Actions Button Group */}
-            <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-slate-100">
+            <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
               {!isAlertMode && (
                 <button
                   type="button"
                   onClick={handleCancel}
                   disabled={loading}
-                  className="px-4 py-2 rounded-xl border border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold uppercase tracking-wider transition-colors cursor-pointer"
+                  className="px-3.5 py-1.5 rounded-lg border border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold transition-colors cursor-pointer"
                 >
                   {cancelText}
                 </button>
@@ -218,10 +218,10 @@ export const ConfirmProvider: React.FC<{ children: ReactNode }> = ({ children })
                 type="button"
                 onClick={handleConfirm}
                 disabled={loading}
-                className={`px-5 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all cursor-pointer shadow-xs ${
+                className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer shadow-xs ${
                   variant === 'danger'
                     ? 'bg-rose-600 hover:bg-rose-700 text-white shadow-rose-600/20'
-                    : 'bg-[#caa04c] hover:bg-[#b88f3e] text-slate-950 font-extrabold shadow-amber-500/20'
+                    : 'bg-[#caa04c] hover:bg-[#b88f3e] text-white shadow-amber-500/20'
                 }`}
               >
                 {loading ? 'Processing...' : confirmText}

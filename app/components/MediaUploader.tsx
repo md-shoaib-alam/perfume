@@ -1,6 +1,6 @@
 'use client';
 import React, { useState, useRef } from 'react';
-import { uploadMediaToAppwrite } from '@/lib/appwrite';
+import { uploadMediaToAppwrite, deleteMediaFromAppwrite } from '@/lib/appwrite';
 import { compressImageToWebP } from '@/lib/imageCompressor';
 
 interface MediaUploaderProps {
@@ -18,7 +18,7 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
   value,
   onChange,
   accept = 'image/*',
-  helperText = 'Upload image (Auto-compressed to WebP) or video (MP4, WebM)',
+  helperText = 'Upload image (Auto-compressed to AVIF/WebP) or video (MP4, WebM)',
   previewType = 'image',
   autoDeleteOldOnReplace = true
 }) => {
@@ -33,13 +33,14 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
     if (!files || files.length === 0) return;
 
     const file = files[0];
+    const oldMediaUrl = value;
     setUploading(true);
     setUploadProgress(0);
     setError(null);
 
     try {
-      // 1. Auto-compress heavy images (e.g. 10MB JPG/PNG) to WebP (~200KB)
-      setStatusText('Optimizing to WebP...');
+      // 1. Auto-compress heavy images (e.g. 10MB JPG/PNG) to AVIF/WebP (~25KB - 80KB)
+      setStatusText('Optimizing (AVIF/WebP)...');
       setUploadProgress(15);
       const processedFile = await compressImageToWebP(file);
       
@@ -49,7 +50,14 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
         setUploadProgress(Math.max(20, pct));
       });
 
-      // 3. Notify parent component with new URL (cleanup of old media occurs only after successful parent document save)
+      // 3. Auto-delete the old media from Appwrite Cloud Storage to free up space
+      if (autoDeleteOldOnReplace && oldMediaUrl && oldMediaUrl !== directUrl && oldMediaUrl.includes('appwrite')) {
+        deleteMediaFromAppwrite(oldMediaUrl).catch((err) => {
+          console.warn('[MediaUploader] Could not delete old replaced media:', err);
+        });
+      }
+
+      // 4. Notify parent component with new URL
       onChange(directUrl);
       setStatusText('Done');
     } catch (err: any) {
@@ -68,7 +76,12 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
   };
 
   const handleRemove = async () => {
-    // Notify parent component with empty string (cleanup of old media occurs only after successful parent document save)
+    const oldMediaUrl = value;
+    if (oldMediaUrl && oldMediaUrl.includes('appwrite')) {
+      deleteMediaFromAppwrite(oldMediaUrl).catch((err) => {
+        console.warn('[MediaUploader] Could not delete removed media from storage:', err);
+      });
+    }
     onChange('');
   };
 

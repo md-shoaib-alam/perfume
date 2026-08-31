@@ -1017,7 +1017,7 @@ export const api = {
     }
   },
 
-  async getPressLogos(): Promise<string[]> {
+  async getPressLogos(): Promise<any[]> {
     try {
       const res = await fetch('/api/press', { cache: 'no-store' });
       if (res.ok) {
@@ -1029,7 +1029,7 @@ export const api = {
     return [];
   },
 
-  async savePressLogos(logos: string[]): Promise<boolean> {
+  async savePressLogos(logos: any[]): Promise<boolean> {
     try {
       const res = await fetch('/api/press', {
         method: 'POST',
