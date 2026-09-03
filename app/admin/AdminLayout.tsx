@@ -14,13 +14,14 @@ import { CouponsManager } from './CouponsManager';
 import { ReviewsManager } from './ReviewsManager';
 import { AnnouncementBarManager } from './AnnouncementBarManager';
 import { MessagesManager } from './MessagesManager';
+import { InstagramManager } from './InstagramManager';
 import { SettingsManager } from './SettingsManager';
 
 interface AdminLayoutProps {
   onBackToStore: () => void;
 }
 
-type TabType = 'overview' | 'products' | 'orders' | 'hero' | 'announcement' | 'messages' | 'reels' | 'collections' | 'perfumers' | 'coupons' | 'reviews' | 'settings';
+type TabType = 'overview' | 'products' | 'orders' | 'hero' | 'announcement' | 'messages' | 'reels' | 'collections' | 'perfumers' | 'instagram' | 'coupons' | 'reviews' | 'settings';
 
 export const AdminLayout: React.FC<AdminLayoutProps> = ({ onBackToStore }) => {
   const [activeTab, setActiveTab] = useState<TabType>('overview');
@@ -40,6 +41,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onBackToStore }) => {
       reels: 'Reels & Press',
       collections: 'Collections',
       perfumers: 'Perfumers',
+      instagram: 'Instagram Showcase',
       coupons: 'Coupons',
       reviews: 'Reviews',
       settings: 'Settings'
@@ -190,6 +192,17 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onBackToStore }) => {
       icon: (
         <svg className="w-4 h-4 fill-none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+        </svg>
+      )
+    },
+    {
+      id: 'instagram',
+      name: 'Instagram Showcase',
+      icon: (
+        <svg className="w-4 h-4 fill-none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+          <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+          <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
         </svg>
       )
     },
@@ -399,6 +412,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onBackToStore }) => {
           {activeTab === 'reels' && <ReelsPressManager />}
           {activeTab === 'collections' && <CollectionsManager />}
           {activeTab === 'perfumers' && <PerfumersCelebritiesManager />}
+          {activeTab === 'instagram' && <InstagramManager />}
           {activeTab === 'coupons' && <CouponsManager />}
           {activeTab === 'reviews' && <ReviewsManager />}
           {activeTab === 'settings' && <SettingsManager />}

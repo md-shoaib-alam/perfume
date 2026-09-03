@@ -1148,5 +1148,39 @@ export const api = {
       console.warn('Failed to sync user with Appwrite:', err);
       return false;
     }
+  },
+
+  // =========================================================================
+  // 12. INSTAGRAM SHOWCASE
+  // =========================================================================
+  async getInstagramPosts(): Promise<any> {
+    try {
+      const res = await fetch('/api/instagram', { cache: 'no-store' });
+      if (res.ok) {
+        return await res.json();
+      }
+    } catch (err) {
+      console.warn('Failed to fetch Instagram posts:', err);
+    }
+    return {
+      title: 'Get Inspired',
+      handle: '@bakhoorbliss',
+      profileUrl: 'https://instagram.com',
+      items: []
+    };
+  },
+
+  async saveInstagramPosts(data: any): Promise<boolean> {
+    try {
+      const res = await fetch('/api/instagram', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      return res.ok;
+    } catch (err) {
+      console.error('Failed to save Instagram posts:', err);
+      return false;
+    }
   }
 };

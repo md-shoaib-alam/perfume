@@ -15,6 +15,7 @@ import { GoldTrustBanner } from './components/GoldTrustBanner';
 import { CelebritySection } from './components/CelebritySection';
 import { CollectionsCirclesSection } from './components/CollectionsCirclesSection';
 import { GenderCampaignBanners } from './components/GenderCampaignBanners';
+import { InstagramShowcaseSection } from './components/InstagramShowcaseSection';
 import { Footer } from './components/Footer';
 
 const CartDrawer = dynamic(() => import('./components/CartDrawer').then((m) => m.CartDrawer), { ssr: false });
@@ -258,6 +259,9 @@ export default function Page() {
 
       {/* 8.6 Gender Campaign Banners */}
       <GenderCampaignBanners onSelectGender={setActiveTab} />
+
+      {/* 8.7 Instagram "Get Inspired" Showcase */}
+      <InstagramShowcaseSection />
 
       {/* 9. Footer */}
       <Footer />
