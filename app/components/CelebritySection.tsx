@@ -50,8 +50,8 @@ export const CelebritySection: React.FC = () => {
         <div className="flex flex-nowrap overflow-x-auto snap-x snap-mandatory gap-3 sm:gap-4 md:gap-4 lg:gap-6 pb-4 no-scrollbar sm:grid sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-4 sm:overflow-x-visible sm:pb-0">
           {celebrities.map((celeb: any, idx: number) => {
             const targetPath = celeb.targetUrl || (celeb.productId ? `/products/${celeb.productId}` : (celeb.perfume ? `/products/${slugify(celeb.perfume)}` : ''));
-            const CardWrapper = targetPath ? Link : 'div';
-            const wrapperProps = targetPath ? { href: targetPath } : {};
+            const CardWrapper: React.ElementType = targetPath ? Link : 'div';
+            const wrapperProps: Record<string, string> = targetPath ? { href: targetPath } : {};
 
             return (
               <div 

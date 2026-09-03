@@ -133,7 +133,7 @@ export const ReelsPressManager: React.FC = () => {
     if (prod) {
       setTitle(prod.name);
       setPrice(`Rs. ${Number(prod.price || 0).toLocaleString()}`);
-      const thumb = (prod.images && prod.images.length > 0) ? prod.images[0] : (prod.image || '');
+      const thumb = prod.image || '';
       setProductImage(thumb);
     }
   };
@@ -513,16 +513,8 @@ export const ReelsPressManager: React.FC = () => {
         <div className="mt-6 pt-6 border-t border-slate-100">
           <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Live Homepage Preview:</p>
           <div className="w-full bg-white p-6 rounded-xl border border-slate-200 overflow-hidden relative shadow-2xs">
-            {/* @ts-ignore */}
-            <marquee
-              behavior="scroll"
-              direction="left"
-              scrollamount="6"
-              className="w-full overflow-hidden py-1"
-              onMouseEnter={(e: any) => e.currentTarget?.stop && e.currentTarget.stop()}
-              onMouseLeave={(e: any) => e.currentTarget?.start && e.currentTarget.start()}
-            >
-              <div className="inline-flex items-center gap-16 sm:gap-24">
+            <div className="group w-full overflow-hidden py-1">
+              <div className="inline-flex items-center gap-16 sm:gap-24 animate-marquee">
                 {logos.map((item, i) => {
                   const isObj = typeof item === 'object' && item !== null;
                   const name = isObj ? item.name : item;
@@ -545,7 +537,7 @@ export const ReelsPressManager: React.FC = () => {
                   );
                 })}
               </div>
-            </marquee>
+            </div>
           </div>
         </div>
       </div>

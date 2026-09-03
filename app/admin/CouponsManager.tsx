@@ -202,7 +202,7 @@ export const CouponsManager: React.FC = () => {
               Active Promo Codes ({coupons.length})
             </h3>
             <button
-              onClick={loadCoupons}
+              onClick={() => loadCoupons()}
               className="text-xs text-slate-500 hover:text-slate-900 cursor-pointer flex items-center gap-1 font-medium"
             >
               <span>Refresh</span>

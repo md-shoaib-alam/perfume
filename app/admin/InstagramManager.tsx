@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
 import { MediaUploader } from '../components/MediaUploader';
-import { useConfirmModal } from '../context/ConfirmModalContext';
+import { useConfirm } from '../components/CustomConfirmModal';
 import { deleteMediaFromAppwrite } from '@/lib/appwrite';
 
 export interface InstagramItem {
@@ -21,7 +21,7 @@ export interface InstagramData {
 }
 
 export const InstagramManager: React.FC = () => {
-  const { showConfirm, showAlert } = useConfirmModal();
+  const { showConfirm, showAlert } = useConfirm();
 
   const [data, setData] = useState<InstagramData>({
     title: 'Get Inspired',

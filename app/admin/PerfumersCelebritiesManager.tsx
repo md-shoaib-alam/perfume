@@ -148,7 +148,7 @@ export const PerfumersCelebritiesManager: React.FC = () => {
       const prod = products.find((p) => String(p.id) === String(prodId));
       if (prod) {
         setCelebFormPerfume(prod.name);
-        const thumb = prod.images && prod.images.length > 0 ? prod.images[0] : prod.image || '';
+        const thumb = prod.image || '';
         setCelebFormBottleThumb(thumb);
         const slug = slugify(prod.name) || prod.id;
         setCelebFormTargetUrl(`/products/${slug}`);

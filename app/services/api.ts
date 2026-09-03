@@ -1046,7 +1046,7 @@ export const api = {
   // =========================================================================
   // 10. CELEBRITIES & PERFUMERS
   // =========================================================================
-  async getCelebrities(): Promise<any[]> {
+  async getCelebrities(): Promise<any> {
     try {
       const res = await fetch('/api/celebrities', { cache: 'no-store' });
       if (res.ok) {
@@ -1058,7 +1058,7 @@ export const api = {
     return [];
   },
 
-  async saveCelebrities(celebrities: any[]): Promise<boolean> {
+  async saveCelebrities(celebrities: any): Promise<boolean> {
     try {
       const res = await fetch('/api/celebrities', {
         method: 'POST',
