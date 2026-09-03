@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { CollectionItem } from './types';
 import { MediaUploader } from '../../components/MediaUploader';
@@ -26,21 +26,47 @@ export const GenderLandingPagesTab: React.FC<GenderLandingPagesTabProps> = ({
   onSavePage,
   onResetPage,
 }) => {
+  const [showTooltip, setShowTooltip] = useState(false);
+
   return (
-    <div className="space-y-6">
-      {/* Information Header */}
-      <div className="bg-[#faf9f6] p-4 rounded-2xl border border-amber-200/80 flex items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-amber-100 border border-amber-200 flex items-center justify-center text-[#caa04c] shrink-0">
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-          </div>
-          <div>
-            <h3 className="font-bold text-slate-900 text-sm">Storefront Gender & Category Landing Banners</h3>
-            <p className="text-xs text-slate-600">
-              Upload top hero images (16:9 on mobile / widescreen on desktop) and customize the editorial story for core target pages.
-            </p>
+    <div className="space-y-4">
+      {/* Clean Header with Circular (i) Info Popover */}
+      <div className="flex items-center justify-between px-1">
+        <div className="flex items-center gap-2">
+          <h3 className="text-sm font-bold text-slate-900">
+            Landing Pages & Banners ({genderPages.length})
+          </h3>
+
+          {/* Circular (i) Info Icon in Grey */}
+          <div className="relative inline-block">
+            <button
+              type="button"
+              onClick={() => setShowTooltip((prev) => !prev)}
+              onMouseEnter={() => setShowTooltip(true)}
+              onMouseLeave={() => setShowTooltip(false)}
+              aria-label="More information"
+              className="w-5 h-5 rounded-full bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-600 hover:text-slate-900 flex items-center justify-center font-serif text-[11px] font-bold shadow-2xs cursor-pointer transition-all focus:outline-none"
+            >
+              i
+            </button>
+
+            {showTooltip && (
+              <div className="absolute left-0 top-full mt-2 w-72 sm:w-80 bg-white border border-slate-200 shadow-xl rounded-2xl p-3.5 z-50 text-xs animate-in fade-in zoom-in-95 duration-150">
+                <div className="flex items-start gap-2.5">
+                  <div className="w-6 h-6 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center shrink-0 mt-0.5 font-serif font-bold text-xs">
+                    i
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-slate-900 text-xs">
+                      Storefront Gender & Category Landing Banners
+                    </h4>
+                    <p className="text-slate-600 text-[11px] leading-relaxed mt-1">
+                      Upload top hero images (16:9 on mobile / widescreen on desktop) and customize the editorial story for core target pages like <strong className="text-slate-800">Shop All</strong>, <strong className="text-slate-800">For Him</strong>, and <strong className="text-slate-800">For Her</strong>.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

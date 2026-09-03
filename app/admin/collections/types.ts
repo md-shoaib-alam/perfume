@@ -14,6 +14,16 @@ export interface CollectionItem {
 
 export const STANDARD_LANDING_PAGES: CollectionItem[] = [
   {
+    slug: 'all',
+    name: 'Shop All Fragrances',
+    subname: 'All Products (Shop All)',
+    badge: 'HOUSE OF BAKHOORBLISS',
+    subtitle: 'Explore the complete universe of BakhoorBliss Extrait de Parfums, Imperial Attars, and Discovery Sets.',
+    editorial: 'Discover the entire compendium of luxury perfumes, discovery sets, and pure oils formulated with Royal Indian traditions and Parisian fine perfumery finesse.',
+    image: '',
+    bannerImage: ''
+  },
+  {
     slug: 'for-him',
     name: 'Pour Homme',
     subname: 'For Him (Men)',
@@ -40,6 +50,26 @@ export const STANDARD_LANDING_PAGES: CollectionItem[] = [
     badge: 'EXCLUSIVE ARTISAN BLENDS',
     subtitle: 'Genderless liquid architecture blending rare resins, spices, and exotic florals.',
     editorial: 'Transcend conventional fragrance boundaries with our unisex compositions. Formulated with vintage resins, smoky incense, and rare floral absolutes that evolve uniquely on pulse points throughout the day.',
+    image: '',
+    bannerImage: ''
+  },
+  {
+    slug: 'extrait-de-parfum',
+    name: 'Extrait De Parfum',
+    subname: '30%+ Concentration',
+    badge: 'HAUTE EXTRAIT (30%+ CONCENTRATION)',
+    subtitle: 'Ultra-concentrated 30%+ pure oil perfume formulations guaranteeing 10+ hours of lingering sillage.',
+    editorial: 'Crafted with master perfumers from Grasse and Dubai, our Extrait De Parfum line is macerated for 90 days in dark oak casks, ensuring unparalleled projection, complexity, and longevity.',
+    image: '',
+    bannerImage: ''
+  },
+  {
+    slug: 'attar',
+    name: 'Imperial Attars',
+    subname: 'Pure Perfume Oils',
+    badge: 'IMPERIAL PURE PERFUME OILS',
+    subtitle: 'Distilled aged agarwoods, Taif roses, and precious musks in non-alcoholic pure oil concentrations.',
+    editorial: 'Centuries of heritage preserved in artisanal flacons. Each drop of our non-alcoholic Imperial Attars represents pure hydro-distilled botanicals and wild-harvested resins.',
     image: '',
     bannerImage: ''
   },

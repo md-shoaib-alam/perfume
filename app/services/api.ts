@@ -507,23 +507,37 @@ export const api = {
   // =========================================================================
   async getReviews(productName?: string): Promise<Review[]> {
     try {
-      const queries: string[] = [Query.limit(50), Query.orderDesc('$createdAt')];
+      const queries: string[] = [Query.limit(100), Query.orderDesc('$createdAt')];
       if (productName) {
         queries.push(Query.equal('productName', productName));
       }
       const res = await databases.listDocuments(APPWRITE_DATABASE_ID, 'reviews', queries);
       if (res && res.documents) {
-        return res.documents.map((d: any) => ({
-          id: d.$id,
-          author: d.author,
-          rating: Number(d.rating) || 5,
-          date: d.date || 'Recent',
-          title: d.title || '',
-          comment: d.comment,
-          verified: Boolean(d.verified),
-          productName: d.productName,
-          approved: d.approved !== undefined ? Boolean(d.approved) : true
-        }));
+        const seenIds = new Set<string>();
+        const seenContent = new Set<string>();
+        const list: Review[] = [];
+
+        for (const d of res.documents) {
+          if (!d || !d.$id || seenIds.has(d.$id)) continue;
+          seenIds.add(d.$id);
+
+          const contentKey = `${(d.productName || '').trim().toLowerCase()}_${(d.author || '').trim().toLowerCase()}_${(d.comment || '').trim()}`;
+          if (seenContent.has(contentKey)) continue;
+          seenContent.add(contentKey);
+
+          list.push({
+            id: d.$id,
+            author: d.author,
+            rating: Number(d.rating) || 5,
+            date: d.date || 'Recent',
+            title: d.title || '',
+            comment: d.comment,
+            verified: Boolean(d.verified),
+            productName: d.productName,
+            approved: d.approved !== undefined ? Boolean(d.approved) : true
+          });
+        }
+        return list;
       }
     } catch (err) {
       console.warn('Appwrite getReviews error:', err);

@@ -32,6 +32,7 @@ const OrderStatusPill: React.FC<{
   }, [isOpen]);
 
   const isCancelled = (currentStatus || '').toLowerCase() === 'cancelled';
+  const isDelivered = (currentStatus || '').toLowerCase() === 'delivered';
 
   if (isCancelled) {
     return (
@@ -43,6 +44,23 @@ const OrderStatusPill: React.FC<{
           <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
         </svg>
         <span>Cancelled</span>
+      </div>
+    );
+  }
+
+  if (isDelivered) {
+    return (
+      <div
+        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-semibold select-none cursor-not-allowed opacity-95 shadow-2xs"
+        title="Order delivered & permanently locked"
+      >
+        <svg className="w-3.5 h-3.5 text-emerald-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+        </svg>
+        <span>5. Delivered</span>
+        <svg className="w-3 h-3 text-emerald-600/70 shrink-0 ml-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+        </svg>
       </div>
     );
   }
@@ -204,6 +222,20 @@ export const OrdersManager: React.FC = () => {
       }
     }
 
+    // 1.5 Confirmation before marking order as Delivered
+    if (newStatus.toLowerCase() === 'delivered') {
+      const confirmed = await showConfirm({
+        title: 'Confirm Order Delivery?',
+        message: 'Are you sure you want to mark this order as DELIVERED? Once delivered, this order will be permanently finalized and locked in the admin console, and the customer will be eligible to submit verified reviews.',
+        confirmText: 'Yes, Mark Delivered',
+        variant: 'success'
+      });
+      if (!confirmed) {
+        setOrders((prev) => [...prev]);
+        return;
+      }
+    }
+
     // 2. In-place instant state update (no full-table refetch or loading skeleton)
     setOrders((prev) =>
       prev.map((o) =>
@@ -234,6 +266,17 @@ export const OrdersManager: React.FC = () => {
         message: 'Are you sure you want to cancel this order? Once cancelled, the order is permanently locked.',
         confirmText: 'Yes, Cancel Order',
         variant: 'danger'
+      });
+      if (!confirmed) return;
+    }
+
+    // Confirmation before marking order as Delivered in modal
+    if (modalStatus.toLowerCase() === 'delivered' && prevStatus !== 'delivered') {
+      const confirmed = await showConfirm({
+        title: 'Confirm Order Delivery?',
+        message: 'Are you sure you want to mark this order as DELIVERED? Once delivered, this order will be permanently finalized and locked in the admin console.',
+        confirmText: 'Yes, Mark Delivered',
+        variant: 'success'
       });
       if (!confirmed) return;
     }
@@ -318,14 +361,27 @@ export const OrdersManager: React.FC = () => {
 
   const filteredOrders = useMemo(() => {
     return orders.filter((o) => {
-      if (statusFilter.toLowerCase() === 'all') return true;
-      const s = (o.orderStatus || o.status || 'Pending').toLowerCase().replace(/_/g, ' ');
-      const f = statusFilter.toLowerCase().replace(/_/g, ' ');
-      if (f === 'pending') {
-        return s === 'pending' || s === 'order placed';
+      if (!statusFilter || statusFilter.toLowerCase() === 'all') return true;
+      const s = (o.orderStatus || o.status || 'Order Placed').toLowerCase().replace(/[-_]/g, ' ').trim();
+      const f = statusFilter.toLowerCase().replace(/[-_]/g, ' ').trim();
+
+      if (f === 'order placed') {
+        return s === 'order placed' || s === 'pending' || s === 'placed' || s === 'processing';
       }
-      if (f === 'in transit') {
-        return s === 'in transit' || s === 'in_transit' || s === 'out for delivery';
+      if (f === 'packed') {
+        return s === 'packed' || s === 'packaged' || s === 'ready for dispatch';
+      }
+      if (f === 'shipped') {
+        return s === 'shipped' || s === 'in transit' || s === 'dispatched';
+      }
+      if (f === 'out for delivery') {
+        return s === 'out for delivery';
+      }
+      if (f === 'delivered') {
+        return s === 'delivered' || s === 'completed';
+      }
+      if (f === 'cancelled') {
+        return s === 'cancelled' || s === 'refunded';
       }
       return s === f;
     });
@@ -367,13 +423,13 @@ export const OrdersManager: React.FC = () => {
           <p className="text-xs text-slate-500">Manage customer orders and shipments.</p>
         </div>
 
-        {/* Filter Pills */}
+        {/* Filter Pills matching exact status options */}
         <div className="flex flex-wrap gap-2">
-          {['all', 'Pending', 'Processing', 'In Transit', 'Shipped', 'Delivered', 'Cancelled'].map((st) => (
+          {['All', 'Order Placed', 'Packed', 'Shipped', 'Out for Delivery', 'Delivered', 'Cancelled'].map((st) => (
             <button
               key={st}
               onClick={() => setStatusFilter(st)}
-              className={`px-3 py-1.5 rounded-full text-xs font-semibold capitalize transition-all cursor-pointer ${
+              className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
                 statusFilter.toLowerCase() === st.toLowerCase()
                   ? 'bg-slate-900 text-white shadow-xs'
                   : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
@@ -704,7 +760,17 @@ export const OrdersManager: React.FC = () => {
                       <label className="block text-[11px] font-semibold text-slate-700 mb-1">
                         Order Status (Customer Stepper Phase)
                       </label>
-                      {((selectedOrder.orderStatus || selectedOrder.status || '').toLowerCase() === 'cancelled') ? (
+                      {((selectedOrder.orderStatus || selectedOrder.status || '').toLowerCase() === 'delivered') ? (
+                        <div className="w-full bg-emerald-50 border border-emerald-200 rounded-xl px-3.5 py-2.5 text-xs font-bold text-emerald-800 flex items-center justify-between cursor-not-allowed">
+                          <div className="flex items-center gap-2">
+                            <svg className="w-4 h-4 text-emerald-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                            </svg>
+                            <span>5. Delivered (Order Finalized)</span>
+                          </div>
+                          <span className="text-[10px] uppercase font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-md border border-emerald-200">Locked</span>
+                        </div>
+                      ) : ((selectedOrder.orderStatus || selectedOrder.status || '').toLowerCase() === 'cancelled') ? (
                         <div className="w-full bg-rose-50 border border-rose-200 rounded-xl px-3.5 py-2 text-xs font-bold text-rose-800 flex items-center gap-2 cursor-not-allowed">
                           <svg className="w-4 h-4 text-rose-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
@@ -720,7 +786,7 @@ export const OrdersManager: React.FC = () => {
                           >
                             <option value="Order Placed">1. Order Placed</option>
                             <option value="Packed">2. Packed</option>
-                            <option value="Shipped">3. Shipped (In Transit)</option>
+                            <option value="Shipped">3. Shipped</option>
                             <option value="Out for Delivery">4. Out for Delivery</option>
                             <option value="Delivered">5. Delivered</option>
                             <option value="Cancelled">Cancelled</option>
@@ -742,8 +808,17 @@ export const OrdersManager: React.FC = () => {
                         type="text"
                         value={modalTrackingNumber}
                         onChange={(e) => setModalTrackingNumber(e.target.value)}
-                        disabled={(selectedOrder.orderStatus || selectedOrder.status || '').toLowerCase() === 'cancelled'}
-                        placeholder={(selectedOrder.orderStatus || selectedOrder.status || '').toLowerCase() === 'cancelled' ? 'Not available for cancelled order' : 'e.g. BLUEDART-987654321 or DELHIVERY-12345'}
+                        disabled={
+                          (selectedOrder.orderStatus || selectedOrder.status || '').toLowerCase() === 'cancelled' ||
+                          (selectedOrder.orderStatus || selectedOrder.status || '').toLowerCase() === 'delivered'
+                        }
+                        placeholder={
+                          (selectedOrder.orderStatus || selectedOrder.status || '').toLowerCase() === 'cancelled'
+                            ? 'Not available for cancelled order'
+                            : (selectedOrder.orderStatus || selectedOrder.status || '').toLowerCase() === 'delivered'
+                            ? 'Order delivered'
+                            : 'e.g. BLUEDART-987654321 or DELHIVERY-12345'
+                        }
                         className="w-full bg-white border border-amber-200 rounded-xl px-3 py-2 text-xs text-slate-800 font-mono focus:outline-none focus:border-[#d6a750] disabled:bg-slate-100 disabled:text-slate-400 disabled:border-slate-200 disabled:cursor-not-allowed"
                       />
                     </div>
@@ -756,8 +831,17 @@ export const OrdersManager: React.FC = () => {
                         type="url"
                         value={modalTrackingUrl}
                         onChange={(e) => setModalTrackingUrl(e.target.value)}
-                        disabled={(selectedOrder.orderStatus || selectedOrder.status || '').toLowerCase() === 'cancelled'}
-                        placeholder={(selectedOrder.orderStatus || selectedOrder.status || '').toLowerCase() === 'cancelled' ? 'Not available for cancelled order' : 'https://shiprocket.co/tracking/...'}
+                        disabled={
+                          (selectedOrder.orderStatus || selectedOrder.status || '').toLowerCase() === 'cancelled' ||
+                          (selectedOrder.orderStatus || selectedOrder.status || '').toLowerCase() === 'delivered'
+                        }
+                        placeholder={
+                          (selectedOrder.orderStatus || selectedOrder.status || '').toLowerCase() === 'cancelled'
+                            ? 'Not available for cancelled order'
+                            : (selectedOrder.orderStatus || selectedOrder.status || '').toLowerCase() === 'delivered'
+                            ? 'Order delivered'
+                            : 'https://shiprocket.co/tracking/...'
+                        }
                         className="w-full bg-white border border-amber-200 rounded-xl px-3 py-2 text-xs text-slate-800 font-mono focus:outline-none focus:border-[#d6a750] disabled:bg-slate-100 disabled:text-slate-400 disabled:border-slate-200 disabled:cursor-not-allowed"
                       />
                     </div>
@@ -766,10 +850,20 @@ export const OrdersManager: React.FC = () => {
                   <div className="pt-2">
                     <button
                       type="submit"
-                      disabled={isSavingModal || (selectedOrder.orderStatus || selectedOrder.status || '').toLowerCase() === 'cancelled'}
+                      disabled={
+                        isSavingModal ||
+                        (selectedOrder.orderStatus || selectedOrder.status || '').toLowerCase() === 'cancelled' ||
+                        (selectedOrder.orderStatus || selectedOrder.status || '').toLowerCase() === 'delivered'
+                      }
                       className="w-full py-2 bg-[#caa04c] hover:bg-[#b88f3e] text-white text-xs font-bold rounded-xl transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                     >
-                      {isSavingModal ? 'Saving...' : (selectedOrder.orderStatus || selectedOrder.status || '').toLowerCase() === 'cancelled' ? 'Order Cancelled (Locked)' : 'Update Status & Tracking'}
+                      {isSavingModal
+                        ? 'Saving...'
+                        : (selectedOrder.orderStatus || selectedOrder.status || '').toLowerCase() === 'delivered'
+                        ? 'Order Delivered (Permanently Locked)'
+                        : (selectedOrder.orderStatus || selectedOrder.status || '').toLowerCase() === 'cancelled'
+                        ? 'Order Cancelled (Locked)'
+                        : 'Update Status & Tracking'}
                     </button>
                   </div>
                 </form>

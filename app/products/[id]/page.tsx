@@ -8,6 +8,8 @@ import { AnnouncementBar } from '../../components/AnnouncementBar';
 import { Navbar } from '../../components/Navbar';
 import { Footer } from '../../components/Footer';
 import { ProductCard } from '../../components/ProductCard';
+import { ProductDetailSkeleton } from '../../components/ProductCardSkeleton';
+import { CustomerReviewsSection } from '../../components/CustomerReviewsSection';
 import { GoldTrustBanner } from '../../components/GoldTrustBanner';
 
 const CartDrawer = dynamic(() => import('../../components/CartDrawer').then((m) => m.CartDrawer), { ssr: false });
@@ -16,6 +18,8 @@ const AuthModal = dynamic(() => import('../../auth/AuthModal').then((m) => m.Aut
 const AccountDashboard = dynamic(() => import('../../components/AccountDashboard').then((m) => m.AccountDashboard), { ssr: false });
 
 import { api } from '../../services/api';
+import { LuxurySelect } from '../../components/ui/LuxurySelect';
+import { useUser } from '@clerk/nextjs';
 import { useCart } from '../../hooks/useCart';
 import { useConfirm } from '../../components/CustomConfirmModal';
 import { getProductSlug, slugify } from '../../utils/slug';
@@ -66,19 +70,47 @@ export default function ProductDetailPage() {
 
   const { data: fetchedReviews = [] } = useReviewsQuery(product?.name || '');
   const [localReviews, setLocalReviews] = useState<Review[]>([]);
-  const reviews = useMemo(() => [...localReviews, ...fetchedReviews], [localReviews, fetchedReviews]);
+  
+  // Guarantee unique reviews with zero duplicates
+  const reviews = useMemo(() => {
+    const map = new Map<string, Review>();
+    const seenContent = new Set<string>();
+
+    // 1. Add fetched reviews from database
+    (fetchedReviews || []).forEach((r) => {
+      if (r && r.id && !map.has(r.id)) {
+        const contentKey = `${(r.author || '').trim().toLowerCase()}_${(r.comment || '').trim()}`;
+        if (!seenContent.has(contentKey)) {
+          seenContent.add(contentKey);
+          map.set(r.id, r);
+        }
+      }
+    });
+
+    // 2. Add local optimistic reviews if not already synced in database query
+    (localReviews || []).forEach((r) => {
+      if (r && r.id && !map.has(r.id)) {
+        const contentKey = `${(r.author || '').trim().toLowerCase()}_${(r.comment || '').trim()}`;
+        if (!seenContent.has(contentKey)) {
+          seenContent.add(contentKey);
+          map.set(r.id, r);
+        }
+      }
+    });
+
+    return Array.from(map.values());
+  }, [localReviews, fetchedReviews]);
 
   const loading = isProductLoading && !product;
   const [selectedImage, setSelectedImage] = useState<string>('');
   const [quantity, setQuantity] = useState<number>(1);
   const [selectedSize, setSelectedSize] = useState<string>('100ml');
 
-  // Review Form State
-  const [isWritingReview, setIsWritingReview] = useState<boolean>(false);
-  const [newRating, setNewRating] = useState<number>(5);
-  const [newTitle, setNewTitle] = useState<string>('');
-  const [newComment, setNewComment] = useState<string>('');
-  const [newAuthor, setNewAuthor] = useState<string>('');
+  const { user, isSignedIn } = useUser();
+  const [userOrders, setUserOrders] = useState<any[]>([]);
+  const [isCheckingOrders, setIsCheckingOrders] = useState<boolean>(false);
+
+  // Review Form Submission State
   const [isSubmittingReview, setIsSubmittingReview] = useState<boolean>(false);
 
   // Global Shell States
@@ -87,6 +119,78 @@ export default function ProductDetailPage() {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
   const [isAccountOpen, setIsAccountOpen] = useState<boolean>(false);
   const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin');
+  const [isWritingReview, setIsWritingReview] = useState<boolean>(false);
+
+  // Sticky Bottom Add-to-Cart Bar state
+  const [showStickyBar, setShowStickyBar] = useState<boolean>(false);
+  const mainAddToCartRef = React.useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (!mainAddToCartRef.current) return;
+      const rect = mainAddToCartRef.current.getBoundingClientRect();
+      // Show sticky bar when the main Add to Bag section scrolls above the screen viewport
+      setShowStickyBar(rect.bottom < 0);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll();
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Load user orders to verify delivery status for this product
+  useEffect(() => {
+    if (isSignedIn && user?.id) {
+      setIsCheckingOrders(true);
+      api.getOrders(user.id)
+        .then((orders) => {
+          if (Array.isArray(orders)) {
+            setUserOrders(orders);
+          }
+        })
+        .catch((e) => console.warn('Could not load user orders for review eligibility:', e))
+        .finally(() => setIsCheckingOrders(false));
+    } else {
+      setUserOrders([]);
+    }
+  }, [isSignedIn, user?.id]);
+
+
+  // Check if current logged-in customer has a delivered order for this product
+  const deliveredOrderForProduct = useMemo(() => {
+    if (!isSignedIn || !product || userOrders.length === 0) return null;
+    const prodNameClean = (product.name || '').toLowerCase().trim();
+    const prodSlug = slugify(product.name || '');
+
+    return (
+      userOrders.find((ord) => {
+        const rawStatus = (ord.orderStatus || ord.status || '').toLowerCase().trim();
+        if (rawStatus !== 'delivered' && rawStatus !== 'completed') return false;
+
+        let items = ord.items;
+        if (typeof items === 'string') {
+          try {
+            items = JSON.parse(items);
+          } catch (e) {
+            items = [];
+          }
+        }
+        if (!Array.isArray(items)) return false;
+
+        return items.some((it: any) => {
+          const itName = (it.name || it.productName || '').toLowerCase().trim();
+          const itSlug = slugify(it.name || it.productName || it.productId || '');
+          return (
+            itName === prodNameClean ||
+            (prodNameClean && itName.includes(prodNameClean)) ||
+            (itSlug && prodSlug && itSlug === prodSlug)
+          );
+        });
+      }) || null
+    );
+  }, [isSignedIn, product, userOrders]);
+
+  const isVerifiedBuyer = Boolean(deliveredOrderForProduct);
   // Reset scroll to top on navigation to product
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
@@ -132,15 +236,23 @@ export default function ProductDetailPage() {
       ? Math.round(((originalPrice - currentPrice) / originalPrice) * 100)
       : 0;
 
-  // Recommended Products (Complementary or same category/gender)
+  // Recommended Products (Complementary or same category/gender, shows across any category)
   const recommendedProducts = useMemo(() => {
     if (!product || allProducts.length === 0) return [];
+    const norm = (s?: string) => (s || '').toLowerCase().trim();
+    const curCategory = norm(product.category);
+    const curGender = norm(product.gender);
+
     return allProducts
       .filter((p) => p.id !== product.id)
       .sort((a, b) => {
-        // Prioritize same category or same gender
-        const aScore = (a.category === product.category ? 2 : 0) + (a.gender === product.gender ? 1 : 0);
-        const bScore = (b.category === product.category ? 2 : 0) + (b.gender === product.gender ? 1 : 0);
+        // Prioritize same category or same gender, but include any category gracefully
+        const aCatMatch = curCategory && norm(a.category) === curCategory;
+        const bCatMatch = curCategory && norm(b.category) === curCategory;
+        const aGenMatch = curGender && norm(a.gender) === curGender;
+        const bGenMatch = curGender && norm(b.gender) === curGender;
+        const aScore = (aCatMatch ? 2 : 0) + (aGenMatch ? 1 : 0);
+        const bScore = (bCatMatch ? 2 : 0) + (bGenMatch ? 1 : 0);
         return bScore - aScore;
       })
       .slice(0, 4);
@@ -159,33 +271,79 @@ export default function ProductDetailPage() {
     return Array.from(set);
   }, [product]);
 
-  const handleReviewSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!product || !newAuthor.trim() || !newComment.trim()) return;
+  // Touch & Swipe Gesture States for Mobile Image Slider
+  const [touchStartX, setTouchStartX] = useState<number | null>(null);
+  const [touchEndX, setTouchEndX] = useState<number | null>(null);
 
+  const currentImageIndex = useMemo(() => {
+    if (imagesList.length === 0) return 0;
+    const active = selectedImage || product?.image;
+    const idx = imagesList.findIndex((img) => img === active);
+    return idx >= 0 ? idx : 0;
+  }, [imagesList, selectedImage, product?.image]);
+
+  const handleNextImage = () => {
+    if (imagesList.length <= 1) return;
+    const nextIndex = (currentImageIndex + 1) % imagesList.length;
+    setSelectedImage(imagesList[nextIndex]);
+  };
+
+  const handlePrevImage = () => {
+    if (imagesList.length <= 1) return;
+    const prevIndex = (currentImageIndex - 1 + imagesList.length) % imagesList.length;
+    setSelectedImage(imagesList[prevIndex]);
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchEndX(null);
+    setTouchStartX(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    setTouchEndX(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchEnd = () => {
+    if (touchStartX === null || touchEndX === null) return;
+    const distance = touchStartX - touchEndX;
+    const minSwipeDistance = 35; // px
+    if (distance > minSwipeDistance) {
+      // Swiped Left -> Next Image
+      handleNextImage();
+    } else if (distance < -minSwipeDistance) {
+      // Swiped Right -> Previous Image
+      handlePrevImage();
+    }
+    setTouchStartX(null);
+    setTouchEndX(null);
+  };
+
+  const handleReviewSubmitData = async (data: {
+    author: string;
+    title: string;
+    comment: string;
+    rating: number;
+    image?: string;
+  }) => {
+    if (!product) return;
     setIsSubmittingReview(true);
     try {
       const created = await api.createReview({
         productName: product.name,
-        author: newAuthor.trim(),
-        title: newTitle.trim() || 'Verified Experience',
-        comment: newComment.trim(),
-        rating: newRating,
-        verified: true,
+        author: data.author.trim(),
+        title: data.title.trim() || 'Verified Experience',
+        comment: data.comment.trim(),
+        rating: data.rating,
+        verified: isVerifiedBuyer,
         date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
       });
 
       setLocalReviews((prev) => [created, ...prev]);
       queryClient.invalidateQueries({ queryKey: queryKeys.reviews(product.name) });
-      setIsWritingReview(false);
-      setNewTitle('');
-      setNewComment('');
-      setNewAuthor('');
-      setNewRating(5);
 
       await showAlert({
-        title: 'Review Submitted',
-        message: 'Thank you for sharing your olfactory journey! Your verified review has been published.',
+        title: 'Review Published',
+        message: 'Thank you for sharing your olfactory journey! Your review has been published.',
         variant: 'success'
       });
     } catch (err: any) {
@@ -194,6 +352,7 @@ export default function ProductDetailPage() {
         message: `Could not save review: ${err.message || 'Please try again later'}`,
         variant: 'danger'
       });
+      throw err;
     } finally {
       setIsSubmittingReview(false);
     }
@@ -221,10 +380,7 @@ export default function ProductDetailPage() {
             if (query) router.replace(`/collections/all?q=${encodeURIComponent(query)}`);
           }}
         />
-        <div className="py-32 text-center text-slate-400">
-          <div className="inline-block w-8 h-8 border-2 border-[#d6a750] border-t-transparent rounded-full animate-spin mb-4" />
-          <p className="font-sans text-sm">Loading fragrance details...</p>
-        </div>
+        <ProductDetailSkeleton />
         <Footer />
       </div>
     );
@@ -326,19 +482,38 @@ export default function ProductDetailPage() {
               </div>
             )}
 
-            {/* Main Featured Image Display (Hard/Square Corners, Discount Badge Removed) */}
-            <div className="relative aspect-square w-full flex-1 rounded-none overflow-hidden bg-slate-50 border border-slate-200/80 shadow-xs">
+            {/* Main Featured Image Display with Touch/Swipe Gestures for Mobile (Hard/Square Corners) */}
+            <div
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleTouchEnd}
+              className="relative aspect-square w-full flex-1 rounded-none overflow-hidden bg-slate-50 border border-slate-200/80 shadow-xs select-none touch-pan-y group"
+            >
               <img
                 src={selectedImage || product.image}
                 alt={product.name}
                 loading="eager"
                 decoding="async"
-                className="w-full h-full object-cover"
+                draggable={false}
+                className="w-full h-full object-cover transition-opacity duration-300 pointer-events-none"
               />
 
-              {product.isBestseller && (
-                <div className="absolute top-4 right-4 bg-[#c59b48] text-white font-sans text-[11px] font-bold px-3 py-1 rounded-full uppercase tracking-wider shadow-sm">
-                  Bestseller
+              {/* Pagination Indicator Dots on Mobile */}
+              {imagesList.length > 1 && (
+                <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 bg-black/35 backdrop-blur-xs px-2.5 py-1 rounded-full md:hidden">
+                  {imagesList.map((_, dotIdx) => (
+                    <button
+                      key={dotIdx}
+                      type="button"
+                      onClick={() => setSelectedImage(imagesList[dotIdx])}
+                      className={`h-1.5 rounded-full transition-all cursor-pointer ${
+                        currentImageIndex === dotIdx
+                          ? 'w-4 bg-white'
+                          : 'w-1.5 bg-white/50 hover:bg-white/80'
+                      }`}
+                      aria-label={`Go to image ${dotIdx + 1}`}
+                    />
+                  ))}
                 </div>
               )}
             </div>
@@ -385,18 +560,25 @@ export default function ProductDetailPage() {
             </div>
 
             {/* Price Box */}
-            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200/80 flex items-baseline gap-4">
-              <span className="font-sans text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">
-                Rs.{currentPrice.toLocaleString('en-IN')}.00
-              </span>
-              {originalPrice > currentPrice && (
-                <span className="font-sans text-sm text-slate-400 line-through">
-                  Rs.{originalPrice.toLocaleString('en-IN')}.00
+            <div className="p-4 sm:p-5 bg-slate-50 rounded-2xl border border-slate-200/80">
+              <div className="flex items-baseline gap-3 flex-wrap">
+                <span className="font-sans text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">
+                  Rs.{currentPrice.toLocaleString('en-IN')}.00
                 </span>
-              )}
-              <span className="text-xs text-slate-500 ml-auto font-sans">
-                Inclusive of all taxes & duties
-              </span>
+                {originalPrice > currentPrice && (
+                  <span className="font-sans text-sm sm:text-base text-slate-400 line-through">
+                    Rs.{originalPrice.toLocaleString('en-IN')}.00
+                  </span>
+                )}
+                {discountPercent > 0 && (
+                  <span className="text-xs font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">
+                    {discountPercent}% OFF
+                  </span>
+                )}
+              </div>
+              <p className="text-[11px] text-slate-500 font-sans mt-1">
+                Tax included
+              </p>
             </div>
 
             {/* Size Selector Pills */}
@@ -417,7 +599,7 @@ export default function ProductDetailPage() {
                           : 'bg-white text-slate-700 border-slate-300 hover:border-slate-400'
                       }`}
                     >
-                      {opt.size} {opt.price ? `— Rs.${opt.price.toLocaleString('en-IN')}` : ''}
+                      {opt.size}
                     </button>
                   ))}
                 </div>
@@ -425,7 +607,7 @@ export default function ProductDetailPage() {
             )}
 
             {/* Quantity Counter & Add to Bag */}
-            <div className="space-y-3 pt-2">
+            <div ref={mainAddToCartRef} className="space-y-3 pt-2">
               <div className="flex items-center gap-3">
                 {/* Quantity */}
                 <div className="flex items-center border border-slate-300 rounded-xl bg-white px-2 py-1">
@@ -599,7 +781,15 @@ export default function ProductDetailPage() {
           <GoldTrustBanner />
         </div>
 
-        {/* 5. Recommended Fragrances / You May Also Like */}
+        {/* 5. Customer Reviews Section (Screenshot Match) */}
+        <CustomerReviewsSection
+          product={product}
+          reviews={reviews}
+          onSubmitReview={handleReviewSubmitData}
+          isSubmitting={isSubmittingReview}
+        />
+
+        {/* 6. Recommended Fragrances / You May Also Admire (2 Per Row on Mobile) */}
         {recommendedProducts.length > 0 && (
           <section className="my-16">
             <div className="text-center mb-8 font-sans">
@@ -611,7 +801,7 @@ export default function ProductDetailPage() {
               </h2>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-5 lg:gap-6">
               {recommendedProducts.map((rec) => (
                 <div key={rec.id} className="h-full">
                   <ProductCard
@@ -624,142 +814,50 @@ export default function ProductDetailPage() {
           </section>
         )}
 
-        {/* 6. Customer Reviews Section */}
-        <section className="my-16 pt-10 border-t border-slate-200">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
-            <div>
-              <h2 className="font-sans text-xl sm:text-2xl font-bold text-slate-900">
-                Customer Impressions & Reviews
-              </h2>
-              <p className="text-xs text-slate-500 mt-1">
-                Real feedback from connoisseurs of {product.name}.
-              </p>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => setIsWritingReview(!isWritingReview)}
-              className="px-6 py-2.5 bg-slate-900 hover:bg-black text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all shadow-xs cursor-pointer"
-            >
-              {isWritingReview ? 'Cancel Review' : 'Write a Review'}
-            </button>
-          </div>
-
-          {/* Write a Review Form */}
-          {isWritingReview && (
-            <form onSubmit={handleReviewSubmit} className="p-6 bg-slate-50 border border-slate-200 rounded-2xl max-w-2xl mx-auto mb-10 space-y-4 text-xs animate-fade-in-up">
-              <h3 className="font-sans text-sm sm:text-base font-bold text-slate-900">Share Your Fragrance Experience</h3>
-
-              <div>
-                <label className="block font-semibold text-slate-700 mb-1">Rating</label>
-                <div className="flex items-center gap-2">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <button
-                      key={star}
-                      type="button"
-                      onClick={() => setNewRating(star)}
-                      className="p-1 cursor-pointer text-[#caa04c]"
-                    >
-                      <svg className={`w-6 h-6 ${star <= newRating ? 'fill-current' : 'fill-none stroke-current'}`} viewBox="0 0 20 20">
-                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                      </svg>
-                    </button>
-                  ))}
-                  <span className="font-bold text-slate-800 ml-2">{newRating} Stars</span>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Your Name</label>
-                  <input
-                    type="text"
-                    required
-                    value={newAuthor}
-                    onChange={(e) => setNewAuthor(e.target.value)}
-                    placeholder="e.g. Rohail Khan"
-                    className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-[#d6a750]"
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Headline / Title</label>
-                  <input
-                    type="text"
-                    value={newTitle}
-                    onChange={(e) => setNewTitle(e.target.value)}
-                    placeholder="e.g. Unbelievable sillage and longevity"
-                    className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-[#d6a750]"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block font-semibold text-slate-700 mb-1">Your Detailed Review</label>
-                <textarea
-                  rows={4}
-                  required
-                  value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
-                  placeholder="Describe the projection, compliment factor, and notes on your skin..."
-                  className="w-full bg-white border border-slate-200 rounded-xl p-3 focus:outline-none focus:border-[#d6a750]"
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={isSubmittingReview}
-                className="w-full py-3 bg-[#c59b48] hover:bg-[#b58b38] text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all shadow-sm cursor-pointer disabled:opacity-50"
-              >
-                {isSubmittingReview ? 'Submitting Review...' : 'Publish Verified Review'}
-              </button>
-            </form>
-          )}
-
-          {/* Reviews List */}
-          {reviews.length === 0 ? (
-            <div className="p-8 text-center bg-slate-50 rounded-2xl border border-slate-200 text-slate-500 text-xs">
-              <p>Be the first connoisseur to review <span className="font-bold text-slate-800">{product.name}</span>.</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {reviews.map((rev) => (
-                <div key={rev.id} className="p-5 bg-white rounded-2xl border border-slate-200/80 shadow-2xs space-y-2.5">
-                  <div className="flex items-center justify-between">
-                    <div className="flex text-[#caa04c]">
-                      {[...Array(rev.rating || 5)].map((_, i) => (
-                        <svg key={i} className="w-3.5 h-3.5 fill-current" viewBox="0 0 20 20">
-                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                        </svg>
-                      ))}
-                    </div>
-                    <span className="text-[11px] text-slate-400 font-sans">{rev.date}</span>
-                  </div>
-
-                  <h4 className="font-sans font-bold text-slate-900 text-sm">{rev.title}</h4>
-                  <p className="text-xs text-slate-600 leading-relaxed font-sans">{rev.comment}</p>
-
-                  <div className="flex items-center gap-2 pt-2 border-t border-slate-100 text-[11px]">
-                    <span className="font-semibold text-slate-800">{rev.author}</span>
-                    {rev.verified && (
-                      <span className="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full font-bold text-[10px] flex items-center gap-1">
-                        <svg className="w-3 h-3 fill-current" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                        </svg>
-                        Verified Buyer
-                      </span>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
-
       </main>
 
       {/* 7. Footer */}
       <Footer />
+
+      {/* Sticky Bottom Add-to-Cart Bar (appears when main button scrolls out of view) */}
+      {product && showStickyBar && (
+        <div className="fixed bottom-0 left-0 right-0 z-35 bg-white/95 backdrop-blur-md border-t border-slate-200 shadow-2xl px-3 sm:px-6 py-2.5 sm:py-3 animate-in slide-in-from-bottom duration-300">
+          <div className="max-w-4xl mx-auto flex items-center justify-between gap-3">
+            {/* Left: Size & Price Dropdown Selector */}
+            <div className="flex-1 max-w-[200px] sm:max-w-[260px] relative">
+              {sizeOptions && sizeOptions.length > 0 ? (
+                <LuxurySelect
+                  value={selectedSize}
+                  onChange={(val) => setSelectedSize(val)}
+                  position="top"
+                  options={sizeOptions.map((opt) => ({
+                    value: opt.size,
+                    label: `${opt.size} — Rs.${(opt.price || currentPrice).toLocaleString('en-IN')}.00`
+                  }))}
+                  triggerClassName="py-2.5 sm:py-3 font-bold text-slate-900 border-slate-300 shadow-2xs"
+                  contentClassName="shadow-2xl border-slate-200"
+                />
+              ) : (
+                <div className="px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-xs sm:text-sm font-bold text-slate-900 shadow-2xs">
+                  {selectedSize || '100ml'} — Rs.{currentPrice.toLocaleString('en-IN')}.00
+                </div>
+              )}
+            </div>
+
+            {/* Right: Add to Cart Action */}
+            <button
+              type="button"
+              onClick={() => addToCart(product, selectedSize, currentPrice, 1)}
+              className="flex-1 py-2.5 sm:py-3 bg-slate-900 hover:bg-black active:bg-slate-800 text-white font-sans font-bold text-xs sm:text-sm uppercase tracking-wider rounded-xl transition-all shadow-md cursor-pointer flex items-center justify-center gap-2"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+              </svg>
+              <span>Add to cart</span>
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* 8. Global Modals & Slide-out Drawers */}
       <CartDrawer

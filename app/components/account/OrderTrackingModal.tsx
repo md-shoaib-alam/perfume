@@ -1,8 +1,9 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { slugify } from '../../utils/slug';
+import { RateProductModal } from './RateProductModal';
 
 interface OrderTrackingModalProps {
   order: any;
@@ -23,6 +24,8 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
   defaultPincode = '',
   defaultPhone = ''
 }) => {
+  const [selectedReviewItem, setSelectedReviewItem] = useState<any | null>(null);
+
   if (!order) return null;
 
   const getOrderItems = (ord: any) => {
@@ -404,8 +407,28 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
                       <p className="text-[11px] text-slate-500 mt-0.5">
                         Size: <span className="font-semibold text-slate-700">{item.size || '50ml'}</span> • Qty: <span className="font-semibold text-slate-700">{item.quantity}</span>
                       </p>
+
+                      {/* Verified Buyer Rate & Review Action (Delivered Orders Only) */}
+                      {isDelivered && (
+                        <div className="pt-2">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setSelectedReviewItem(item);
+                            }}
+                            className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-50 hover:bg-amber-100 text-[#b88f3e] border border-amber-200/70 rounded-lg text-[11px] font-bold transition-all shadow-2xs cursor-pointer"
+                          >
+                            <svg className="w-3.5 h-3.5 fill-current text-[#caa04c]" viewBox="0 0 20 20">
+                              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                            </svg>
+                            <span>Rate & Review</span>
+                          </button>
+                        </div>
+                      )}
                     </div>
-                    <div className="text-right shrink-0">
+                    <div className="text-right shrink-0 self-start sm:self-center">
                       <p className="font-bold text-xs sm:text-sm text-slate-900 group-hover:text-[#b88f3e] transition-colors">
                         Rs.{(item.price * item.quantity).toLocaleString('en-IN')}
                       </p>
@@ -459,6 +482,22 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({
           </button>
         </div>
       </div>
+
+      {/* Verified Customer Rate & Review Modal */}
+      {selectedReviewItem && (
+        <RateProductModal
+          isOpen={Boolean(selectedReviewItem)}
+          onClose={() => setSelectedReviewItem(null)}
+          productName={selectedReviewItem.name || selectedReviewItem.productName || 'Fragrance'}
+          productImage={selectedReviewItem.image || selectedReviewItem.productImage}
+          productSize={selectedReviewItem.size}
+          orderNumber={orderIdText}
+          userDisplayName={displayName}
+          onSuccess={() => {
+            setSelectedReviewItem(null);
+          }}
+        />
+      )}
     </div>
   );
 };

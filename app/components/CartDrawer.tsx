@@ -1,8 +1,10 @@
 'use client';
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
 import type { CartItem } from '../types';
+import { getProductSlug } from '../utils/slug';
 
 interface CartDrawerProps {
   isOpen: boolean;
@@ -129,38 +131,51 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                     <path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
                   </svg>
                 </div>
-                <div className="space-y-1">
-                  <p className="text-sm font-semibold text-slate-800">Your shopping bag is currently empty.</p>
-                  <p className="text-xs text-slate-500">Discover our artisanal extrait de parfums & attars.</p>
+                <div>
+                  <p className="text-sm font-medium text-slate-800">Your bag is empty</p>
                 </div>
-                <button
+                <Link
+                  href="/collections/all"
                   onClick={onClose}
-                  className="px-7 py-3 bg-[#caa04c] hover:bg-[#b88f3e] text-white text-xs uppercase font-bold tracking-widest rounded-lg transition-colors cursor-pointer shadow-sm"
+                  className="px-7 py-3 bg-[#caa04c] hover:bg-[#b88f3e] text-white text-xs uppercase font-bold tracking-widest rounded-lg transition-colors cursor-pointer shadow-sm text-center inline-block"
                 >
                   Explore Collection
-                </button>
+                </Link>
               </div>
             ) : (
               cartItems.map((item) => {
                 const itemId = String(item.product.id || (item.product as any)?.$id || item.product.name || 'item');
                 const itemKey = `${itemId}__${item.selectedSize || 'default'}`;
+                const productSlug = getProductSlug(item.product);
 
                 return (
                   <div
                     key={itemKey}
                     className="flex gap-4 p-3.5 bg-white border border-slate-200/80 rounded-xl relative group shadow-xs hover:border-slate-300 transition-colors"
                   >
-                    <img
-                      src={item.product.image}
-                      alt={item.product.name}
-                      loading="lazy"
-                      decoding="async"
-                      className="w-20 h-24 object-cover rounded-lg border border-slate-100 bg-slate-50 shrink-0"
-                    />
+                    <Link
+                      href={`/products/${productSlug}`}
+                      onClick={onClose}
+                      className="w-20 h-24 object-cover rounded-lg border border-slate-100 bg-slate-50 shrink-0 overflow-hidden block"
+                    >
+                      <img
+                        src={item.product.image}
+                        alt={item.product.name}
+                        loading="lazy"
+                        decoding="async"
+                        className="w-full h-full object-cover"
+                      />
+                    </Link>
                     <div className="flex-1 flex flex-col justify-between min-w-0">
                       <div>
                         <div className="flex justify-between items-start gap-2">
-                          <h4 className="font-serif text-sm font-bold text-slate-900 truncate">{item.product.name}</h4>
+                          <Link
+                            href={`/products/${productSlug}`}
+                            onClick={onClose}
+                            className="font-serif text-sm font-bold text-slate-900 truncate hover:text-[#caa04c] transition-colors block"
+                          >
+                            {item.product.name}
+                          </Link>
                           <button
                             onClick={() => onRemoveItem(itemId, item.selectedSize)}
                             aria-label={`Remove ${item.product.name}`}

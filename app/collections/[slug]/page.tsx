@@ -8,6 +8,7 @@ import { AnnouncementBar } from '../../components/AnnouncementBar';
 import { Navbar } from '../../components/Navbar';
 import { Footer } from '../../components/Footer';
 import { ProductCard } from '../../components/ProductCard';
+import { ProductGridSkeleton } from '../../components/ProductCardSkeleton';
 import { GoldTrustBanner } from '../../components/GoldTrustBanner';
 
 const CartDrawer = dynamic(() => import('../../components/CartDrawer').then((m) => m.CartDrawer), { ssr: false });
@@ -17,6 +18,7 @@ const AccountDashboard = dynamic(() => import('../../components/AccountDashboard
 
 import { api } from '../../services/api';
 import { useCart } from '../../hooks/useCart';
+import { LuxurySelect } from '../../components/ui/LuxurySelect';
 import { getProductSlug } from '../../utils/slug';
 import type { Product } from '../../types';
 
@@ -390,18 +392,22 @@ export default function CollectionPage() {
           </span>
 
           <div className="flex items-center gap-2">
-            <label htmlFor="sort-select" className="text-slate-500 font-semibold text-[11px] sm:text-xs">Sort By:</label>
-            <select
+            <span className="text-slate-500 font-semibold text-[11px] sm:text-xs">Sort By:</span>
+            <LuxurySelect
               id="sort-select"
               value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as any)}
-              className="bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-[11.5px] sm:text-xs font-semibold text-slate-800 focus:outline-none focus:border-[#d6a750] cursor-pointer shadow-2xs"
-            >
-              <option value="bestseller">Featured / Bestseller</option>
-              <option value="price-asc">Price: Low to High</option>
-              <option value="price-desc">Price: High to Low</option>
-              <option value="rating">Highest Rated</option>
-            </select>
+              onChange={(val) => setSortBy(val as any)}
+              position="bottom"
+              align="right"
+              options={[
+                { value: 'bestseller', label: 'Featured / Bestseller' },
+                { value: 'price-asc', label: 'Price: Low to High' },
+                { value: 'price-desc', label: 'Price: High to Low' },
+                { value: 'rating', label: 'Highest Rated' }
+              ]}
+              triggerClassName="py-1.5 px-3 text-[11.5px] sm:text-xs font-semibold rounded-lg border-slate-200"
+              contentClassName="min-w-[180px]"
+            />
           </div>
         </div>
       </div>
@@ -409,10 +415,7 @@ export default function CollectionPage() {
       {/* 6. Product Grid (2 Columns on Mobile, 3 Columns on Tablet/Desktop) */}
       <main className="max-w-[1680px] mx-auto px-3 sm:px-6 lg:px-8 pb-16">
         {loading ? (
-          <div className="py-24 text-center text-slate-400 font-sans text-xs">
-            <div className="inline-block w-8 h-8 border-2 border-[#d6a750] border-t-transparent rounded-full animate-spin mb-4" />
-            <p className="font-serif text-sm">Presenting curated collection from Appwrite...</p>
-          </div>
+          <ProductGridSkeleton count={6} />
         ) : filteredProducts.length === 0 ? (
           <div className="pt-2 pb-10 sm:pt-4 sm:pb-14 px-6 text-center max-w-lg mx-auto space-y-3">
             <div className="w-36 h-36 sm:w-48 sm:h-48 md:w-52 md:h-52 mx-auto flex items-center justify-center">
