@@ -101,6 +101,29 @@ export default function ProductDetailPage() {
     return Array.from(map.values());
   }, [localReviews, fetchedReviews]);
 
+  // Derived review metrics synchronized dynamically with customer reviews
+  const reviewStats = useMemo(() => {
+    if (!reviews || reviews.length === 0) {
+      const fallbackRating = Number(product?.rating) || 5;
+      const fallbackCount = product?.reviewsCount || 0;
+      return {
+        averageRating: fallbackRating.toFixed(2),
+        numericRating: fallbackRating,
+        totalCount: fallbackCount,
+        hasReviews: false,
+      };
+    }
+
+    const ratingSum = reviews.reduce((acc, r) => acc + (Number(r.rating) || 5), 0);
+    const avg = ratingSum / reviews.length;
+    return {
+      averageRating: avg.toFixed(2),
+      numericRating: avg,
+      totalCount: reviews.length,
+      hasReviews: true,
+    };
+  }, [reviews, product?.rating, product?.reviewsCount]);
+
   const loading = isProductLoading && !product;
   const [selectedImage, setSelectedImage] = useState<string>('');
   const [quantity, setQuantity] = useState<number>(1);
@@ -109,6 +132,18 @@ export default function ProductDetailPage() {
   const { user, isSignedIn } = useUser();
   const [userOrders, setUserOrders] = useState<any[]>([]);
   const [isCheckingOrders, setIsCheckingOrders] = useState<boolean>(false);
+
+  const userDisplayName = useMemo(() => {
+    if (!user) return '';
+    if (user.fullName) return user.fullName;
+    if (user.firstName && user.lastName) return `${user.firstName} ${user.lastName}`.trim();
+    if (user.firstName) return user.firstName;
+    if (user.username) return user.username;
+    if (user.primaryEmailAddress?.emailAddress) {
+      return user.primaryEmailAddress.emailAddress.split('@')[0];
+    }
+    return '';
+  }, [user]);
 
   // Review Form Submission State
   const [isSubmittingReview, setIsSubmittingReview] = useState<boolean>(false);
@@ -156,16 +191,17 @@ export default function ProductDetailPage() {
   }, [isSignedIn, user?.id]);
 
 
-  // Check if current logged-in customer has a delivered order for this product
-  const deliveredOrderForProduct = useMemo(() => {
+  // Check if current logged-in customer has purchased this product
+  const purchasedOrderForProduct = useMemo(() => {
     if (!isSignedIn || !product || userOrders.length === 0) return null;
     const prodNameClean = (product.name || '').toLowerCase().trim();
     const prodSlug = slugify(product.name || '');
+    const prodId = String(product.id || (product as any).$id || '').trim();
 
     return (
       userOrders.find((ord) => {
         const rawStatus = (ord.orderStatus || ord.status || '').toLowerCase().trim();
-        if (rawStatus !== 'delivered' && rawStatus !== 'completed') return false;
+        if (rawStatus === 'cancelled' || rawStatus === 'refunded' || rawStatus === 'failed') return false;
 
         let items = ord.items;
         if (typeof items === 'string') {
@@ -180,7 +216,9 @@ export default function ProductDetailPage() {
         return items.some((it: any) => {
           const itName = (it.name || it.productName || '').toLowerCase().trim();
           const itSlug = slugify(it.name || it.productName || it.productId || '');
+          const itId = String(it.id || it.productId || '').trim();
           return (
+            (prodId && itId && itId === prodId) ||
             itName === prodNameClean ||
             (prodNameClean && itName.includes(prodNameClean)) ||
             (itSlug && prodSlug && itSlug === prodSlug)
@@ -190,7 +228,12 @@ export default function ProductDetailPage() {
     );
   }, [isSignedIn, product, userOrders]);
 
-  const isVerifiedBuyer = Boolean(deliveredOrderForProduct);
+  const isAdminUser = Boolean(
+    user?.publicMetadata?.role === 'admin' ||
+    user?.emailAddresses?.[0]?.emailAddress?.toLowerCase().includes('admin')
+  );
+
+  const isVerifiedBuyer = Boolean(purchasedOrderForProduct) || isAdminUser;
   // Reset scroll to top on navigation to product
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
@@ -326,6 +369,11 @@ export default function ProductDetailPage() {
     image?: string;
   }) => {
     if (!product) return;
+
+    if (!isSignedIn || !isVerifiedBuyer) {
+      return;
+    }
+
     setIsSubmittingReview(true);
     try {
       const created = await api.createReview({
@@ -541,20 +589,41 @@ export default function ProductDetailPage() {
                 {product.subtitle}
               </p>
 
-              {/* Star Rating Badge */}
+              {/* Star Rating Badge (Synchronized Dynamically with Customer Reviews) */}
               <div className="flex items-center gap-2 mt-3">
-                <div className="flex text-[#caa04c]">
-                  {[...Array(5)].map((_, i) => (
-                    <svg key={i} className="w-4 h-4 fill-current" viewBox="0 0 20 20">
-                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                    </svg>
-                  ))}
+                <div className="flex items-center gap-0.5 text-[#caa04c]">
+                  {[1, 2, 3, 4, 5].map((star) => {
+                    const diff = reviewStats.numericRating - (star - 1);
+                    const isFull = diff >= 0.75;
+                    const isHalf = diff >= 0.25 && diff < 0.75;
+
+                    return (
+                      <div key={star} className="relative w-4 h-4">
+                        {/* Background empty star */}
+                        <svg className="w-4 h-4 text-slate-200 fill-current" viewBox="0 0 20 20">
+                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                        {/* Filled star overlay */}
+                        {isFull ? (
+                          <svg className="w-4 h-4 text-[#caa04c] fill-current absolute inset-0" viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                          </svg>
+                        ) : isHalf ? (
+                          <div className="absolute inset-0 overflow-hidden w-1/2">
+                            <svg className="w-4 h-4 text-[#caa04c] fill-current" viewBox="0 0 20 20">
+                              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                            </svg>
+                          </div>
+                        ) : null}
+                      </div>
+                    );
+                  })}
                 </div>
                 <span className="text-xs font-bold text-slate-800">
-                  {product.rating || '4.9'}
+                  {reviewStats.averageRating}
                 </span>
                 <span className="text-xs text-slate-400">
-                  ({reviews.length > 0 ? reviews.length : (product.reviewsCount || 128)} verified reviews)
+                  ({reviewStats.totalCount} {reviewStats.totalCount === 1 ? 'verified review' : 'verified reviews'})
                 </span>
               </div>
             </div>
@@ -785,6 +854,14 @@ export default function ProductDetailPage() {
         <CustomerReviewsSection
           product={product}
           reviews={reviews}
+          userName={userDisplayName}
+          isSignedIn={isSignedIn}
+          isVerifiedBuyer={isVerifiedBuyer}
+          isCheckingOrders={isCheckingOrders}
+          onOpenAuth={(mode) => {
+            setAuthMode(mode || 'signin');
+            setIsAuthModalOpen(true);
+          }}
           onSubmitReview={handleReviewSubmitData}
           isSubmitting={isSubmittingReview}
         />

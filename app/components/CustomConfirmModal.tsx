@@ -175,7 +175,7 @@ export const ConfirmProvider: React.FC<{ children: ReactNode }> = ({ children })
           aria-modal="true" 
           aria-labelledby="dialog-title"
           aria-describedby="dialog-description"
-          className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+          className="fixed inset-0 z-[9999999] flex items-center justify-center p-4"
         >
           {/* Backdrop with Subtle Blur */}
           <div

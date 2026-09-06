@@ -36,6 +36,31 @@ export const RateProductModal: React.FC<RateProductModalProps> = ({
   const [comment, setComment] = useState<string>('');
   const [author, setAuthor] = useState<string>(userDisplayName);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [isExistingReview, setIsExistingReview] = useState<boolean>(false);
+
+  // Auto-fill existing review if previously submitted
+  React.useEffect(() => {
+    if (isOpen && productName) {
+      let isMounted = true;
+      api.getReviews(productName).then((revs) => {
+        if (!isMounted) return;
+        const myReview = revs.find(
+          (r) => (r.author || '').trim().toLowerCase() === (userDisplayName || '').trim().toLowerCase()
+        );
+        if (myReview) {
+          setRating(myReview.rating || 5);
+          setTitle(myReview.title || '');
+          setComment(myReview.comment || '');
+          setIsExistingReview(true);
+        } else {
+          setIsExistingReview(false);
+        }
+      }).catch(() => {});
+      return () => {
+        isMounted = false;
+      };
+    }
+  }, [isOpen, productName, userDisplayName]);
 
   if (!isOpen) return null;
 
@@ -66,14 +91,15 @@ export const RateProductModal: React.FC<RateProductModalProps> = ({
       queryClient.invalidateQueries({ queryKey: queryKeys.reviews(productName) });
       queryClient.invalidateQueries({ queryKey: ['reviews'] });
 
+      // Close modal first so UI responds immediately
+      if (onSuccess) onSuccess();
+      onClose();
+
       await showAlert({
-        title: 'Review Published',
+        title: isExistingReview ? 'Review Updated' : 'Review Published',
         message: `Thank you for reviewing ${productName}! Your verified buyer rating has been recorded.`,
         variant: 'success'
       });
-
-      if (onSuccess) onSuccess();
-      onClose();
     } catch (err: any) {
       console.error('Failed to submit review:', err);
       await showAlert({
@@ -89,7 +115,7 @@ export const RateProductModal: React.FC<RateProductModalProps> = ({
   const currentDisplayRating = hoverRating || rating;
 
   return (
-    <div className="fixed inset-0 z-[999999] bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 animate-fade-in font-sans">
+    <div className="fixed inset-0 z-[99999] bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 animate-fade-in font-sans">
       <div
         className="bg-white rounded-2xl sm:rounded-3xl border border-slate-200 shadow-2xl max-w-lg w-full overflow-hidden text-slate-900"
         onClick={(e) => e.stopPropagation()}
@@ -243,7 +269,7 @@ export const RateProductModal: React.FC<RateProductModalProps> = ({
               disabled={isSubmitting}
               className="px-6 py-2.5 bg-[#caa04c] hover:bg-[#b88f3e] text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
             >
-              {isSubmitting ? 'Submitting...' : 'Publish Verified Review'}
+              {isSubmitting ? 'Saving...' : isExistingReview ? 'Update Verified Review' : 'Publish Verified Review'}
             </button>
           </div>
         </form>

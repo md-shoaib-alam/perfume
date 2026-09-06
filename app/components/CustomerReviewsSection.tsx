@@ -7,6 +7,11 @@ import type { Product, Review } from '../types';
 interface CustomerReviewsSectionProps {
   product: Product;
   reviews: Review[];
+  userName?: string;
+  isSignedIn?: boolean;
+  isVerifiedBuyer?: boolean;
+  isCheckingOrders?: boolean;
+  onOpenAuth?: (mode?: 'signin' | 'signup') => void;
   onSubmitReview: (reviewData: {
     author: string;
     title: string;
@@ -20,12 +25,16 @@ interface CustomerReviewsSectionProps {
 export const CustomerReviewsSection: React.FC<CustomerReviewsSectionProps> = ({
   product,
   reviews,
+  userName = '',
+  isSignedIn = false,
+  isVerifiedBuyer = false,
+  isCheckingOrders = false,
+  onOpenAuth,
   onSubmitReview,
   isSubmitting = false,
 }) => {
   // Local UI states
   const [isWritingReview, setIsWritingReview] = useState(false);
-  const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<'recent' | 'highest' | 'lowest'>('recent');
   const [visibleCount, setVisibleCount] = useState(3);
   const [activePhotoModal, setActivePhotoModal] = useState<string | null>(null);
@@ -33,11 +42,31 @@ export const CustomerReviewsSection: React.FC<CustomerReviewsSectionProps> = ({
   // Review Form States
   const [formRating, setFormRating] = useState(5);
   const [formHoverRating, setFormHoverRating] = useState(0);
-  const [formName, setFormName] = useState('');
+  const [formName, setFormName] = useState(userName || '');
   const [formTitle, setFormTitle] = useState('');
   const [formComment, setFormComment] = useState('');
   const [formPhotoUrl, setFormPhotoUrl] = useState('');
   const [formError, setFormError] = useState('');
+
+  // Check if current user already has a review for this fragrance
+  const existingUserReview = useMemo(() => {
+    if (!userName) return null;
+    return reviews.find(
+      (r) => (r.author || '').trim().toLowerCase() === userName.trim().toLowerCase()
+    ) || null;
+  }, [userName, reviews]);
+
+  // Keep form synced when user logs in or previously reviewed
+  React.useEffect(() => {
+    if (userName) {
+      setFormName((prev) => prev || userName);
+      if (existingUserReview) {
+        setFormRating(existingUserReview.rating || 5);
+        setFormTitle(existingUserReview.title || '');
+        setFormComment(existingUserReview.comment || '');
+      }
+    }
+  }, [userName, existingUserReview]);
 
   // Curated customer gallery images (from product images, reviews, and unboxing shots)
   const customerGallery = useMemo(() => {
@@ -126,33 +155,6 @@ export const CustomerReviewsSection: React.FC<CustomerReviewsSectionProps> = ({
     return defaultReviews;
   }, [reviews, product.name]);
 
-  // Dynamic tags / keywords derived from notes and review contents
-  const keywordTags = useMemo(() => {
-    const defaultTags = [
-      'Woods',
-      'Ocean smell',
-      'Davana',
-      'Banana',
-      'Middle',
-      'Skin',
-      'Scents',
-      'Favorite',
-      'Something',
-      'One',
-    ];
-    const extractedTags = new Set<string>();
-    if (product.notes) {
-      [...(product.notes.top || []), ...(product.notes.heart || []), ...(product.notes.base || [])].forEach((n) => {
-        if (n && n.length > 2) extractedTags.add(n.charAt(0).toUpperCase() + n.slice(1));
-      });
-    }
-    const combined = Array.from(extractedTags);
-    defaultTags.forEach((t) => {
-      if (!combined.includes(t)) combined.push(t);
-    });
-    return combined.slice(0, 10);
-  }, [product.notes]);
-
   // Statistics calculation
   const totalCount = allDisplayReviews.length;
   const ratingSum = allDisplayReviews.reduce((acc, r) => acc + (r.rating || 5), 0);
@@ -168,20 +170,9 @@ export const CustomerReviewsSection: React.FC<CustomerReviewsSectionProps> = ({
     return counts;
   }, [allDisplayReviews]);
 
-  // Filtered and sorted reviews
+  // Sorted reviews
   const processedReviews = useMemo(() => {
     let list = [...allDisplayReviews];
-
-    // Filter by keyword tag
-    if (selectedTag) {
-      const tagLower = selectedTag.toLowerCase();
-      list = list.filter(
-        (r) =>
-          r.comment.toLowerCase().includes(tagLower) ||
-          r.title.toLowerCase().includes(tagLower) ||
-          r.author.toLowerCase().includes(tagLower)
-      );
-    }
 
     // Sort
     if (sortBy === 'highest') {
@@ -191,28 +182,22 @@ export const CustomerReviewsSection: React.FC<CustomerReviewsSectionProps> = ({
     }
 
     return list;
-  }, [allDisplayReviews, selectedTag, sortBy]);
+  }, [allDisplayReviews, sortBy]);
 
   const visibleReviews = processedReviews.slice(0, visibleCount);
   const hasMore = visibleCount < processedReviews.length;
 
-  // Social Share
-  const handleShareFacebook = (review: Review) => {
-    if (typeof window === 'undefined') return;
-    const url = window.location.href;
-    window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, '_blank', 'width=600,height=400');
-  };
-
-  const handleShareTwitter = (review: Review) => {
-    if (typeof window === 'undefined') return;
-    const url = window.location.href;
-    const text = `Review for ${product.name}: "${review.title || review.comment.slice(0, 50)}..."`;
-    window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, '_blank', 'width=600,height=400');
-  };
-
   // Handle Form Submit
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isSignedIn) {
+      if (onOpenAuth) onOpenAuth('signin');
+      return;
+    }
+    if (!isVerifiedBuyer) {
+      setFormError('Only customers who have purchased this fragrance can submit a review.');
+      return;
+    }
     if (!formName.trim() || !formComment.trim()) {
       setFormError('Please enter your name and comments.');
       return;
@@ -249,11 +234,31 @@ export const CustomerReviewsSection: React.FC<CustomerReviewsSectionProps> = ({
         {/* Left Column: Overall Rating */}
         <div className="flex flex-col items-center text-center shrink-0 w-full md:w-auto">
           <div className="flex items-center gap-1 text-[#caa04c] mb-1.5">
-            {[1, 2, 3, 4, 5].map((s) => (
-              <svg key={s} className="w-5 h-5 fill-current" viewBox="0 0 20 20">
-                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-              </svg>
-            ))}
+            {[1, 2, 3, 4, 5].map((s) => {
+              const numRating = parseFloat(averageRating) || 5;
+              const diff = numRating - (s - 1);
+              const isFull = diff >= 0.75;
+              const isHalf = diff >= 0.25 && diff < 0.75;
+
+              return (
+                <div key={s} className="relative w-5 h-5">
+                  <svg className="w-5 h-5 text-slate-200 fill-current" viewBox="0 0 20 20">
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                  </svg>
+                  {isFull ? (
+                    <svg className="w-5 h-5 text-[#caa04c] fill-current absolute inset-0" viewBox="0 0 20 20">
+                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                    </svg>
+                  ) : isHalf ? (
+                    <div className="absolute inset-0 overflow-hidden w-1/2">
+                      <svg className="w-5 h-5 text-[#caa04c] fill-current" viewBox="0 0 20 20">
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                      </svg>
+                    </div>
+                  ) : null}
+                </div>
+              );
+            })}
           </div>
           <p className="text-sm sm:text-base font-semibold text-slate-900 font-sans">
             {averageRating} <span className="font-normal text-slate-700">out of 5</span>
@@ -304,7 +309,13 @@ export const CustomerReviewsSection: React.FC<CustomerReviewsSectionProps> = ({
         <div className="w-full md:w-auto shrink-0 md:pl-8 md:border-l md:border-slate-200 flex justify-center">
           <button
             type="button"
-            onClick={() => setIsWritingReview(!isWritingReview)}
+            onClick={() => {
+              if (!isSignedIn && onOpenAuth) {
+                onOpenAuth('signin');
+                return;
+              }
+              setIsWritingReview(!isWritingReview);
+            }}
             className="w-full sm:w-auto px-8 py-3 bg-[#caa04c] hover:bg-[#b88f3e] text-white font-bold text-xs uppercase tracking-wider rounded-xs transition-colors shadow-xs cursor-pointer text-center"
           >
             {isWritingReview ? 'Cancel Review' : 'Write a review'}
@@ -312,45 +323,62 @@ export const CustomerReviewsSection: React.FC<CustomerReviewsSectionProps> = ({
         </div>
       </div>
 
-      {/* 3. Interactive Write A Review Form (Expands cleanly on click) */}
+      {/* 3. Interactive Write A Review Form (Upgraded Luxury UI) */}
       {isWritingReview && (
         <form
           onSubmit={handleSubmit}
-          className="my-8 p-6 sm:p-8 bg-[#faf9f6] border border-slate-200 rounded-sm space-y-4 text-xs transition-all duration-300"
+          className="my-8 p-6 sm:p-8 bg-white border border-slate-200/90 rounded-2xl shadow-xs space-y-5 text-xs transition-all duration-300 font-sans"
         >
-          <div className="flex items-center justify-between pb-3 border-b border-slate-200">
-            <h3 className="font-serif text-lg font-bold text-slate-900">Write A Review</h3>
-            <span className="text-[11px] text-slate-500">for {product.name}</span>
+          <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+            <div>
+              <h3 className="font-serif text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">Write A Review</h3>
+              <p className="text-[12px] text-slate-500 mt-0.5">Share your authentic impressions for <span className="font-semibold text-slate-700">{product.name}</span></p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsWritingReview(false)}
+              className="text-slate-400 hover:text-slate-700 p-1.5 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+              aria-label="Close review form"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
           </div>
 
           {formError && (
-            <div className="p-3 bg-red-50 text-red-700 border border-red-200 rounded-xs text-xs">
+            <div className="p-3 bg-rose-50 text-rose-700 border border-rose-200 rounded-lg text-xs font-medium">
               {formError}
             </div>
           )}
 
-          {/* Star Picker */}
+          {/* Star Rating Picker */}
           <div>
-            <label className="block font-semibold text-slate-700 mb-1.5">Rating</label>
-            <div className="flex items-center gap-1.5">
-              {[1, 2, 3, 4, 5].map((star) => (
-                <button
-                  key={star}
-                  type="button"
-                  onMouseEnter={() => setFormHoverRating(star)}
-                  onMouseLeave={() => setFormHoverRating(0)}
-                  onClick={() => setFormRating(star)}
-                  className="p-1 cursor-pointer text-[#caa04c]"
-                >
-                  <svg
-                    className={`w-6 h-6 ${(formHoverRating || formRating) >= star ? 'fill-current' : 'fill-none stroke-current'}`}
-                    viewBox="0 0 20 20"
+            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
+              Rating
+            </label>
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    key={star}
+                    type="button"
+                    onMouseEnter={() => setFormHoverRating(star)}
+                    onMouseLeave={() => setFormHoverRating(0)}
+                    onClick={() => setFormRating(star)}
+                    className="p-1 cursor-pointer transition-transform active:scale-95 focus:outline-none"
+                    aria-label={`Rate ${star} star`}
                   >
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                  </svg>
-                </button>
-              ))}
-              <span className="font-semibold text-slate-800 ml-2 text-xs">
+                    <svg
+                      className={`w-6 h-6 ${(formHoverRating || formRating) >= star ? 'text-[#caa04c] fill-current' : 'text-slate-200 fill-current'}`}
+                      viewBox="0 0 20 20"
+                    >
+                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                    </svg>
+                  </button>
+                ))}
+              </div>
+              <span className="text-xs font-bold text-[#caa04c] bg-amber-50/80 px-2.5 py-0.5 rounded-full border border-amber-200/50 ml-1">
                 {formHoverRating || formRating} Stars
               </span>
             </div>
@@ -358,53 +386,54 @@ export const CustomerReviewsSection: React.FC<CustomerReviewsSectionProps> = ({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block font-semibold text-slate-700 mb-1">Your Name</label>
+              <label className="block text-xs font-bold text-slate-700 mb-1.5">Your Name</label>
               <input
                 type="text"
                 required
                 value={formName}
                 onChange={(e) => setFormName(e.target.value)}
                 placeholder="e.g. Mihir Patel"
-                className="w-full bg-white border border-slate-300 rounded-xs px-3.5 py-2.5 text-xs focus:outline-none focus:border-[#caa04c]"
+                className="w-full bg-slate-50/50 border border-slate-200 rounded-lg px-3.5 py-2.5 text-xs text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#caa04c]/20 focus:border-[#caa04c] transition-all"
               />
             </div>
 
             <div>
-              <label className="block font-semibold text-slate-700 mb-1">Review Title</label>
+              <label className="block text-xs font-bold text-slate-700 mb-1.5">Review Title</label>
               <input
                 type="text"
                 value={formTitle}
                 onChange={(e) => setFormTitle(e.target.value)}
                 placeholder="e.g. Beautiful aquatic jasmine forward fragrance"
-                className="w-full bg-white border border-slate-300 rounded-xs px-3.5 py-2.5 text-xs focus:outline-none focus:border-[#caa04c]"
+                className="w-full bg-slate-50/50 border border-slate-200 rounded-lg px-3.5 py-2.5 text-xs text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#caa04c]/20 focus:border-[#caa04c] transition-all"
               />
             </div>
           </div>
 
           <div>
-            <label className="block font-semibold text-slate-700 mb-1">Detailed Review</label>
+            <label className="block text-xs font-bold text-slate-700 mb-1.5">Detailed Review</label>
             <textarea
               rows={4}
               required
               value={formComment}
               onChange={(e) => setFormComment(e.target.value)}
               placeholder="Describe the projection, sillage, compliments, and olfactory accords on your skin..."
-              className="w-full bg-white border border-slate-300 rounded-xs p-3 text-xs focus:outline-none focus:border-[#caa04c]"
+              className="w-full bg-slate-50/50 border border-slate-200 rounded-lg p-3.5 text-xs text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#caa04c]/20 focus:border-[#caa04c] transition-all leading-relaxed resize-y"
             />
           </div>
 
+          {/* Action Buttons: Simply disabled if guest or hasn't purchased */}
           <div className="flex items-center gap-3 pt-2">
             <button
               type="submit"
-              disabled={isSubmitting}
-              className="px-8 py-3 bg-[#caa04c] hover:bg-[#b88f3e] text-white font-bold text-xs uppercase tracking-wider rounded-xs transition-colors shadow-xs cursor-pointer disabled:opacity-50"
+              disabled={!isSignedIn || !isVerifiedBuyer || isSubmitting || isCheckingOrders}
+              className="px-8 py-3 bg-[#caa04c] hover:bg-[#b88f3e] text-white font-sans font-bold text-xs uppercase tracking-wider rounded-lg transition-all shadow-xs cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[#caa04c]"
             >
-              {isSubmitting ? 'Publishing...' : 'Submit Review'}
+              {isSubmitting ? 'Publishing...' : existingUserReview ? 'Update Review' : 'Submit Review'}
             </button>
             <button
               type="button"
               onClick={() => setIsWritingReview(false)}
-              className="px-6 py-3 border border-slate-300 text-slate-600 font-bold text-xs uppercase tracking-wider rounded-xs hover:bg-slate-100 transition-colors cursor-pointer"
+              className="px-6 py-3 border border-slate-200 text-slate-600 font-sans font-bold text-xs uppercase tracking-wider rounded-lg hover:bg-slate-50 transition-colors cursor-pointer"
             >
               Cancel
             </button>
@@ -447,38 +476,6 @@ export const CustomerReviewsSection: React.FC<CustomerReviewsSectionProps> = ({
           </div>
         </div>
       )}
-
-      {/* 5. Filter Keyword Pills (Screenshot Match) */}
-      <div className="py-6 border-b border-slate-200">
-        <div className="flex items-center gap-2 flex-wrap">
-          {selectedTag && (
-            <button
-              type="button"
-              onClick={() => setSelectedTag(null)}
-              className="px-3 py-1 bg-slate-900 text-white text-[11px] font-semibold rounded-xs cursor-pointer"
-            >
-              Clear Filter ({selectedTag})
-            </button>
-          )}
-          {keywordTags.map((tag) => {
-            const isSelected = selectedTag === tag;
-            return (
-              <button
-                key={tag}
-                type="button"
-                onClick={() => setSelectedTag(isSelected ? null : tag)}
-                className={`px-3 py-1 text-[11px] font-normal rounded-xs transition-all border cursor-pointer ${
-                  isSelected
-                    ? 'bg-[#caa04c] text-white border-[#caa04c] font-semibold'
-                    : 'border-[#dfb86c] text-[#8c671b] bg-amber-50/20 hover:bg-amber-100/40'
-                }`}
-              >
-                {tag}
-              </button>
-            );
-          })}
-        </div>
-      </div>
 
       {/* 6. Sorting Bar */}
       <div className="py-4 border-b border-slate-200 flex items-center justify-between">
@@ -544,30 +541,6 @@ export const CustomerReviewsSection: React.FC<CustomerReviewsSectionProps> = ({
               <p className="text-xs sm:text-sm text-slate-700 font-normal leading-relaxed font-sans">
                 {rev.comment}
               </p>
-
-              {/* Social Share Icons (Facebook & Twitter/X) */}
-              <div className="flex items-center gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => handleShareFacebook(rev)}
-                  title="Share on Facebook"
-                  className="text-slate-900 hover:text-[#caa04c] transition-colors cursor-pointer"
-                >
-                  <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
-                    <path d="M9 8H6v4h3v12h5V12h3.642L18 8h-4V6.333C14 5.374 14.5 5 15.688 5H18V0h-3.808C10.592 0 9 1.582 9 4.615V8z" />
-                  </svg>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleShareTwitter(rev)}
-                  title="Share on X / Twitter"
-                  className="text-slate-900 hover:text-[#caa04c] transition-colors cursor-pointer"
-                >
-                  <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
-                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-                  </svg>
-                </button>
-              </div>
             </div>
           ))
         )}

@@ -20,7 +20,6 @@ import {
 import { AccountSidebar } from './account/AccountSidebar';
 import { DashboardTab } from './account/DashboardTab';
 import { OrdersTab } from './account/OrdersTab';
-import { OrderTrackingModal } from './account/OrderTrackingModal';
 import { RecentlyViewedTab } from './account/RecentlyViewedTab';
 
 export const AccountView: React.FC<AccountViewProps> = ({
@@ -326,95 +325,117 @@ export const AccountView: React.FC<AccountViewProps> = ({
     { key: 'password', label: 'Change Password', icon: ICONS.password },
   ];
 
+  const handleTabChange = (tab: TabKey) => {
+    setSelectedOrder(null);
+    setActiveTab(tab);
+  };
+
   return (
-    <div className="flex-1 flex flex-col md:flex-row min-h-0">
-      {/* ------------------------------------------------------------- */}
-      {/* LEFT SIDEBAR PROFILE CARD (Desktop Only: hidden md:flex)      */}
-      {/* ------------------------------------------------------------- */}
-      <AccountSidebar
-        user={user}
-        displayName={displayName}
-        firstName={firstName}
-        email={email}
-        activeTab={activeTab}
-        menuItems={MENU_ITEMS}
-        onSelectTab={setActiveTab}
-        onLogout={handleLogout}
-        logoutIcon={ICONS.logout}
-      />
+    <div className="w-full flex-1 flex flex-col min-h-0">
+      {/* ============================================================= */}
+      {/* 2-COLUMN LUXURY DASHBOARD LAYOUT                             */}
+      {/* ============================================================= */}
+      <div className="flex-1 flex flex-col md:flex-row min-h-0">
+        {/* ------------------------------------------------------------- */}
+        {/* LEFT SIDEBAR PROFILE CARD (Desktop Only: hidden md:flex)      */}
+        {/* ------------------------------------------------------------- */}
+        <AccountSidebar
+          user={user}
+          displayName={displayName}
+          firstName={firstName}
+          email={email}
+          activeTab={activeTab}
+          menuItems={MENU_ITEMS}
+          onSelectTab={handleTabChange}
+          onLogout={handleLogout}
+          logoutIcon={ICONS.logout}
+        />
 
-      {/* ------------------------------------------------------------- */}
-      {/* RIGHT MAIN CONTENT VIEWPORT                                   */}
-      {/* ------------------------------------------------------------- */}
-      <div className="flex-1 flex flex-col min-w-0">
-        {/* MOBILE HORIZONTAL PILLS NAVIGATION (Mobile Only: md:hidden) */}
-        <div className="md:hidden bg-white border-b border-slate-200 px-4 py-3 sticky top-0 z-30 shadow-2xs">
-          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
-            {MENU_ITEMS.map((item) => {
-              const isActive = activeTab === item.key;
-              const isWishlist = item.key === 'wishlist';
-              return (
-                <button
-                  key={item.key}
-                  onClick={() => setActiveTab(item.key)}
-                  className={`shrink-0 px-4 py-2 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-                    isActive
-                      ? 'bg-[#caa04c] text-white shadow-xs'
-                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                  }`}
-                >
-                  <span>{item.label}</span>
-                  {isWishlist && wishlist.length > 0 && (
-                    <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
-                      isActive ? 'bg-white text-[#caa04c]' : 'bg-[#caa04c] text-white'
-                    }`}>
-                      +{wishlist.length}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
+        {/* ------------------------------------------------------------- */}
+        {/* RIGHT MAIN CONTENT VIEWPORT                                   */}
+        {/* ------------------------------------------------------------- */}
+        <div className="flex-1 flex flex-col min-w-0">
+          {/* MOBILE HORIZONTAL PILLS NAVIGATION (Mobile Only: md:hidden) */}
+          <div className="md:hidden bg-white border-b border-slate-200 px-4 py-3 sticky top-0 z-30 shadow-2xs">
+            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
+              {MENU_ITEMS.map((item) => {
+                const isActive = activeTab === item.key;
+                const isWishlist = item.key === 'wishlist';
+                return (
+                  <button
+                    key={item.key}
+                    onClick={() => handleTabChange(item.key)}
+                    className={`shrink-0 px-4 py-2 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                      isActive
+                        ? 'bg-[#caa04c] text-white shadow-xs'
+                        : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                    }`}
+                  >
+                    <span>{item.label}</span>
+                    {isWishlist && wishlist.length > 0 && (
+                      <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                        isActive ? 'bg-white text-[#caa04c]' : 'bg-[#caa04c] text-white'
+                      }`}>
+                        +{wishlist.length}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+            {/* Subtle gold active indicator bar */}
+            <div className="w-full bg-slate-100 h-0.5 rounded-full mt-2 overflow-hidden">
+              <div className="bg-[#caa04c] h-full w-1/3 rounded-full transition-all" />
+            </div>
           </div>
-          {/* Subtle gold active indicator bar */}
-          <div className="w-full bg-slate-100 h-0.5 rounded-full mt-2 overflow-hidden">
-            <div className="bg-[#caa04c] h-full w-1/3 rounded-full transition-all" />
-          </div>
-        </div>
 
-        <main className="flex-1 p-4 sm:p-6 md:p-9 overflow-y-auto bg-slate-50/50">
-          {/* ----------------------------------------------------------- */}
-          {/* TAB 1: DASHBOARD OVERVIEW                                   */}
-          {/* ----------------------------------------------------------- */}
-          {activeTab === 'dashboard' && (
-            <DashboardTab
-              userOrders={userOrders}
-              totalSpent={totalSpent}
-              wishlist={wishlist}
-              user={user}
-              firstName={firstName}
-              lastName={lastName}
-              displayName={displayName}
-              email={email}
-              phone={phone}
-              isEditingProfile={isEditingProfile}
-              setIsEditingProfile={setIsEditingProfile}
-              setFirstName={setFirstName}
-              setLastName={setLastName}
-              setPhone={setPhone}
-              handleSaveProfile={handleSaveProfile}
-              saveSuccess={saveSuccess}
-              onViewAllOrders={() => setActiveTab('orders')}
-              onSelectOrder={(ord) => setSelectedOrder(ord)}
-            />
-          )}
+          <main className="flex-1 p-4 sm:p-6 md:p-9 overflow-y-auto bg-slate-50/50">
+            {/* ----------------------------------------------------------- */}
+            {/* TAB 1: DASHBOARD OVERVIEW                                   */}
+            {/* ----------------------------------------------------------- */}
+            {activeTab === 'dashboard' && (
+              <DashboardTab
+                userOrders={userOrders}
+                totalSpent={totalSpent}
+                wishlist={wishlist}
+                user={user}
+                firstName={firstName}
+                lastName={lastName}
+                displayName={displayName}
+                email={email}
+                phone={phone}
+                isEditingProfile={isEditingProfile}
+                setIsEditingProfile={setIsEditingProfile}
+                setFirstName={setFirstName}
+                setLastName={setLastName}
+                setPhone={setPhone}
+                handleSaveProfile={handleSaveProfile}
+                saveSuccess={saveSuccess}
+                onViewAllOrders={() => {
+                  setSelectedOrder(null);
+                  setActiveTab('orders');
+                }}
+                onSelectOrder={(ord) => {
+                  setSelectedOrder(ord);
+                  setActiveTab('orders');
+                }}
+              />
+            )}
 
         {/* ----------------------------------------------------------- */}
-        {/* TAB 2: MY ORDERS                                            */}
+        {/* TAB 2: MY ORDERS (In-page view & tracking)                   */}
         {/* ----------------------------------------------------------- */}
         {activeTab === 'orders' && (
           <OrdersTab
             orders={userOrders}
+            selectedOrder={selectedOrder}
             onSelectOrder={(ord) => setSelectedOrder(ord)}
+            onDeselectOrder={() => setSelectedOrder(null)}
+            displayName={displayName}
+            defaultAddress={address}
+            defaultCity={city}
+            defaultPincode={pincode}
+            defaultPhone={phone}
             onShopNow={onShopNow}
             onClose={onClose}
           />
@@ -422,7 +443,6 @@ export const AccountView: React.FC<AccountViewProps> = ({
 
         {/* ----------------------------------------------------------- */}
         {/* TAB 3: MY PROFILE                                           */}
-        {/* ----------------------------------------------------------- */}
         {activeTab === 'profile' && (
           <div className="space-y-6 w-full">
             <h2 className="text-sm font-extrabold uppercase tracking-widest text-slate-900">
@@ -908,23 +928,9 @@ export const AccountView: React.FC<AccountViewProps> = ({
             </div>
           </div>
         )}
-
-        {/* ----------------------------------------------------------- */}
-        {/* ORDER DETAILS & LIVE SHIPMENT TRACKING MODAL               */}
-        {/* ----------------------------------------------------------- */}
-        {selectedOrder && (
-          <OrderTrackingModal
-            order={selectedOrder}
-            onClose={() => setSelectedOrder(null)}
-            displayName={displayName}
-            defaultAddress={address}
-            defaultCity={city}
-            defaultPincode={pincode}
-            defaultPhone={phone}
-          />
-        )}
       </main>
     </div>
   </div>
+</div>
   );
 };

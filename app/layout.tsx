@@ -22,8 +22,58 @@ const playfair = Playfair_Display({
 });
 
 export const metadata: Metadata = {
-  title: "BakhoorBliss | Luxury Extrait De Parfum & Attars",
-  description: "Experience global award-winning luxury perfumes, fine fragrances, and artisanal attars crafted with master perfumers.",
+  metadataBase: new URL('https://bakhoorbliss.in'),
+  title: {
+    default: "BakhoorBliss | Luxury Extrait De Parfum & Artisanal Attars",
+    template: "%s | BakhoorBliss",
+  },
+  description: "Experience artisanal extrait de parfums, pure concentrated attars, and luxury Middle Eastern fragrance oils crafted with master perfumers.",
+  keywords: [
+    "BakhoorBliss",
+    "luxury perfume",
+    "extrait de parfum",
+    "attar",
+    "oud fragrance",
+    "bakhoor",
+    "artisanal perfumery",
+    "long lasting perfume",
+    "niche fragrance India",
+  ],
+  authors: [{ name: "BakhoorBliss Luxury Perfumery" }],
+  creator: "BakhoorBliss",
+  publisher: "BakhoorBliss",
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
+  alternates: {
+    canonical: "/",
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
+  openGraph: {
+    title: "BakhoorBliss | Luxury Extrait De Parfum & Artisanal Attars",
+    description: "Experience artisanal extrait de parfums, pure concentrated attars, and luxury Middle Eastern fragrance oils crafted with master perfumers.",
+    url: "https://bakhoorbliss.in",
+    siteName: "BakhoorBliss",
+    locale: "en_IN",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "BakhoorBliss | Luxury Extrait De Parfum & Artisanal Attars",
+    description: "Experience artisanal extrait de parfums, pure concentrated attars, and luxury Middle Eastern fragrance oils crafted with master perfumers.",
+  },
   icons: {
     icon: "/favicon.ico",
   },

@@ -547,21 +547,68 @@ export const api = {
 
   async createReview(reviewData: Partial<Review>): Promise<Review> {
     try {
-      const doc = await databases.createDocument(
-        APPWRITE_DATABASE_ID,
-        'reviews',
-        ID.unique(),
-        {
-          productName: reviewData.productName || 'General',
-          author: reviewData.author || 'Verified Customer',
-          rating: Number(reviewData.rating || 5),
-          title: reviewData.title || '',
-          comment: reviewData.comment || '',
-          verified: true,
-          approved: true,
-          date: new Date().toISOString().split('T')[0]
+      const prodName = (reviewData.productName || 'General').trim();
+      const authorName = (reviewData.author || 'Verified Customer').trim();
+
+      // Check if this user already reviewed this specific fragrance
+      let existingDocId: string | null = null;
+      try {
+        const queries: string[] = [Query.limit(100)];
+        if (prodName && prodName !== 'General') {
+          queries.push(Query.equal('productName', prodName));
         }
-      );
+        const existingRes = await databases.listDocuments(APPWRITE_DATABASE_ID, 'reviews', queries);
+        if (existingRes && existingRes.documents) {
+          const match = existingRes.documents.find((d) => {
+            const authorMatches = (d.author || '').trim().toLowerCase() === authorName.toLowerCase();
+            const productMatches = (d.productName || '').trim().toLowerCase() === prodName.toLowerCase();
+            return authorMatches && (prodName === 'General' || productMatches);
+          });
+          if (match) {
+            existingDocId = match.$id;
+          }
+        }
+      } catch (checkErr) {
+        console.warn('Check existing review warning:', checkErr);
+      }
+
+      let doc: any;
+      if (existingDocId) {
+        // Update / replace old review with new one
+        doc = await databases.updateDocument(
+          APPWRITE_DATABASE_ID,
+          'reviews',
+          existingDocId,
+          {
+            productName: prodName,
+            author: authorName,
+            rating: Number(reviewData.rating || 5),
+            title: reviewData.title || '',
+            comment: reviewData.comment || '',
+            verified: true,
+            approved: true,
+            date: new Date().toISOString().split('T')[0]
+          }
+        );
+      } else {
+        // Create new review
+        doc = await databases.createDocument(
+          APPWRITE_DATABASE_ID,
+          'reviews',
+          ID.unique(),
+          {
+            productName: prodName,
+            author: authorName,
+            rating: Number(reviewData.rating || 5),
+            title: reviewData.title || '',
+            comment: reviewData.comment || '',
+            verified: true,
+            approved: true,
+            date: new Date().toISOString().split('T')[0]
+          }
+        );
+      }
+
       return {
         id: doc.$id,
         author: doc.author,
