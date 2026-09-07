@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { databases, APPWRITE_DATABASE_ID } from '@/lib/appwrite';
 import { ID, Query } from 'appwrite';
 import { auth } from '@clerk/nextjs/server';
+import { checkRole } from '@/lib/roles';
 import { calculateOrderBreakdown, isProductSoldOut } from '@/lib/pricing';
 
 
