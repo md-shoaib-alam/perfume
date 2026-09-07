@@ -311,12 +311,13 @@ export const OrdersTab: React.FC<OrdersTabProps> = ({
             {/* Desktop Horizontal Stepper */}
             <div className="hidden sm:block pt-2">
               <div className="flex items-center justify-between relative">
-                {/* Horizontal Background Line */}
-                <div className="absolute top-5 left-8 right-8 h-1 bg-slate-200 z-0" />
-                <div
-                  className="absolute top-5 left-8 h-1 bg-[#caa04c] z-0 transition-all duration-500"
-                  style={{ width: `${Math.max(0, Math.min(100, ((trackingStep - 1) / 4) * 100))}%` }}
-                />
+                {/* Horizontal Background Track & Active Progress Fill */}
+                <div className="absolute top-5 left-8 right-8 h-1 bg-slate-200 z-0 overflow-hidden rounded-full">
+                  <div
+                    className="h-full bg-[#caa04c] transition-all duration-500 rounded-full"
+                    style={{ width: `${Math.max(0, Math.min(100, ((trackingStep - 1) / 4) * 100))}%` }}
+                  />
+                </div>
 
                 {steps.map((step, idx) => {
                   const isDone = trackingStep >= step.stage;
