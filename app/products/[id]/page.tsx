@@ -25,7 +25,7 @@ import { useConfirm } from '../../components/CustomConfirmModal';
 import { getProductSlug, slugify } from '../../utils/slug';
 import { addRecentlyViewed } from '../../utils/recentlyViewed';
 import type { Product, Review } from '../../types';
-import { resolveProductSizeOptions, resolveProductUnitPrice } from '@/lib/pricing';
+import { resolveProductSizeOptions, resolveProductUnitPrice, isProductSoldOut } from '@/lib/pricing';
 
 import { useProductsQuery, useProductQuery, useReviewsQuery, queryKeys } from '../../hooks/useQueries';
 import { useQueryClient } from '@tanstack/react-query';
@@ -271,6 +271,11 @@ export default function ProductDetailPage() {
       isSoldOut: false
     };
   }, [product, sizeOptions, selectedSize]);
+
+  const isCurrentSoldOut = useMemo(() => {
+    if (!product) return false;
+    return isProductSoldOut(product, selectedSize);
+  }, [product, selectedSize]);
 
   const currentPrice = currentOption?.price ?? product?.price ?? 0;
   const originalPrice = currentOption?.originalPrice ?? product?.originalPrice ?? 0;
@@ -657,20 +662,32 @@ export default function ProductDetailPage() {
                   Select Bottle Size:
                 </label>
                 <div className="flex flex-wrap gap-2.5">
-                  {product.sizeOptions.map((opt) => (
-                    <button
-                      key={opt.size}
-                      type="button"
-                      onClick={() => setSelectedSize(opt.size)}
-                      className={`px-5 py-2.5 rounded-xl text-xs font-sans font-bold uppercase tracking-wider transition-all cursor-pointer border ${
-                        selectedSize === opt.size
-                          ? 'bg-slate-900 text-white border-slate-900 shadow-sm'
-                          : 'bg-white text-slate-700 border-slate-300 hover:border-slate-400'
-                      }`}
-                    >
-                      {opt.size}
-                    </button>
-                  ))}
+                  {product.sizeOptions.map((opt) => {
+                    const isOptSoldOut = isProductSoldOut(product, opt.size);
+                    return (
+                      <button
+                        key={opt.size}
+                        type="button"
+                        onClick={() => setSelectedSize(opt.size)}
+                        className={`px-4 sm:px-5 py-2.5 rounded-xl text-xs font-sans font-bold uppercase tracking-wider transition-all cursor-pointer border flex items-center gap-1.5 ${
+                          selectedSize === opt.size
+                            ? isOptSoldOut
+                              ? 'bg-rose-50 text-rose-800 border-rose-300 shadow-xs'
+                              : 'bg-slate-900 text-white border-slate-900 shadow-sm'
+                            : isOptSoldOut
+                            ? 'bg-slate-50 text-slate-400 border-slate-200'
+                            : 'bg-white text-slate-700 border-slate-300 hover:border-slate-400'
+                        }`}
+                      >
+                        <span className={isOptSoldOut ? 'line-through opacity-75' : ''}>{opt.size}</span>
+                        {isOptSoldOut && (
+                          <span className="text-[9.5px] font-mono font-bold text-rose-600 bg-rose-100/80 px-1.5 py-0.5 rounded">
+                            Sold Out
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -679,9 +696,10 @@ export default function ProductDetailPage() {
             <div ref={mainAddToCartRef} className="space-y-3 pt-2">
               <div className="flex items-center gap-3">
                 {/* Quantity */}
-                <div className="flex items-center border border-slate-300 rounded-xl bg-white px-2 py-1">
+                <div className={`flex items-center border border-slate-300 rounded-xl bg-white px-2 py-1 ${isCurrentSoldOut ? 'opacity-40 pointer-events-none' : ''}`}>
                   <button
                     type="button"
+                    disabled={isCurrentSoldOut}
                     onClick={() => setQuantity((q) => Math.max(1, q - 1))}
                     className="w-8 h-8 flex items-center justify-center text-slate-600 hover:text-black font-bold text-sm"
                   >
@@ -690,6 +708,7 @@ export default function ProductDetailPage() {
                   <span className="w-8 text-center text-xs font-bold text-slate-900">{quantity}</span>
                   <button
                     type="button"
+                    disabled={isCurrentSoldOut}
                     onClick={() => setQuantity((q) => q + 1)}
                     className="w-8 h-8 flex items-center justify-center text-slate-600 hover:text-black font-bold text-sm"
                   >
@@ -700,15 +719,29 @@ export default function ProductDetailPage() {
                 {/* Add to Bag Button */}
                 <button
                   type="button"
-                  onClick={() => addToCart(product, selectedSize, currentPrice, quantity)}
-                  className="flex-1 py-3.5 bg-[#c59b48] hover:bg-[#b58b38] active:bg-[#a57b28] text-white font-sans font-bold text-xs uppercase tracking-widest rounded-xl transition-all shadow-md cursor-pointer flex items-center justify-center gap-2"
+                  disabled={isCurrentSoldOut}
+                  onClick={() => !isCurrentSoldOut && addToCart(product, selectedSize, currentPrice, quantity)}
+                  className={`flex-1 py-3.5 font-sans font-bold text-xs uppercase tracking-widest rounded-xl transition-all shadow-md flex items-center justify-center gap-2 ${
+                    isCurrentSoldOut
+                      ? 'bg-slate-200 text-slate-400 cursor-not-allowed border border-slate-200 shadow-none'
+                      : 'bg-[#c59b48] hover:bg-[#b58b38] active:bg-[#a57b28] text-white cursor-pointer'
+                  }`}
                 >
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
                   </svg>
-                  <span>ADD TO BAG</span>
+                  <span>{isCurrentSoldOut ? 'SOLD OUT' : 'ADD TO BAG'}</span>
                 </button>
               </div>
+
+              {isCurrentSoldOut && (
+                <div className="p-3 bg-rose-50 border border-rose-200/80 rounded-xl flex items-center gap-2 text-rose-800 text-xs font-medium animate-in fade-in duration-200">
+                  <svg className="w-4 h-4 text-rose-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                  <span>This fragrance variant is currently sold out and unavailable to order.</span>
+                </div>
+              )}
             </div>
 
             {/* Trust Highlights */}
@@ -907,16 +940,20 @@ export default function ProductDetailPage() {
                   value={selectedSize}
                   onChange={(val) => setSelectedSize(val)}
                   position="top"
-                  options={sizeOptions.map((opt) => ({
-                    value: opt.size,
-                    label: `${opt.size} — Rs.${(opt.price || currentPrice).toLocaleString('en-IN')}.00`
-                  }))}
+                  options={sizeOptions.map((opt) => {
+                    const isOptSoldOut = isProductSoldOut(product, opt.size);
+                    return {
+                      value: opt.size,
+                      label: `${opt.size} — Rs.${(opt.price || currentPrice).toLocaleString('en-IN')}.00${isOptSoldOut ? ' (Sold Out)' : ''}`,
+                      disabled: isOptSoldOut
+                    };
+                  })}
                   triggerClassName="py-2.5 sm:py-3 font-bold text-slate-900 border-slate-300 shadow-2xs"
                   contentClassName="shadow-2xl border-slate-200"
                 />
               ) : (
                 <div className="px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-xs sm:text-sm font-bold text-slate-900 shadow-2xs">
-                  {selectedSize || '100ml'} — Rs.{currentPrice.toLocaleString('en-IN')}.00
+                  {selectedSize || '100ml'} — Rs.{currentPrice.toLocaleString('en-IN')}.00{isCurrentSoldOut ? ' (Sold Out)' : ''}
                 </div>
               )}
             </div>
@@ -924,13 +961,18 @@ export default function ProductDetailPage() {
             {/* Right: Add to Cart Action */}
             <button
               type="button"
-              onClick={() => addToCart(product, selectedSize, currentPrice, 1)}
-              className="flex-1 py-2.5 sm:py-3 bg-slate-900 hover:bg-black active:bg-slate-800 text-white font-sans font-bold text-xs sm:text-sm uppercase tracking-wider rounded-xl transition-all shadow-md cursor-pointer flex items-center justify-center gap-2"
+              disabled={isCurrentSoldOut}
+              onClick={() => !isCurrentSoldOut && addToCart(product, selectedSize, currentPrice, 1)}
+              className={`flex-1 py-2.5 sm:py-3 font-sans font-bold text-xs sm:text-sm uppercase tracking-wider rounded-xl transition-all shadow-md flex items-center justify-center gap-2 ${
+                isCurrentSoldOut
+                  ? 'bg-slate-200 text-slate-400 cursor-not-allowed border border-slate-200 shadow-none'
+                  : 'bg-slate-900 hover:bg-black active:bg-slate-800 text-white cursor-pointer'
+              }`}
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
               </svg>
-              <span>Add to cart</span>
+              <span>{isCurrentSoldOut ? 'Sold Out' : 'Add to cart'}</span>
             </button>
           </div>
         </div>

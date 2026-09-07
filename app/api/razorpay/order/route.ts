@@ -3,7 +3,7 @@ import Razorpay from 'razorpay';
 import { databases, APPWRITE_DATABASE_ID } from '@/lib/appwrite';
 import { ID, Query } from 'appwrite';
 import { auth } from '@clerk/nextjs/server';
-import { calculateOrderBreakdown } from '@/lib/pricing';
+import { calculateOrderBreakdown, isProductSoldOut } from '@/lib/pricing';
 
 export async function POST(req: Request) {
   try {
@@ -45,9 +45,18 @@ export async function POST(req: Request) {
 
       if (!productDoc) continue;
 
+      const resolvedSize = item.selectedSize || item.size || productDoc.volume || '100ml';
+
+      if (isProductSoldOut(productDoc, resolvedSize)) {
+        return NextResponse.json(
+          { error: `"${productDoc.name} (${resolvedSize})" is currently out of stock. Please remove it from your bag to proceed.` },
+          { status: 400 }
+        );
+      }
+
       itemsWithDocs.push({
         productDoc,
-        selectedSize: item.selectedSize || item.size || productDoc.volume || '100ml',
+        selectedSize: resolvedSize,
         quantity: Math.max(1, Math.min(100, Math.floor(Number(item.quantity) || 1)))
       });
     }

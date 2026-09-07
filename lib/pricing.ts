@@ -126,6 +126,43 @@ export function resolveProductUnitPrice(
 }
 
 /**
+ * Checks if a product or a specific size variant is sold out.
+ */
+export function isProductSoldOut(
+  productDoc: any,
+  selectedSize?: string | null
+): boolean {
+  if (!productDoc) return false;
+
+  // 1. Overall product stock check (if stock is explicitly 0 or negative)
+  if (
+    productDoc.stock !== undefined &&
+    productDoc.stock !== null &&
+    productDoc.stock !== '' &&
+    !isNaN(Number(productDoc.stock)) &&
+    Number(productDoc.stock) <= 0
+  ) {
+    return true;
+  }
+
+  // 2. Size variant specific check
+  const sizeOptions = resolveProductSizeOptions(productDoc);
+  if (sizeOptions.length > 0) {
+    const normalizedTarget = normalizeSizeKey(selectedSize || productDoc.volume || '100ml');
+    const matched = sizeOptions.find((opt) => {
+      const optKey = normalizeSizeKey(opt.size);
+      return optKey === normalizedTarget || optKey.includes(normalizedTarget) || normalizedTarget.includes(optKey);
+    });
+
+    if (matched) {
+      return Boolean(matched.isSoldOut);
+    }
+  }
+
+  return false;
+}
+
+/**
  * Validates and calculates order subtotal, item breakdowns, and discount
  */
 export function calculateOrderBreakdown(

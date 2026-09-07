@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { getProductSlug } from '../utils/slug';
 import { addRecentlyViewed } from '../utils/recentlyViewed';
 import type { Product } from '../types';
-import { resolveProductSizeOptions, resolveProductUnitPrice } from '@/lib/pricing';
+import { resolveProductSizeOptions, resolveProductUnitPrice, isProductSoldOut } from '@/lib/pricing';
 
 interface ProductCardProps {
   product: Product;
@@ -42,7 +42,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   }, [sizeOptions, product, selectedSize]);
 
   const currentPrice = currentOption.price;
-  const isCurrentlySoldOut = !!currentOption.isSoldOut;
+  const isCurrentlySoldOut = isProductSoldOut(product, selectedSize);
   const [imageLoaded, setImageLoaded] = useState(false);
 
   return (
@@ -111,20 +111,27 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         {/* Dynamic Size Selector Pills (Only when sizes are defined) */}
         {sizes.length > 0 && (
           <div className="flex items-center justify-center gap-1 sm:gap-2 mb-2 sm:mb-3 flex-wrap">
-            {sizes.map((size) => (
-              <button
-                key={size}
-                type="button"
-                onClick={() => setSelectedSize(size)}
-                className={`px-2 py-0.5 sm:px-3.5 sm:py-1 text-[10px] sm:text-xs font-sans rounded-full transition-all border cursor-pointer ${
-                  selectedSize === size
-                    ? 'bg-[#353534] text-white border-[#353534] font-bold'
-                    : 'bg-[#f5f5f5] text-slate-600 border-slate-100 hover:bg-slate-200'
-                }`}
-              >
-                {size}
-              </button>
-            ))}
+            {sizes.map((size) => {
+              const isSizeSoldOut = isProductSoldOut(product, size);
+              return (
+                <button
+                  key={size}
+                  type="button"
+                  onClick={() => setSelectedSize(size)}
+                  className={`px-2 py-0.5 sm:px-3.5 sm:py-1 text-[10px] sm:text-xs font-sans rounded-full transition-all border cursor-pointer ${
+                    selectedSize === size
+                      ? isSizeSoldOut
+                        ? 'bg-rose-100 text-rose-800 border-rose-300 font-bold'
+                        : 'bg-[#353534] text-white border-[#353534] font-bold'
+                      : isSizeSoldOut
+                      ? 'bg-slate-50 text-slate-400 border-slate-200 line-through'
+                      : 'bg-[#f5f5f5] text-slate-600 border-slate-100 hover:bg-slate-200'
+                  }`}
+                >
+                  {size}
+                </button>
+              );
+            })}
           </div>
         )}
 

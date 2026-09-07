@@ -3,7 +3,7 @@
 import { useEffect, useCallback, useRef, useSyncExternalStore } from 'react';
 import { useUser } from '@clerk/nextjs';
 import type { Product, CartItem } from '../types';
-import { resolveProductUnitPrice, resolveProductSizeOptions } from '@/lib/pricing';
+import { resolveProductUnitPrice, resolveProductSizeOptions, isProductSoldOut } from '@/lib/pricing';
 
 const CART_STORAGE_KEY = 'neesh_cart_items_v1';
 const getUserCartStorageKey = (userId: string) => `neesh_user_cart_${userId}`;
@@ -192,6 +192,13 @@ export function useCart() {
     const cleanId = getCleanProductId(product);
     const sizeOpts = resolveProductSizeOptions(product);
     const resolvedSize = size || (sizeOpts.length > 0 ? sizeOpts[0].size : product.volume || '100ml');
+
+    // Strict Out-of-Stock Guard
+    if (isProductSoldOut(product, resolvedSize)) {
+      console.warn(`[useCart] Prevented adding sold-out product to bag: ${product.name} (${resolvedSize})`);
+      return false;
+    }
+
     const resolvedPrice = unitPrice != null && unitPrice > 0 
       ? unitPrice 
       : resolveProductUnitPrice(product, resolvedSize);
@@ -223,6 +230,7 @@ export function useCart() {
 
     setCartStore(nextItems, user?.id);
     setIsCartOpen(true);
+    return true;
   }, [user?.id, setIsCartOpen]);
 
   const updateQuantity = useCallback((productId: string, delta: number, size?: string) => {
@@ -269,6 +277,14 @@ export function useCart() {
     setCartStore([], user?.id);
   }, [user?.id]);
 
+  const removeSoldOutItems = useCallback(() => {
+    initStoreIfNeeded();
+    const nextItems = cartStore.filter((item) => !isProductSoldOut(item.product, item.selectedSize));
+    setCartStore(nextItems, user?.id);
+  }, [user?.id]);
+
+  const hasSoldOutItems = cartItems.some((item) => isProductSoldOut(item.product, item.selectedSize));
+
   const totalCartCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
   const subtotal = cartItems.reduce(
     (sum, item) => sum + (item.unitPrice ?? item.product.price) * item.quantity,
@@ -285,6 +301,8 @@ export function useCart() {
     updateQuantity,
     removeItem,
     clearCart,
+    hasSoldOutItems,
+    removeSoldOutItems,
     isLoaded: isStoreLoaded
   };
 }

@@ -27,7 +27,7 @@ import { api } from './services/api';
 import { useCart } from './hooks/useCart';
 import { getProductSlug } from './utils/slug';
 import type { Product } from './types';
-import { resolveProductSizeOptions, resolveProductUnitPrice } from '@/lib/pricing';
+import { resolveProductSizeOptions, resolveProductUnitPrice, isProductSoldOut } from '@/lib/pricing';
 import { useProductsQuery } from './hooks/useQueries';
 
 export default function Page() {
@@ -346,30 +346,41 @@ export default function Page() {
                   </span>
                 </div>
 
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => {
-                      const sizeOpts = resolveProductSizeOptions(selectedProductModal);
-                      const defaultOption = sizeOpts.length > 0 ? sizeOpts[0] : null;
-                      const defaultSize = defaultOption?.size || selectedProductModal.volume || '100ml';
-                      const defaultPrice = defaultOption?.price ?? resolveProductUnitPrice(selectedProductModal, defaultSize);
+                {(() => {
+                  const sizeOpts = resolveProductSizeOptions(selectedProductModal);
+                  const defaultOption = sizeOpts.length > 0 ? sizeOpts[0] : null;
+                  const defaultSize = defaultOption?.size || selectedProductModal.volume || '100ml';
+                  const defaultPrice = defaultOption?.price ?? resolveProductUnitPrice(selectedProductModal, defaultSize);
+                  const isSoldOut = isProductSoldOut(selectedProductModal, defaultSize);
 
-                      addToCart(selectedProductModal, defaultSize, defaultPrice);
-                      setSelectedProductModal(null);
-                    }}
-                    className="flex-1 py-3 bg-[#d6a750] text-white font-sans font-bold text-xs uppercase tracking-widest rounded-md hover:bg-[#c49232] transition-colors cursor-pointer"
-                  >
-                    ADD TO BAG
-                  </button>
+                  return (
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => {
+                          if (isSoldOut) return;
+                          addToCart(selectedProductModal, defaultSize, defaultPrice);
+                          setSelectedProductModal(null);
+                        }}
+                        disabled={isSoldOut}
+                        className={`flex-1 py-3 font-sans font-bold text-xs uppercase tracking-widest rounded-md transition-colors ${
+                          isSoldOut
+                            ? 'bg-slate-200 text-slate-400 cursor-not-allowed border border-slate-200 shadow-none'
+                            : 'bg-[#d6a750] text-white hover:bg-[#c49232] cursor-pointer'
+                        }`}
+                      >
+                        {isSoldOut ? 'SOLD OUT' : 'ADD TO BAG'}
+                      </button>
 
-                  <Link
-                    href={`/products/${getProductSlug(selectedProductModal)}`}
-                    onClick={() => setSelectedProductModal(null)}
-                    className="px-4 py-3 bg-slate-900 hover:bg-black text-white font-sans font-bold text-xs uppercase tracking-widest rounded-md transition-colors text-center"
-                  >
-                    View Details
-                  </Link>
-                </div>
+                      <Link
+                        href={`/products/${getProductSlug(selectedProductModal)}`}
+                        onClick={() => setSelectedProductModal(null)}
+                        className="px-4 py-3 bg-slate-900 hover:bg-black text-white font-sans font-bold text-xs uppercase tracking-widest rounded-md transition-colors text-center"
+                      >
+                        View Details
+                      </Link>
+                    </div>
+                  );
+                })()}
               </div>
             </div>
           </div>
