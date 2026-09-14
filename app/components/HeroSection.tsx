@@ -102,11 +102,11 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onShopNow }) => {
       onMouseLeave={() => setIsHovered(false)}
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
-      className="relative w-full bg-black overflow-hidden border-b border-[#b69254]/30 select-none group min-h-[340px] sm:min-h-[460px] md:min-h-[560px]"
+      className="relative w-full bg-black overflow-hidden border-b border-[#b69254]/30 select-none group"
     >
       {/* Sliding Track */}
       <div
-        className="flex transition-transform duration-700 ease-[cubic-bezier(0.25,1,0.5,1)] w-full will-change-transform"
+        className="flex transition-transform duration-700 ease-[cubic-bezier(0.25,1,0.5,1)] w-full will-change-transform items-center"
         style={{
           transform: `translate3d(-${currentIndex * 100}%, 0, 0)`
         }}
@@ -128,17 +128,17 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onShopNow }) => {
                 loading={index === 0 ? 'eager' : 'lazy'}
                 fetchPriority={index === 0 ? 'high' : 'auto'}
                 decoding="async"
-                className="hidden md:block w-full h-auto max-h-[92vh] object-contain select-none mx-auto"
+                className="hidden md:block w-full h-auto select-none mx-auto"
               />
 
-              {/* Mobile Image Banner (Preserved for small devices) */}
+              {/* Mobile Image Banner (Full intrinsic ratio - Never crops top or text) */}
               <img
                 src={slide.mobileImage || slide.desktopImage}
                 alt={slide.name || 'Hero Banner Mobile'}
                 loading={index === 0 ? 'eager' : 'lazy'}
                 fetchPriority={index === 0 ? 'high' : 'auto'}
                 decoding="async"
-                className="block md:hidden w-full h-auto aspect-[4/5] object-cover object-center select-none"
+                className="block md:hidden w-full h-auto select-none mx-auto"
               />
             </a>
           </div>

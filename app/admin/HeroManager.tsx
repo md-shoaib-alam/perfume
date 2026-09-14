@@ -429,7 +429,7 @@ export const HeroManager: React.FC = () => {
                       alt="Desktop Banner Preview"
                       loading="lazy"
                       decoding="async"
-                      className="w-full h-full object-cover object-center"
+                      className="w-full h-full object-contain bg-black"
                     />
                   ) : (
                     <div className="flex flex-col items-center justify-center text-slate-400 text-xs">
@@ -451,7 +451,7 @@ export const HeroManager: React.FC = () => {
                       alt="Mobile Banner Preview"
                       loading="lazy"
                       decoding="async"
-                      className="w-full h-full object-cover object-center"
+                      className="w-full h-full object-contain bg-black"
                     />
                   ) : (
                     <div className="flex flex-col items-center justify-center text-slate-400 text-xs">

@@ -70,7 +70,7 @@ export const GenderCampaignBanners: React.FC<GenderCampaignBannersProps> = () =>
                   alt={item.title}
                   loading="lazy"
                   decoding="async"
-                  className="w-full h-full object-cover object-top sm:object-center"
+                  className="w-full h-full object-cover object-top"
                 />
               ) : (
                 <div className="w-full h-full bg-slate-900" />
