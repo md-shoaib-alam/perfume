@@ -61,6 +61,9 @@ export async function DELETE(req: Request) {
     await databases.deleteDocument(APPWRITE_DATABASE_ID, 'hero_slides', id);
     return NextResponse.json({ success: true });
   } catch (err: any) {
+    if (err?.code === 404 || err?.message?.includes('could not be found')) {
+      return NextResponse.json({ success: true, alreadyDeleted: true });
+    }
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }

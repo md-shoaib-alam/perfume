@@ -867,11 +867,33 @@ export const api = {
   },
 
   async deleteHeroSlide(id: string): Promise<boolean> {
+    // 1. Try server API route first
+    try {
+      const res = await fetch(`/api/hero?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
+      if (res.ok) {
+        this.invalidateHeroCache();
+        return true;
+      }
+      const data = await res.json().catch(() => null);
+      if (data?.alreadyDeleted) {
+        this.invalidateHeroCache();
+        return true;
+      }
+    } catch {
+      // Fall through to direct SDK call
+    }
+
+    // 2. Direct client SDK fallback
     try {
       await databases.deleteDocument(APPWRITE_DATABASE_ID, 'hero_slides', id);
       this.invalidateHeroCache();
       return true;
-    } catch (err) {
+    } catch (err: any) {
+      // If the document is already deleted or not found (404), treat as successfully removed
+      if (err?.code === 404 || err?.message?.includes('could not be found') || err?.message?.includes('404')) {
+        this.invalidateHeroCache();
+        return true;
+      }
       console.error('Appwrite deleteHeroSlide error:', err);
       return false;
     }

@@ -110,25 +110,58 @@ export const HeroManager: React.FC = () => {
     }
   };
 
-  const handleAddSlide = async () => {
-    const newSlide: HeroSlide = {
-      id: '',
-      name: `Promo Banner ${slides.length + 1}`,
-      desktopImage: 'https://images.unsplash.com/photo-1594035910387-fea47794261f?auto=format&fit=crop&w=1920&q=80',
-      mobileImage: 'https://images.unsplash.com/photo-1594035910387-fea47794261f?auto=format&fit=crop&w=800&q=80',
-      linkUrl: '#bestsellers'
-    };
-    try {
-      await api.saveHeroSlide(newSlide);
-      await loadSlides();
-      setActiveSlideIdx(slides.length);
-    } catch (e: any) {
+  const handleSaveCurrent = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!currentSlide.desktopImage && !currentSlide.mobileImage) {
       await showAlert({
-        title: 'Error Adding Slide',
-        message: `Failed to add slide: ${e.message}`,
+        title: 'Image Required',
+        message: 'Please upload at least a desktop or mobile banner image before saving.',
+        variant: 'warning'
+      });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await api.saveHeroSlide(currentSlide);
+
+      // Clean up replaced storage media for this slide
+      const orig = initialSlides.find((s) => (currentSlide.id && s.id === currentSlide.id) || s.name === currentSlide.name);
+      if (orig) {
+        if (orig.desktopImage && orig.desktopImage !== currentSlide.desktopImage) {
+          deleteMediaFromAppwrite(orig.desktopImage).catch(() => {});
+        }
+        if (orig.mobileImage && orig.mobileImage !== currentSlide.mobileImage) {
+          deleteMediaFromAppwrite(orig.mobileImage).catch(() => {});
+        }
+      }
+
+      await loadSlides();
+      window.dispatchEvent(new Event('neesh_hero_updated'));
+      queryClient.invalidateQueries({ queryKey: queryKeys.heroSlides });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3500);
+    } catch (err: any) {
+      await showAlert({
+        title: 'Error Saving Slide',
+        message: `Failed to save slide: ${err.message}`,
         variant: 'danger'
       });
+    } finally {
+      setLoading(false);
     }
+  };
+
+  const handleAddSlide = () => {
+    const newSlide: HeroSlide = {
+      id: '',
+      name: `Slide ${slides.length + 1}`,
+      desktopImage: '',
+      mobileImage: '',
+      linkUrl: ''
+    };
+    setSlides((prev) => [...prev, newSlide]);
+    setActiveSlideIdx(slides.length);
   };
 
   const handleDeleteSlide = async (idx: number) => {
@@ -140,6 +173,20 @@ export const HeroManager: React.FC = () => {
       });
       return;
     }
+
+    const slideToDelete = slides[idx];
+
+    // If this is an unsaved draft slide (never saved to database), discard it immediately without modal
+    if (!slideToDelete?.id) {
+      if (slideToDelete?.desktopImage) deleteMediaFromAppwrite(slideToDelete.desktopImage).catch(() => {});
+      if (slideToDelete?.mobileImage) deleteMediaFromAppwrite(slideToDelete.mobileImage).catch(() => {});
+
+      setSlides((prev) => prev.filter((_, i) => i !== idx));
+      setActiveSlideIdx(Math.max(0, idx - 1));
+      return;
+    }
+
+    // Only ask for confirmation when deleting an existing slide from Appwrite database
     const confirmed = await showConfirm({
       title: 'Delete Hero Slide',
       message: 'Are you sure you want to delete this hero banner slide?',
@@ -148,7 +195,6 @@ export const HeroManager: React.FC = () => {
     });
     if (!confirmed) return;
 
-    const slideToDelete = slides[idx];
     try {
       if (slideToDelete?.id) {
         await api.deleteHeroSlide(slideToDelete.id);
@@ -216,31 +262,10 @@ export const HeroManager: React.FC = () => {
           <button
             type="button"
             onClick={handleAddSlide}
-            className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold rounded-xl shadow-xs transition-all cursor-pointer flex items-center gap-1.5 border border-slate-200"
+            className="px-4 py-2.5 bg-[#d8a753] hover:bg-[#c69542] text-white text-xs font-bold rounded-xl shadow-xs transition-all cursor-pointer flex items-center gap-1.5"
           >
             <span>+</span>
             <span>Add Banner</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => handleSave()}
-            disabled={loading}
-            className="px-5 py-2.5 bg-[#c59b48] hover:bg-[#b58b38] text-white text-xs font-bold rounded-xl shadow-md transition-all cursor-pointer flex items-center gap-2"
-          >
-            {loading ? (
-              <>
-                <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                <span>Saving...</span>
-              </>
-            ) : (
-              <>
-                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
-                </svg>
-                <span>Save All Slides</span>
-              </>
-            )}
           </button>
         </div>
       </div>
@@ -284,7 +309,7 @@ export const HeroManager: React.FC = () => {
         {/* Left Side: Configure Slide Form (7 Columns) */}
         <div className="lg:col-span-7">
           {/* Slide Editor Form */}
-          <form onSubmit={handleSave} className="bg-white p-5 sm:p-7 rounded-2xl border border-slate-200 shadow-xs space-y-5 text-xs">
+          <form onSubmit={handleSaveCurrent} className="bg-white p-5 sm:p-7 rounded-2xl border border-slate-200 shadow-xs space-y-5 text-xs">
             <div className="flex justify-between items-center pb-3 border-b border-slate-100">
               <h3 className="font-bold text-base text-slate-900">
                 Configure Slide #{activeSlideIdx + 1}: {currentSlide.name}
@@ -358,20 +383,32 @@ export const HeroManager: React.FC = () => {
                   </span>
                 )}
               </div>
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full sm:w-auto px-8 py-3 bg-[#c59b48] hover:bg-[#b58b38] text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow-md transition-all cursor-pointer flex items-center justify-center gap-2"
-              >
-                {loading ? (
-                  <>
-                    <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    <span>Saving...</span>
-                  </>
-                ) : (
-                  <span>Save All Banner Slides</span>
-                )}
-              </button>
+              <div className="flex items-center gap-3 w-full sm:w-auto">
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="flex-1 sm:flex-initial px-6 py-3 bg-[#d8a753] hover:bg-[#c69542] active:bg-[#b58434] text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow-xs transition-all cursor-pointer flex items-center justify-center gap-2"
+                >
+                  {loading ? (
+                    <>
+                      <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <span>Saving...</span>
+                    </>
+                  ) : (
+                    <span>Save This Banner</span>
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleSave()}
+                  disabled={loading}
+                  className="flex-1 sm:flex-initial px-5 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2"
+                  title="Save all configured slides at once"
+                >
+                  <span>Save All Slides</span>
+                </button>
+              </div>
             </div>
           </form>
         </div>

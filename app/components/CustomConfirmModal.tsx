@@ -33,7 +33,7 @@ const DialogIcon: React.FC<{ variant: DialogVariant }> = ({ variant }) => {
   switch (variant) {
     case 'danger':
       return (
-        <div className="w-11 h-11 rounded-2xl bg-rose-50 border border-rose-200/70 flex items-center justify-center text-rose-600 shrink-0">
+        <div className="w-11 h-11 rounded-2xl bg-amber-50 border border-amber-200/80 flex items-center justify-center text-[#caa04c] shrink-0">
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
           </svg>
@@ -41,7 +41,7 @@ const DialogIcon: React.FC<{ variant: DialogVariant }> = ({ variant }) => {
       );
     case 'warning':
       return (
-        <div className="w-11 h-11 rounded-2xl bg-amber-50 border border-amber-200/80 flex items-center justify-center text-amber-600 shrink-0">
+        <div className="w-11 h-11 rounded-2xl bg-amber-50 border border-amber-200/80 flex items-center justify-center text-[#caa04c] shrink-0">
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
           </svg>
@@ -58,7 +58,7 @@ const DialogIcon: React.FC<{ variant: DialogVariant }> = ({ variant }) => {
     case 'info':
     default:
       return (
-        <div className="w-11 h-11 rounded-2xl bg-amber-50/70 border border-[#caa04c]/40 flex items-center justify-center text-[#b88f3e] shrink-0">
+        <div className="w-11 h-11 rounded-2xl bg-amber-50 border border-amber-200/80 flex items-center justify-center text-[#caa04c] shrink-0">
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
@@ -183,31 +183,31 @@ export const ConfirmProvider: React.FC<{ children: ReactNode }> = ({ children })
             className="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px] transition-opacity animate-fade-in"
           />
 
-          {/* Simple Clean Modern Dialog Card */}
-          <div className="relative bg-white border border-slate-200 text-slate-900 w-full max-w-sm rounded-2xl p-5 shadow-2xl shadow-slate-900/15 font-sans z-10 animate-scale-up space-y-4">
+          {/* Refined Luxury Modal Card */}
+          <div className="relative bg-white border border-slate-200/90 text-slate-900 w-full max-w-md rounded-3xl p-6 sm:p-7 shadow-2xl shadow-slate-900/10 font-sans z-10 animate-scale-up space-y-5">
             
-            {/* Header with Icon and Simplified Text */}
-            <div className="flex items-start gap-3">
+            {/* Header with Luxury Badge & Clean Typography */}
+            <div className="flex items-start gap-4">
               <DialogIcon variant={variant} />
 
               <div className="flex-1 min-w-0 pt-0.5">
-                <h3 id="dialog-title" className="text-sm sm:text-base font-bold text-slate-900 tracking-tight">
+                <h3 id="dialog-title" className="text-base sm:text-lg font-serif font-bold text-slate-900 tracking-tight">
                   {title}
                 </h3>
-                <p id="dialog-description" className="text-xs text-slate-600 mt-1 leading-relaxed">
+                <p id="dialog-description" className="text-xs sm:text-sm text-slate-500 mt-1.5 leading-relaxed">
                   {message}
                 </p>
               </div>
             </div>
 
             {/* Actions Button Group */}
-            <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+            <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
               {!isAlertMode && (
                 <button
                   type="button"
                   onClick={handleCancel}
                   disabled={loading}
-                  className="px-3.5 py-1.5 rounded-lg border border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold transition-colors cursor-pointer"
+                  className="px-5 py-2.5 rounded-xl border border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer"
                 >
                   {cancelText}
                 </button>
@@ -218,11 +218,7 @@ export const ConfirmProvider: React.FC<{ children: ReactNode }> = ({ children })
                 type="button"
                 onClick={handleConfirm}
                 disabled={loading}
-                className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer shadow-xs ${
-                  variant === 'danger'
-                    ? 'bg-rose-600 hover:bg-rose-700 text-white shadow-rose-600/20'
-                    : 'bg-[#caa04c] hover:bg-[#b88f3e] text-white shadow-amber-500/20'
-                }`}
+                className="px-6 py-2.5 rounded-xl bg-[#d8a753] hover:bg-[#c69542] active:bg-[#b58434] text-white text-xs font-bold uppercase tracking-wider transition-all shadow-xs cursor-pointer disabled:opacity-75"
               >
                 {loading ? 'Processing...' : confirmText}
               </button>
