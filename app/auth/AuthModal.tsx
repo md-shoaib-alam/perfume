@@ -11,7 +11,7 @@ interface AuthModalProps {
   initialMode?: 'signin' | 'signup';
 }
 
-type AuthStep = 'identifier' | 'link_email' | 'otp';
+type AuthStep = 'identifier' | 'password' | 'link_email' | 'otp';
 
 export const AuthModal: React.FC<AuthModalProps> = ({
   isOpen,
@@ -23,6 +23,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   
   const [mobileNumber, setMobileNumber] = useState('');
   const [emailAddress, setEmailAddress] = useState('');
+  const [passwordInput, setPasswordInput] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [hasPasswordFactor, setHasPasswordFactor] = useState(false);
+  const [emailAddressId, setEmailAddressId] = useState<string | null>(null);
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   
   const [isLoading, setIsLoading] = useState(false);
@@ -40,6 +44,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       setActiveAuthType('signup');
       setMobileNumber('');
       setEmailAddress('');
+      setPasswordInput('');
+      setShowPassword(false);
+      setHasPasswordFactor(false);
+      setEmailAddressId(null);
       setOtp(['', '', '', '', '', '']);
       setErrorMsg('');
       setSuccessMsg('');
@@ -185,10 +193,27 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             identifier: cleanEmail,
           });
 
+          const pwdFactor = signInAttempt.supportedFirstFactors?.find(
+            (f: any) => f.strategy === 'password'
+          );
           const emailFactor = signInAttempt.supportedFirstFactors?.find(
             (f: any) => f.strategy === 'email_code'
           );
 
+          if (emailFactor && 'emailAddressId' in emailFactor) {
+            setEmailAddressId(emailFactor.emailAddressId);
+          }
+
+          // If user has a password set on their account, present password step first
+          if (pwdFactor) {
+            setHasPasswordFactor(true);
+            setActiveAuthType('signin');
+            setStep('password');
+            setIsLoading(false);
+            return;
+          }
+
+          // Otherwise, fall back to email OTP
           if (emailFactor && 'emailAddressId' in emailFactor) {
             await signInAttempt.prepareFirstFactor({
               strategy: 'email_code',
@@ -201,7 +226,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             setIsLoading(false);
             return;
           } else {
-            throw new Error('Email OTP is not enabled for this account. Please sign in with password or Google.');
+            throw new Error('Please sign in with password, reset link, or Google.');
           }
         }
 
@@ -318,6 +343,125 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     }
   };
 
+  // Handle Password Sign-In
+  const handlePasswordSignIn = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!passwordInput) {
+      setErrorMsg('Please enter your password.');
+      return;
+    }
+
+    setIsLoading(true);
+    setErrorMsg('');
+
+    try {
+      const client = await getClerkClient();
+      if (!client?.signIn) {
+        throw new Error('Authentication client is not available.');
+      }
+
+      const result = await client.signIn.attemptFirstFactor({
+        strategy: 'password',
+        password: passwordInput,
+      });
+
+      if (result.status === 'complete' && clerk.setActive) {
+        await clerk.setActive({ session: result.createdSessionId });
+        setSuccessMsg('Signed in successfully! Welcome to BakhoorBliss.');
+        setTimeout(() => {
+          setIsLoading(false);
+          onClose();
+        }, 600);
+        return;
+      }
+
+      setErrorMsg('Unable to complete sign in. Please verify your password.');
+      setIsLoading(false);
+    } catch (err: any) {
+      console.error('Password sign in error:', err);
+      const msg =
+        err?.errors?.[0]?.longMessage ||
+        err?.errors?.[0]?.message ||
+        'Incorrect password. Please verify your credentials or sign in with OTP.';
+      setErrorMsg(msg);
+      setIsLoading(false);
+    }
+  };
+
+  // Handle Switch from Password to Email OTP
+  const handleSwitchToOtp = async () => {
+    setIsLoading(true);
+    setErrorMsg('');
+
+    try {
+      const client = await getClerkClient();
+      if (!client?.signIn) {
+        throw new Error('Authentication client is not available.');
+      }
+
+      let activeEmailId = emailAddressId;
+      if (!activeEmailId) {
+        const emailFactor = client.signIn.supportedFirstFactors?.find(
+          (f: any) => f.strategy === 'email_code'
+        );
+        if (emailFactor && 'emailAddressId' in emailFactor) {
+          activeEmailId = emailFactor.emailAddressId;
+          setEmailAddressId(activeEmailId);
+        }
+      }
+
+      if (activeEmailId) {
+        await client.signIn.prepareFirstFactor({
+          strategy: 'email_code',
+          emailAddressId: activeEmailId,
+        });
+        setActiveAuthType('signin');
+        setStep('otp');
+        setResendTimer(30);
+      } else {
+        await client.signIn.create({
+          strategy: 'reset_password_email_code',
+          identifier: emailAddress,
+        });
+        setSuccessMsg('Password reset instructions have been sent to your email.');
+      }
+    } catch (err: any) {
+      console.error('Error switching to OTP:', err);
+      const msg =
+        err?.errors?.[0]?.longMessage ||
+        err?.errors?.[0]?.message ||
+        'Failed to send OTP code. Please try again.';
+      setErrorMsg(msg);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Handle Send Password Reset Link
+  const handleForgotPassword = async () => {
+    setIsLoading(true);
+    setErrorMsg('');
+    try {
+      const client = await getClerkClient();
+      if (!client?.signIn) throw new Error('Authentication client is not available.');
+
+      await client.signIn.create({
+        strategy: 'reset_password_email_code',
+        identifier: emailAddress,
+      });
+      setSuccessMsg('If an account exists for this email, we have sent password reset instructions.');
+    } catch (err: any) {
+      console.error('Forgot password error:', err);
+      const msg =
+        err?.errors?.[0]?.longMessage ||
+        err?.errors?.[0]?.message ||
+        'Failed to send password reset email.';
+      setErrorMsg(msg);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // Handle Social OAuth (Google / Apple)
   const handleOAuth = async (provider: 'oauth_google' | 'oauth_apple') => {
     try {
@@ -382,34 +526,62 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs transition-opacity duration-300 animate-fade-in-up">
       <div className="relative w-full max-w-[420px] bg-white rounded-3xl p-7 sm:p-9 shadow-2xl text-slate-900 font-sans border border-slate-100 transition-all duration-300">
         
-        {/* Top Navigation: Back Button (on steps 2 & 3) & Close Button */}
-        <div className="flex items-center justify-between mb-4">
-          {step !== 'identifier' ? (
+        {/* Top Header Row: Back Button (Left), Logo (Center), Close Button (Right) */}
+        <div className="flex items-center justify-between mb-6 min-h-[36px]">
+          {/* Left: Back Button */}
+          <div className="w-14 flex items-center justify-start">
+            {step !== 'identifier' && (
+              <button
+                type="button"
+                onClick={() => {
+                  setErrorMsg('');
+                  setSuccessMsg('');
+                  if (step === 'password') {
+                    setStep('identifier');
+                  } else if (step === 'otp') {
+                    if (hasPasswordFactor) {
+                      setStep('password');
+                    } else if (emailAddress && mobileNumber && mobileNumber !== emailAddress) {
+                      setStep('link_email');
+                    } else {
+                      setStep('identifier');
+                    }
+                  } else if (step === 'link_email') {
+                    setStep('identifier');
+                  }
+                }}
+                className="text-slate-500 hover:text-slate-900 text-xs font-semibold uppercase tracking-wider transition-colors cursor-pointer flex items-center gap-1"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                </svg>
+                <span>Back</span>
+              </button>
+            )}
+          </div>
+
+          {/* Center: Brand Logo */}
+          <div className="flex-1 flex justify-center items-center">
+            <img 
+              src="/assets/bakhoorblissnav.avif" 
+              alt="Bakhoor Bliss" 
+              className="h-10 sm:h-11 w-auto object-contain" 
+            />
+          </div>
+
+          {/* Right: Close Button */}
+          <div className="w-14 flex items-center justify-end">
             <button
               type="button"
-              onClick={() => {
-                setErrorMsg('');
-                if (step === 'otp') setStep('link_email');
-                else if (step === 'link_email') setStep('identifier');
-              }}
-              className="text-slate-500 hover:text-slate-900 text-sm font-medium transition-colors cursor-pointer flex items-center gap-1"
+              onClick={onClose}
+              className="text-slate-400 hover:text-slate-800 transition-colors p-1 cursor-pointer rounded-full hover:bg-slate-100"
+              aria-label="Close"
             >
-              Back
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
             </button>
-          ) : (
-            <div />
-          )}
-
-          <button
-            type="button"
-            onClick={onClose}
-            className="text-slate-400 hover:text-slate-800 transition-colors p-1 cursor-pointer"
-            aria-label="Close"
-          >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
+          </div>
         </div>
 
         {/* ------------------------------------------------------------- */}
@@ -515,6 +687,117 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             </p>
 
             <div className="flex items-center justify-center gap-1 text-[11px] text-slate-400">
+              <span>Secured by</span>
+              <span className="font-extrabold tracking-wider text-slate-800">AXENTRA</span>
+            </div>
+          </div>
+        )}
+
+        {/* ------------------------------------------------------------- */}
+        {/* STEP: Password Verification                                  */}
+        {/* ------------------------------------------------------------- */}
+        {step === 'password' && (
+          <div className="animate-fade-in-up">
+            <div className="text-center mb-6">
+              <h2 className="text-2xl sm:text-[28px] font-bold text-[#1f2937] tracking-tight mb-2">
+                Enter Password
+              </h2>
+              <p className="text-xs sm:text-[13px] text-slate-500 leading-relaxed px-2">
+                Welcome back, <span className="font-semibold text-slate-800">{emailAddress}</span>
+              </p>
+            </div>
+
+            <form onSubmit={handlePasswordSignIn} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
+                  Password <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    value={passwordInput}
+                    onChange={(e) => setPasswordInput(e.target.value)}
+                    placeholder="Enter your password"
+                    className="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl text-slate-900 text-sm focus:outline-none focus:border-[#caa04c] focus:ring-1 focus:ring-[#caa04c] transition-all placeholder:text-slate-400 pr-11"
+                    autoFocus
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+                  >
+                    {showPassword ? (
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18" />
+                      </svg>
+                    ) : (
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                      </svg>
+                    )}
+                  </button>
+                </div>
+                <div className="flex justify-end pt-1.5">
+                  <button
+                    type="button"
+                    onClick={handleForgotPassword}
+                    className="text-xs text-[#caa04c] hover:underline font-medium cursor-pointer"
+                  >
+                    Forgot Password?
+                  </button>
+                </div>
+              </div>
+
+              {errorMsg && (
+                <p className="text-xs text-red-500 text-center font-medium">{errorMsg}</p>
+              )}
+              {successMsg && (
+                <p className="text-xs text-emerald-600 text-center font-semibold">{successMsg}</p>
+              )}
+
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="w-full py-3.5 bg-[#d8a753] hover:bg-[#c69542] active:bg-[#b58434] text-white font-bold text-sm tracking-wide rounded-xl transition-all shadow-xs cursor-pointer flex items-center justify-center disabled:opacity-90"
+              >
+                {isLoading ? (
+                  <span className="flex items-center gap-2">
+                    <svg className="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    <span>Signing in...</span>
+                  </span>
+                ) : (
+                  <span>Sign In</span>
+                )}
+              </button>
+
+              <div className="relative my-4 text-center">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-slate-200" />
+                </div>
+                <span className="relative bg-white px-3 text-xs text-slate-400">
+                  or
+                </span>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleSwitchToOtp}
+                disabled={isLoading}
+                className="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs tracking-wider uppercase rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5"
+              >
+                <svg className="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+                <span>Sign In with Email OTP Instead</span>
+              </button>
+            </form>
+
+            <div className="flex items-center justify-center gap-1 text-[11px] text-slate-400 mt-6">
               <span>Secured by</span>
               <span className="font-extrabold tracking-wider text-slate-800">AXENTRA</span>
             </div>

@@ -21,6 +21,7 @@ import { AccountSidebar } from './account/AccountSidebar';
 import { DashboardTab } from './account/DashboardTab';
 import { OrdersTab } from './account/OrdersTab';
 import { RecentlyViewedTab } from './account/RecentlyViewedTab';
+import { PasswordTab } from './account/PasswordTab';
 
 export const AccountView: React.FC<AccountViewProps> = ({
   onClose,
@@ -903,30 +904,7 @@ export const AccountView: React.FC<AccountViewProps> = ({
         {/* TAB 6: CHANGE PASSWORD                                      */}
         {/* ----------------------------------------------------------- */}
         {activeTab === 'password' && (
-          <div className="bg-white rounded-2xl p-6 sm:p-8 border border-slate-100 shadow-2xs space-y-6">
-            <div>
-              <h3 className="text-base font-bold text-slate-900">Security & Password</h3>
-              <p className="text-xs text-slate-400">Update your credentials or trigger an instant password reset link.</p>
-            </div>
-
-            <div className="p-5 bg-slate-50 rounded-2xl border border-slate-200">
-              <p className="text-xs text-slate-700 leading-relaxed mb-4">
-                Click the button below to send a secure password reset link to your verified email: <br />
-                <strong className="text-slate-900">{email}</strong>
-              </p>
-              <button
-                type="button"
-                onClick={handleSendPasswordReset}
-                className="px-5 py-2.5 bg-[#d8a753] hover:bg-[#c69542] text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer transition-all"
-              >
-                Send Password Reset Link
-              </button>
-
-              {pwdMsg && (
-                <p className="text-xs text-emerald-600 font-semibold mt-3">{pwdMsg}</p>
-              )}
-            </div>
-          </div>
+          <PasswordTab />
         )}
       </main>
     </div>
