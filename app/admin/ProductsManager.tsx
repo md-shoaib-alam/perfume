@@ -72,6 +72,7 @@ export const ProductsManager: React.FC = () => {
     isBestseller: false,
     isNew: false,
     isPreOrder: false,
+    isComingSoon: false,
     stock: 100,
     sizeOptions: [
       { size: '15ml', price: 1900, isSoldOut: false },
@@ -251,6 +252,7 @@ export const ProductsManager: React.FC = () => {
       isBestseller: false,
       isNew: false,
       isPreOrder: false,
+      isComingSoon: false,
       stock: 100,
       sizeOptions: [
         { size: '15ml', price: 1900, isSoldOut: false },
@@ -483,6 +485,11 @@ export const ProductsManager: React.FC = () => {
                         PRE-ORDER
                       </span>
                     )}
+                    {prod.isComingSoon && (
+                      <span className="px-1.5 py-0.5 bg-indigo-100 text-indigo-800 text-[9px] font-bold rounded">
+                        COMING SOON
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
@@ -628,7 +635,12 @@ export const ProductsManager: React.FC = () => {
                             PRE-ORDER
                           </span>
                         )}
-                        {!prod.isBestseller && !prod.isPreOrder && (
+                        {prod.isComingSoon && (
+                          <span className="px-2 py-0.5 bg-indigo-100 text-indigo-800 text-[10px] font-bold rounded">
+                            COMING SOON
+                          </span>
+                        )}
+                        {!prod.isBestseller && !prod.isPreOrder && !prod.isComingSoon && (
                           <span className="text-[11px] text-slate-400 font-medium">Standard</span>
                         )}
                       </div>

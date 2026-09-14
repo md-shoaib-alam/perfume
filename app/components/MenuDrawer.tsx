@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useUser, useClerk } from '@clerk/nextjs';
+import { toast } from 'sonner';
 import { api } from '../services/api';
 import type { Product } from '../types';
 
@@ -312,6 +313,7 @@ export const MenuDrawer: React.FC<MenuDrawerProps> = ({
                         onClick={async () => {
                           onClose();
                           await signOut();
+                          toast.success('Signed out successfully.');
                         }}
                         className="w-full py-2.5 bg-white hover:bg-red-50 text-red-500 border border-red-200 font-bold text-xs uppercase tracking-wider rounded-xl transition-colors cursor-pointer flex items-center justify-center gap-2"
                       >

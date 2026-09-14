@@ -249,7 +249,7 @@ export const DashboardOverview: React.FC<{ onNavigateTo?: (tab: string) => void 
                         {item.name} ({item.volume})
                       </h5>
                       <p className={`text-[11px] ${item.isLow ? 'text-amber-700' : 'text-slate-600'}`}>
-                        {item.stock} units in stock {item.isPreOrder ? '• Pre-order Active' : ''}
+                        {item.stock} units in stock {item.isComingSoon ? '• Coming Soon' : item.isPreOrder ? '• Pre-order Active' : ''}
                       </p>
                     </div>
                     <span

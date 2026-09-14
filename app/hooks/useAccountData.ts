@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useUser, useClerk } from '@clerk/nextjs';
+import { toast } from 'sonner';
 import { api } from '../services/api';
 import { getRecentlyViewed } from '../utils/recentlyViewed';
 import type { Product } from '../types';
@@ -182,6 +183,7 @@ export function useAccountData(onLogoutCallback?: () => void) {
 
   const handleLogout = async () => {
     await signOut();
+    toast.success('Signed out successfully.');
     if (onLogoutCallback) {
       onLogoutCallback();
     }

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useClerk, useUser } from '@clerk/nextjs';
+import { toast } from 'sonner';
 import { api } from '@/app/services/api';
 
 type AuthStep = 'identifier' | 'password' | 'link_email' | 'otp';
@@ -303,6 +304,7 @@ export default function CustomSignInPage() {
         const result = await client.signUp.attemptEmailAddressVerification({ code });
         if (result.status === 'complete' && clerk.setActive) {
           await clerk.setActive({ session: result.createdSessionId });
+          toast.success('Account created & verified! Welcome to BakhoorBliss.');
           setSuccessMsg('Account created & verified! Welcome to BakhoorBliss.');
           setTimeout(() => {
             router.push('/');
@@ -317,6 +319,7 @@ export default function CustomSignInPage() {
 
         if (result.status === 'complete' && clerk.setActive) {
           await clerk.setActive({ session: result.createdSessionId });
+          toast.success('Signed in successfully! Welcome to BakhoorBliss.');
           setSuccessMsg('Signed in successfully! Welcome to BakhoorBliss.');
           setTimeout(() => {
             router.push('/');
@@ -358,6 +361,7 @@ export default function CustomSignInPage() {
 
       if (result.status === 'complete' && clerk.setActive) {
         await clerk.setActive({ session: result.createdSessionId });
+        toast.success('Signed in successfully! Welcome to BakhoorBliss.');
         setSuccessMsg('Signed in successfully! Welcome to BakhoorBliss.');
         setTimeout(() => {
           router.push(effectiveTarget || '/');
@@ -437,7 +441,7 @@ export default function CustomSignInPage() {
         strategy: 'reset_password_email_code',
         identifier: emailAddress,
       });
-      setSuccessMsg('If an account exists for this email, we have sent password reset instructions.');
+      toast.success('If an account exists for this email, we have sent password reset instructions.');
     } catch (err: any) {
       console.error('Forgot password error:', err);
       const msg =
@@ -701,7 +705,7 @@ export default function CustomSignInPage() {
 
               <p className="text-[11px] text-slate-400 text-center mb-5">
                 By continuing, you agree to our{' '}
-                <a href="#" className="underline hover:text-slate-600">
+                <a href="/terms-of-service" className="underline hover:text-slate-600">
                   Terms of Service
                 </a>
                 .
@@ -771,9 +775,6 @@ export default function CustomSignInPage() {
                 {errorMsg && (
                   <p className="text-xs text-red-500 text-center font-medium">{errorMsg}</p>
                 )}
-                {successMsg && (
-                  <p className="text-xs text-emerald-600 text-center font-semibold">{successMsg}</p>
-                )}
 
                 <button
                   type="submit"
@@ -811,7 +812,7 @@ export default function CustomSignInPage() {
                   <svg className="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                   </svg>
-                  <span>Sign In with Email OTP Instead</span>
+                  <span>Sign In with OTP</span>
                 </button>
               </form>
 

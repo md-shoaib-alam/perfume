@@ -16,6 +16,7 @@ const CartDrawer = dynamic(() => import('../../components/CartDrawer').then((m) 
 const MenuDrawer = dynamic(() => import('../../components/MenuDrawer').then((m) => m.MenuDrawer), { ssr: false });
 const AuthModal = dynamic(() => import('../../auth/AuthModal').then((m) => m.AuthModal), { ssr: false });
 const AccountDashboard = dynamic(() => import('../../components/AccountDashboard').then((m) => m.AccountDashboard), { ssr: false });
+const NotifyModal = dynamic(() => import('../../components/NotifyModal').then((m) => m.NotifyModal), { ssr: false });
 
 import { api } from '../../services/api';
 import { LuxurySelect } from '../../components/ui/LuxurySelect';
@@ -155,6 +156,7 @@ export default function ProductDetailPage() {
   const [isAccountOpen, setIsAccountOpen] = useState<boolean>(false);
   const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin');
   const [isWritingReview, setIsWritingReview] = useState<boolean>(false);
+  const [isNotifyOpen, setIsNotifyOpen] = useState<boolean>(false);
 
   // Sticky Bottom Add-to-Cart Bar state
   const [showStickyBar, setShowStickyBar] = useState<boolean>(false);
@@ -551,6 +553,23 @@ export default function ProductDetailPage() {
                 className="w-full h-full object-cover transition-opacity duration-300 pointer-events-none"
               />
 
+              {/* Coming Soon / Sold Out Badge Overlay on Product Detail Image */}
+              {product.isComingSoon ? (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/10 backdrop-blur-2xs pointer-events-none">
+                  <div className="w-18 h-18 sm:w-22 sm:h-22 rounded-full bg-white/95 backdrop-blur-xs flex flex-col items-center justify-center text-center shadow-lg border border-slate-100 p-2">
+                    <span className="text-[11px] sm:text-xs font-extrabold tracking-wider leading-tight text-slate-900">COMING</span>
+                    <span className="text-[11px] sm:text-xs font-extrabold tracking-wider leading-tight text-slate-900">SOON</span>
+                  </div>
+                </div>
+              ) : isCurrentSoldOut ? (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/10 backdrop-blur-2xs pointer-events-none">
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-white/95 backdrop-blur-xs flex flex-col items-center justify-center text-center shadow-lg border border-slate-100 p-2">
+                    <span className="text-[10px] sm:text-xs font-extrabold tracking-wider leading-tight text-slate-900">SOLD</span>
+                    <span className="text-[10px] sm:text-xs font-extrabold tracking-wider leading-tight text-slate-900">OUT</span>
+                  </div>
+                </div>
+              ) : null}
+
               {/* Pagination Indicator Dots on Mobile */}
               {imagesList.length > 1 && (
                 <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 bg-black/35 backdrop-blur-xs px-2.5 py-1 rounded-full md:hidden">
@@ -650,9 +669,18 @@ export default function ProductDetailPage() {
                   </span>
                 )}
               </div>
-              <p className="text-[11px] text-slate-500 font-sans mt-1">
-                Tax included
-              </p>
+              <div className="flex items-center justify-between mt-1 text-[11px] font-sans">
+                <span className="text-slate-500">Tax included</span>
+                {product.isComingSoon ? (
+                  <span className="font-semibold text-amber-600">
+                    Launching Soon • Reserve Your Scent
+                  </span>
+                ) : product.isPreOrder && product.shippingNote ? (
+                  <span className="font-semibold text-emerald-600">
+                    {product.shippingNote}
+                  </span>
+                ) : null}
+              </div>
             </div>
 
             {/* Size Selector Pills */}
@@ -692,49 +720,67 @@ export default function ProductDetailPage() {
               </div>
             )}
 
-            {/* Quantity Counter & Add to Bag */}
+            {/* Quantity Counter & Add to Bag / Notify Me Action */}
             <div ref={mainAddToCartRef} className="space-y-3 pt-2">
-              <div className="flex items-center gap-3">
-                {/* Quantity */}
-                <div className={`flex items-center border border-slate-300 rounded-xl bg-white px-2 py-1 ${isCurrentSoldOut ? 'opacity-40 pointer-events-none' : ''}`}>
+              {product.isComingSoon ? (
+                <div className="space-y-3">
                   <button
                     type="button"
-                    disabled={isCurrentSoldOut}
-                    onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                    className="w-8 h-8 flex items-center justify-center text-slate-600 hover:text-black font-bold text-sm"
+                    onClick={() => setIsNotifyOpen(true)}
+                    className="w-full py-4 font-sans font-bold text-xs uppercase tracking-widest rounded-xl transition-all shadow-md flex items-center justify-center gap-2.5 bg-[#d8a753] hover:bg-[#c69542] active:bg-[#b58434] text-white cursor-pointer active:scale-[0.99]"
                   >
-                    -
+                    <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                    </svg>
+                    <span>NOTIFY ME WHEN AVAILABLE</span>
                   </button>
-                  <span className="w-8 text-center text-xs font-bold text-slate-900">{quantity}</span>
+                  <p className="text-[11px] text-slate-500 text-center font-sans">
+                    This creation is coming soon. Enter your details to get first access.
+                  </p>
+                </div>
+              ) : (
+                <div className="flex items-center gap-3">
+                  {/* Quantity */}
+                  <div className={`flex items-center border border-slate-300 rounded-xl bg-white px-2 py-1 ${isCurrentSoldOut ? 'opacity-40 pointer-events-none' : ''}`}>
+                    <button
+                      type="button"
+                      disabled={isCurrentSoldOut}
+                      onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                      className="w-8 h-8 flex items-center justify-center text-slate-600 hover:text-black font-bold text-sm"
+                    >
+                      -
+                    </button>
+                    <span className="w-8 text-center text-xs font-bold text-slate-900">{quantity}</span>
+                    <button
+                      type="button"
+                      disabled={isCurrentSoldOut}
+                      onClick={() => setQuantity((q) => q + 1)}
+                      className="w-8 h-8 flex items-center justify-center text-slate-600 hover:text-black font-bold text-sm"
+                    >
+                      +
+                    </button>
+                  </div>
+
+                  {/* Add to Bag Button */}
                   <button
                     type="button"
                     disabled={isCurrentSoldOut}
-                    onClick={() => setQuantity((q) => q + 1)}
-                    className="w-8 h-8 flex items-center justify-center text-slate-600 hover:text-black font-bold text-sm"
+                    onClick={() => !isCurrentSoldOut && addToCart(product, selectedSize, currentPrice, quantity)}
+                    className={`flex-1 py-3.5 font-sans font-bold text-xs uppercase tracking-widest rounded-xl transition-all shadow-md flex items-center justify-center gap-2 ${
+                      isCurrentSoldOut
+                        ? 'bg-slate-200 text-slate-400 cursor-not-allowed border border-slate-200 shadow-none'
+                        : 'bg-[#c59b48] hover:bg-[#b58b38] active:bg-[#a57b28] text-white cursor-pointer'
+                    }`}
                   >
-                    +
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                    </svg>
+                    <span>{isCurrentSoldOut ? 'SOLD OUT' : (product.isPreOrder ? (product.buttonText || 'PRE-ORDER') : 'ADD TO BAG')}</span>
                   </button>
                 </div>
+              )}
 
-                {/* Add to Bag Button */}
-                <button
-                  type="button"
-                  disabled={isCurrentSoldOut}
-                  onClick={() => !isCurrentSoldOut && addToCart(product, selectedSize, currentPrice, quantity)}
-                  className={`flex-1 py-3.5 font-sans font-bold text-xs uppercase tracking-widest rounded-xl transition-all shadow-md flex items-center justify-center gap-2 ${
-                    isCurrentSoldOut
-                      ? 'bg-slate-200 text-slate-400 cursor-not-allowed border border-slate-200 shadow-none'
-                      : 'bg-[#c59b48] hover:bg-[#b58b38] active:bg-[#a57b28] text-white cursor-pointer'
-                  }`}
-                >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-                  </svg>
-                  <span>{isCurrentSoldOut ? 'SOLD OUT' : 'ADD TO BAG'}</span>
-                </button>
-              </div>
-
-              {isCurrentSoldOut && (
+              {!product.isComingSoon && isCurrentSoldOut && (
                 <div className="p-3 bg-rose-50 border border-rose-200/80 rounded-xl flex items-center gap-2 text-rose-800 text-xs font-medium animate-in fade-in duration-200">
                   <svg className="w-4 h-4 text-rose-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
@@ -958,22 +1004,35 @@ export default function ProductDetailPage() {
               )}
             </div>
 
-            {/* Right: Add to Cart Action */}
-            <button
-              type="button"
-              disabled={isCurrentSoldOut}
-              onClick={() => !isCurrentSoldOut && addToCart(product, selectedSize, currentPrice, 1)}
-              className={`flex-1 py-2.5 sm:py-3 font-sans font-bold text-xs sm:text-sm uppercase tracking-wider rounded-xl transition-all shadow-md flex items-center justify-center gap-2 ${
-                isCurrentSoldOut
-                  ? 'bg-slate-200 text-slate-400 cursor-not-allowed border border-slate-200 shadow-none'
-                  : 'bg-slate-900 hover:bg-black active:bg-slate-800 text-white cursor-pointer'
-              }`}
-            >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-              </svg>
-              <span>{isCurrentSoldOut ? 'Sold Out' : 'Add to cart'}</span>
-            </button>
+            {/* Right: Add to Cart or Notify Me Action */}
+            {product.isComingSoon ? (
+              <button
+                type="button"
+                onClick={() => setIsNotifyOpen(true)}
+                className="flex-1 py-2.5 sm:py-3 font-sans font-bold text-xs sm:text-sm uppercase tracking-wider rounded-xl transition-all shadow-md flex items-center justify-center gap-2 bg-[#d8a753] hover:bg-[#c69542] active:bg-[#b58434] text-white cursor-pointer"
+              >
+                <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                </svg>
+                <span>Notify Me</span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                disabled={isCurrentSoldOut}
+                onClick={() => !isCurrentSoldOut && addToCart(product, selectedSize, currentPrice, 1)}
+                className={`flex-1 py-2.5 sm:py-3 font-sans font-bold text-xs sm:text-sm uppercase tracking-wider rounded-xl transition-all shadow-md flex items-center justify-center gap-2 ${
+                  isCurrentSoldOut
+                    ? 'bg-slate-200 text-slate-400 cursor-not-allowed border border-slate-200 shadow-none'
+                    : 'bg-slate-900 hover:bg-black active:bg-slate-800 text-white cursor-pointer'
+                }`}
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                </svg>
+                <span>{isCurrentSoldOut ? 'Sold Out' : (product.isPreOrder ? (product.buttonText || 'Pre-Order') : 'Add to cart')}</span>
+              </button>
+            )}
           </div>
         </div>
       )}
@@ -1015,6 +1074,19 @@ export default function ProductDetailPage() {
         onClose={() => setIsAccountOpen(false)}
         onAddToCart={addToCart}
       />
+
+      {/* Notify Modal */}
+      {product && (
+        <NotifyModal
+          isOpen={isNotifyOpen}
+          onClose={() => setIsNotifyOpen(false)}
+          product={{
+            id: product.id,
+            name: product.name,
+            image: product.image
+          }}
+        />
+      )}
     </div>
     </>
   );

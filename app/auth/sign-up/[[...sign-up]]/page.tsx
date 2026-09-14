@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useClerk, useUser } from '@clerk/nextjs';
+import { toast } from 'sonner';
 import { api } from '@/app/services/api';
 
 type AuthStep = 'identifier' | 'link_email' | 'otp';
@@ -283,6 +284,7 @@ export default function CustomSignUpPage() {
         const result = await client.signUp.attemptEmailAddressVerification({ code });
         if (result.status === 'complete' && clerk.setActive) {
           await clerk.setActive({ session: result.createdSessionId });
+          toast.success('Account created & verified! Welcome to BakhoorBliss.');
           setSuccessMsg('Account created & verified! Welcome to BakhoorBliss.');
           setTimeout(() => {
             router.push('/');
@@ -297,6 +299,7 @@ export default function CustomSignUpPage() {
 
         if (result.status === 'complete' && clerk.setActive) {
           await clerk.setActive({ session: result.createdSessionId });
+          toast.success('Signed in successfully! Welcome to BakhoorBliss.');
           setSuccessMsg('Signed in successfully! Welcome to BakhoorBliss.');
           setTimeout(() => {
             router.push('/');

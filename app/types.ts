@@ -35,6 +35,7 @@ export interface Product {
   isBestseller?: boolean;
   isNew?: boolean;
   isPreOrder?: boolean;
+  isComingSoon?: boolean;
   shippingNote?: string;
   buttonText?: string;
   tagline?: string;

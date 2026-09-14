@@ -43,6 +43,7 @@ const formatProductDoc = (doc: any): Product => {
     isBestseller: Boolean(doc.isBestseller),
     isNew: Boolean(doc.isNew),
     isPreOrder: Boolean(doc.isPreOrder),
+    isComingSoon: Boolean(doc.isComingSoon),
     shippingNote: doc.shippingNote || '',
     buttonText: doc.buttonText || '',
     tagline: doc.tagline || '',
@@ -193,6 +194,7 @@ export const api = {
         isBestseller: Boolean(product.isBestseller),
         isNew: Boolean(product.isNew),
         isPreOrder: Boolean(product.isPreOrder),
+        isComingSoon: Boolean(product.isComingSoon),
         shippingNote: product.shippingNote || '',
         buttonText: product.buttonText || '',
         tagline: product.tagline || '',
@@ -252,6 +254,7 @@ export const api = {
       if (updates.isBestseller !== undefined) cleanData.isBestseller = Boolean(updates.isBestseller);
       if (updates.isNew !== undefined) cleanData.isNew = Boolean(updates.isNew);
       if (updates.isPreOrder !== undefined) cleanData.isPreOrder = Boolean(updates.isPreOrder);
+      if (updates.isComingSoon !== undefined) cleanData.isComingSoon = Boolean(updates.isComingSoon);
       if (updates.shippingNote !== undefined) cleanData.shippingNote = updates.shippingNote;
       if (updates.buttonText !== undefined) cleanData.buttonText = updates.buttonText;
       if (updates.tagline !== undefined) cleanData.tagline = updates.tagline;

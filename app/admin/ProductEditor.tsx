@@ -865,7 +865,7 @@ export function ProductEditor({
               </h4>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3 sm:gap-4">
               <label className="flex items-center gap-3 p-3.5 bg-slate-50 rounded-xl border border-slate-200 cursor-pointer select-none hover:bg-slate-100 transition-colors">
                 <input
                   type="checkbox"
@@ -890,10 +890,34 @@ export function ProductEditor({
                 <input
                   type="checkbox"
                   checked={formData.isPreOrder || false}
-                  onChange={(e) => setFormData({ ...formData, isPreOrder: e.target.checked })}
+                  onChange={(e) => {
+                    const isChecked = e.target.checked;
+                    setFormData({ 
+                      ...formData, 
+                      isPreOrder: isChecked,
+                      ...(isChecked ? { isComingSoon: false } : {})
+                    });
+                  }}
                   className="rounded border-slate-300 text-[#caa04c] focus:ring-[#caa04c] w-4 h-4 cursor-pointer"
                 />
                 <span className="text-xs font-bold text-slate-800">Pre-Order Only</span>
+              </label>
+
+              <label className="flex items-center gap-3 p-3.5 bg-slate-50 rounded-xl border border-slate-200 cursor-pointer select-none hover:bg-slate-100 transition-colors">
+                <input
+                  type="checkbox"
+                  checked={formData.isComingSoon || false}
+                  onChange={(e) => {
+                    const isChecked = e.target.checked;
+                    setFormData({ 
+                      ...formData, 
+                      isComingSoon: isChecked,
+                      ...(isChecked ? { isPreOrder: false } : {})
+                    });
+                  }}
+                  className="rounded border-slate-300 text-[#caa04c] focus:ring-[#caa04c] w-4 h-4 cursor-pointer"
+                />
+                <span className="text-xs font-bold text-slate-800">Coming Soon</span>
               </label>
 
               <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200">

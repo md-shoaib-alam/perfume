@@ -25,6 +25,7 @@ export const INITIAL_SEED_PRODUCTS: Partial<Product>[] = [
     hoverImage: 'https://images.unsplash.com/photo-1547887537-6158d64c35b3?auto=format&fit=crop&w=800&q=80',
     isBestseller: true,
     isPreOrder: true,
+    isComingSoon: false,
     shippingNote: 'Shipping Starts From 31st August',
     buttonText: 'PRE-ORDER',
     tagline: 'Creation by Julien Rasquinet',
