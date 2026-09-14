@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { LuxurySelect } from './ui/LuxurySelect';
+import { toast } from '@/components/lightswind/use-toast';
 import type { Product, Review } from '../types';
 
 interface CustomerReviewsSectionProps {
@@ -217,8 +218,11 @@ export const CustomerReviewsSection: React.FC<CustomerReviewsSectionProps> = ({
       setFormComment('');
       setFormPhotoUrl('');
       setFormRating(5);
+      toast.success('Thank you! Your verified review has been submitted.');
     } catch (err: any) {
-      setFormError(err.message || 'Error submitting review');
+      const errorMsg = err.message || 'Error submitting review';
+      setFormError(errorMsg);
+      toast.error(errorMsg);
     }
   };
 

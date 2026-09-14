@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useUser, useClerk } from '@clerk/nextjs';
-import { toast } from 'sonner';
+import { toast } from '@/components/lightswind/use-toast';
 import { api } from '../services/api';
 import type { Product } from '../types';
 

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useClerk } from '@clerk/nextjs';
-import { toast } from 'sonner';
+import { toast } from '@/components/lightswind/use-toast';
 import { api } from '../services/api';
 
 
@@ -443,24 +443,73 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
   // Handle Send Password Reset Link
   const handleForgotPassword = async () => {
+    const targetEmail = (emailAddress || mobileNumber || '').trim();
+    if (!targetEmail || !targetEmail.includes('@')) {
+      const msg = 'Please enter a valid email address to receive password reset instructions.';
+      setErrorMsg(msg);
+      toast.error(msg);
+      return;
+    }
+
     setIsLoading(true);
     setErrorMsg('');
     try {
       const client = await getClerkClient();
       if (!client?.signIn) throw new Error('Authentication client is not available.');
 
-      await client.signIn.create({
-        strategy: 'reset_password_email_code',
-        identifier: emailAddress,
+      let factorPrepared = false;
+
+      // Check if sign-in is already in progress and has reset_password_email_code or email_code
+      if (client.signIn?.supportedFirstFactors && client.signIn.status === 'needs_first_factor') {
+        const resetFactor = client.signIn.supportedFirstFactors.find(
+          (f: any) => f.strategy === 'reset_password_email_code'
+        );
+        if (resetFactor && 'emailAddressId' in resetFactor) {
+          await client.signIn.prepareFirstFactor({
+            strategy: 'reset_password_email_code',
+            emailAddressId: resetFactor.emailAddressId,
+          });
+          factorPrepared = true;
+        }
+      }
+
+      if (!factorPrepared) {
+        try {
+          await client.signIn.create({
+            strategy: 'reset_password_email_code',
+            identifier: targetEmail,
+          });
+          factorPrepared = true;
+        } catch (createErr: any) {
+          // If already in progress, try preparing factor with fallback
+          const factor = client.signIn?.supportedFirstFactors?.find(
+            (f: any) => f.strategy === 'reset_password_email_code' || f.strategy === 'email_code'
+          );
+          if (factor && 'emailAddressId' in factor) {
+            await client.signIn.prepareFirstFactor({
+              strategy: factor.strategy as any,
+              emailAddressId: factor.emailAddressId,
+            });
+            factorPrepared = true;
+          } else {
+            throw createErr;
+          }
+        }
+      }
+
+      toast.success({
+        title: 'Reset Instructions Sent',
+        description: 'If an account exists for this email, we have sent password reset instructions.',
       });
-      toast.success('If an account exists for this email, we have sent password reset instructions.');
     } catch (err: any) {
       console.error('Forgot password error:', err);
       const msg =
         err?.errors?.[0]?.longMessage ||
         err?.errors?.[0]?.message ||
-        'Failed to send password reset email.';
+        err?.message ||
+        'Failed to send password reset email. Please try again.';
       setErrorMsg(msg);
+      toast.error(msg);
     } finally {
       setIsLoading(false);
     }

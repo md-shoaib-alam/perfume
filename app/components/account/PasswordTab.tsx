@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { useUser, useClerk } from '@clerk/nextjs';
+import { toast } from '@/components/lightswind/use-toast';
 
 export const PasswordTab: React.FC = () => {
   const { user, isLoaded } = useUser();
@@ -79,6 +80,7 @@ export const PasswordTab: React.FC = () => {
           newPassword,
         });
         setSuccessMessage('Your password has been updated successfully.');
+        toast.success('Your password has been updated successfully.');
       } else {
         // User does not have a password yet - calls /v1/me/change_password with newPassword
         await user.updatePassword({
@@ -86,6 +88,7 @@ export const PasswordTab: React.FC = () => {
         });
         setPasswordConfigured(true);
         setSuccessMessage('Password created successfully! You can now change your password or sign in with it anytime.');
+        toast.success('Password created successfully!');
       }
 
       // Reload Clerk user session to sync user.hasPassword
@@ -107,6 +110,7 @@ export const PasswordTab: React.FC = () => {
         err?.message ||
         'Failed to save password. Please verify your requirements and try again.';
       setErrorMessage(msg);
+      toast.error(msg);
     } finally {
       setIsSubmitting(false);
     }
@@ -114,7 +118,9 @@ export const PasswordTab: React.FC = () => {
 
   const handleSendResetEmail = async () => {
     if (!userEmail) {
-      setErrorMessage('No primary email found for this account.');
+      const msg = 'No primary email found for this account.';
+      setErrorMessage(msg);
+      toast.error(msg);
       return;
     }
 
@@ -135,6 +141,7 @@ export const PasswordTab: React.FC = () => {
         });
       }
 
+      toast.success('Password reset instructions sent to your email.');
       // 3. Redirect to sign in where user can enter the reset code
       window.location.href = '/auth/sign-in';
     } catch (err: any) {
@@ -145,6 +152,7 @@ export const PasswordTab: React.FC = () => {
         err?.message ||
         'Failed to trigger password reset.';
       setErrorMessage(msg);
+      toast.error(msg);
       setIsSendingReset(false);
     }
   };

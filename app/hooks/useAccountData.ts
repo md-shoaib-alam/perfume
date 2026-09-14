@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useUser, useClerk } from '@clerk/nextjs';
-import { toast } from 'sonner';
+import { toast } from '@/components/lightswind/use-toast';
 import { api } from '../services/api';
 import { getRecentlyViewed } from '../utils/recentlyViewed';
 import type { Product } from '../types';
@@ -151,9 +151,12 @@ export function useAccountData(onLogoutCallback?: () => void) {
       }
       setSaveSuccess(true);
       setIsEditingProfile(false);
+      toast.success('Profile and address saved successfully.');
       setTimeout(() => setSaveSuccess(false), 3000);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to update profile:', err);
+      const msg = err?.errors?.[0]?.message || err?.message || 'Failed to update profile. Please try again.';
+      toast.error(msg);
     }
   };
 
@@ -167,8 +170,10 @@ export function useAccountData(onLogoutCallback?: () => void) {
           identifier: email,
         });
         setPwdMsg(`Password reset instructions have been sent to ${email}. Please check your inbox.`);
+        toast.success(`Password reset instructions sent to ${email}.`);
       } else {
         setPwdMsg(`Password reset request submitted for ${email}. Please check your inbox.`);
+        toast.success(`Password reset instructions sent to ${email}.`);
       }
     } catch (err: any) {
       console.error('Password reset error:', err);
@@ -178,6 +183,7 @@ export function useAccountData(onLogoutCallback?: () => void) {
         err?.message ||
         'Failed to trigger password reset. Please try again.';
       setPwdMsg(msg);
+      toast.error(msg);
     }
   };
 

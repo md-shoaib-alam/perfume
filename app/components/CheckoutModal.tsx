@@ -5,6 +5,7 @@ import { useUser } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 import type { CartItem } from '../types';
 import { api } from '../services/api';
+import { toast } from '@/components/lightswind/use-toast';
 
 interface CheckoutModalProps {
   isOpen: boolean;
@@ -166,13 +167,17 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
         setAppliedCoupon(code);
         setDiscountAmount(res.discount);
         setCouponSuccess(res.message);
+        toast.success(res.message || `Coupon "${code}" applied successfully!`);
       } else {
-        setCouponError(res.message || 'Invalid or expired coupon code');
+        const errorMsg = res.message || 'Invalid or expired coupon code';
+        setCouponError(errorMsg);
+        toast.error(errorMsg);
         setAppliedCoupon(null);
         setDiscountAmount(0);
       }
     } catch (err: any) {
       setCouponError('Failed to validate coupon');
+      toast.error('Failed to validate coupon. Please try again.');
     } finally {
       setIsValidatingCoupon(false);
     }
@@ -184,6 +189,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
     setCouponInput('');
     setCouponSuccess(null);
     setCouponError(null);
+    toast.info('Coupon removed.');
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {

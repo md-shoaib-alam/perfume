@@ -83,7 +83,7 @@ import { ConfirmProvider } from "./components/CustomConfirmModal";
 import { UserSyncGlobal } from "./components/UserSyncGlobal";
 import { QueryProvider } from "./providers/QueryProvider";
 import { ScrollToTop } from "./components/ScrollToTop";
-import { Toaster } from "sonner";
+import { Toaster } from "@/components/lightswind/toaster";
 
 export default function RootLayout({
   children,
@@ -104,7 +104,7 @@ export default function RootLayout({
             <ConfirmProvider>
               {children}
             </ConfirmProvider>
-            <Toaster position="top-right" richColors closeButton />
+            <Toaster position="top-right" />
           </QueryProvider>
         </ClerkProvider>
       </body>

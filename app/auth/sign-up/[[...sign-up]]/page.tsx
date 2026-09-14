@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useClerk, useUser } from '@clerk/nextjs';
-import { toast } from 'sonner';
+import { toast } from '@/components/lightswind/use-toast';
 import { api } from '@/app/services/api';
 
 type AuthStep = 'identifier' | 'link_email' | 'otp';

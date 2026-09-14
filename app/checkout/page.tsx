@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
 import { useCart } from '../hooks/useCart';
 import { api } from '../services/api';
+import { toast } from '@/components/lightswind/use-toast';
 import { isProductSoldOut } from '@/lib/pricing';
 import {
   COUNTRY_STATE_CITY_MAP,
@@ -583,13 +584,17 @@ export default function CheckoutPage() {
         setAppliedCoupon(code);
         setDiscountAmount(res.discount);
         setCouponSuccess(res.message);
+        toast.success(res.message || `Coupon "${code}" applied successfully!`);
       } else {
-        setCouponError(res.message || 'Invalid or expired coupon code');
+        const errorMsg = res.message || 'Invalid or expired coupon code';
+        setCouponError(errorMsg);
+        toast.error(errorMsg);
         setAppliedCoupon(null);
         setDiscountAmount(0);
       }
     } catch (err: any) {
       setCouponError('Failed to validate coupon');
+      toast.error('Failed to validate coupon. Please try again.');
     } finally {
       setIsValidatingCoupon(false);
     }
@@ -601,6 +606,7 @@ export default function CheckoutPage() {
     setCouponInput('');
     setCouponSuccess(null);
     setCouponError(null);
+    toast.info('Coupon removed.');
   };
 
   // Auto re-validate / adjust applied coupon when subtotal changes

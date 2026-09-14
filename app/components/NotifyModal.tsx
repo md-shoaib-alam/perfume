@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { toast } from 'sonner';
+import { toast } from '@/components/lightswind/use-toast';
 
 interface NotifyModalProps {
   isOpen: boolean;
