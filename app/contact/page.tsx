@@ -290,8 +290,8 @@ export default function ContactPage() {
                   Information
                 </h3>
                 <p>
-                  <a href="mailto:wecare@neeshperfumes.com" className="text-slate-700 hover:text-[#caa04c] transition-colors">
-                    wecare@neeshperfumes.com
+                  <a href="mailto:wecare@bakhoorbliss.in" className="text-slate-700 hover:text-[#caa04c] transition-colors">
+                    wecare@bakhoorbliss.in
                   </a>
                 </p>
                 <p>
