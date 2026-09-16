@@ -56,16 +56,11 @@ export const CollectionsCirclesSection: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Typography: 2-line title support with subtext */}
+                {/* Typography: Clean single-line title */}
                 <div className="mt-2 text-center w-full px-0.5">
-                  <h3 className="text-[11px] sm:text-xs md:text-[13px] font-serif font-bold text-slate-800 group-hover:text-[#b88f3e] transition-colors leading-snug line-clamp-2">
+                  <h3 className="text-[11px] sm:text-xs md:text-[13px] font-serif font-bold text-slate-800 group-hover:text-[#b88f3e] transition-colors leading-snug truncate">
                     {col.name}
                   </h3>
-                  {col.subname && (
-                    <p className="text-[9px] sm:text-[10px] text-slate-400 font-sans tracking-wide mt-0.5 truncate">
-                      {col.subname}
-                    </p>
-                  )}
                 </div>
               </Link>
             );
