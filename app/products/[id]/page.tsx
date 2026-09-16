@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
@@ -323,9 +323,9 @@ export default function ProductDetailPage() {
     return Array.from(set);
   }, [product]);
 
-  // Touch & Swipe Gesture States for Mobile Image Slider
-  const [touchStartX, setTouchStartX] = useState<number | null>(null);
-  const [touchEndX, setTouchEndX] = useState<number | null>(null);
+  // Carousel Controller & Smooth Slide State
+  const carouselRef = useRef<HTMLDivElement | null>(null);
+  const isProgrammaticScroll = useRef(false);
 
   const currentImageIndex = useMemo(() => {
     if (imagesList.length === 0) return 0;
@@ -334,41 +334,47 @@ export default function ProductDetailPage() {
     return idx >= 0 ? idx : 0;
   }, [imagesList, selectedImage, product?.image]);
 
-  const handleNextImage = () => {
-    if (imagesList.length <= 1) return;
-    const nextIndex = (currentImageIndex + 1) % imagesList.length;
-    setSelectedImage(imagesList[nextIndex]);
-  };
-
-  const handlePrevImage = () => {
-    if (imagesList.length <= 1) return;
-    const prevIndex = (currentImageIndex - 1 + imagesList.length) % imagesList.length;
-    setSelectedImage(imagesList[prevIndex]);
-  };
-
-  const handleTouchStart = (e: React.TouchEvent) => {
-    setTouchEndX(null);
-    setTouchStartX(e.targetTouches[0].clientX);
-  };
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-    setTouchEndX(e.targetTouches[0].clientX);
-  };
-
-  const handleTouchEnd = () => {
-    if (touchStartX === null || touchEndX === null) return;
-    const distance = touchStartX - touchEndX;
-    const minSwipeDistance = 35; // px
-    if (distance > minSwipeDistance) {
-      // Swiped Left -> Next Image
-      handleNextImage();
-    } else if (distance < -minSwipeDistance) {
-      // Swiped Right -> Previous Image
-      handlePrevImage();
+  const handleSelectImage = (img: string, index: number) => {
+    setSelectedImage(img);
+    if (carouselRef.current) {
+      isProgrammaticScroll.current = true;
+      const width = carouselRef.current.clientWidth;
+      carouselRef.current.scrollTo({
+        left: index * width,
+        behavior: 'smooth'
+      });
+      setTimeout(() => {
+        isProgrammaticScroll.current = false;
+      }, 500);
     }
-    setTouchStartX(null);
-    setTouchEndX(null);
   };
+
+  const handleCarouselScroll = () => {
+    if (!carouselRef.current || isProgrammaticScroll.current) return;
+    const { scrollLeft, clientWidth } = carouselRef.current;
+    if (clientWidth === 0) return;
+    const newIndex = Math.round(scrollLeft / clientWidth);
+    if (newIndex >= 0 && newIndex < imagesList.length) {
+      const targetImg = imagesList[newIndex];
+      if (targetImg && targetImg !== (selectedImage || product?.image)) {
+        setSelectedImage(targetImg);
+      }
+    }
+  };
+
+
+  // Keep carousel aligned if selectedImage changes from outside
+  useEffect(() => {
+    if (carouselRef.current && !isProgrammaticScroll.current) {
+      const idx = imagesList.findIndex((img) => img === selectedImage);
+      if (idx >= 0) {
+        const width = carouselRef.current.clientWidth;
+        if (width > 0 && Math.abs(carouselRef.current.scrollLeft - idx * width) > 10) {
+          carouselRef.current.scrollTo({ left: idx * width, behavior: 'smooth' });
+        }
+      }
+    }
+  }, [selectedImage, imagesList]);
 
   const handleReviewSubmitData = async (data: {
     author: string;
@@ -520,7 +526,7 @@ export default function ProductDetailPage() {
                   <button
                     key={idx}
                     type="button"
-                    onClick={() => setSelectedImage(img)}
+                    onClick={() => handleSelectImage(img, idx)}
                     className={`w-16 h-16 sm:w-18 sm:h-18 md:w-20 md:h-20 rounded-none overflow-hidden border-2 transition-all cursor-pointer shrink-0 bg-slate-50 ${
                       (selectedImage || product.image) === img
                         ? 'border-[#c59b48] shadow-sm ring-1 ring-[#c59b48]'
@@ -539,32 +545,42 @@ export default function ProductDetailPage() {
               </div>
             )}
 
-            {/* Main Featured Image Display with Touch/Swipe Gestures for Mobile (Hard/Square Corners) */}
-            <div
-              onTouchStart={handleTouchStart}
-              onTouchMove={handleTouchMove}
-              onTouchEnd={handleTouchEnd}
-              className="relative aspect-square w-full flex-1 rounded-none overflow-hidden bg-slate-50 border border-slate-200/80 shadow-xs select-none touch-pan-y group"
-            >
-              <img
-                src={selectedImage || product.image}
-                alt={product.name}
-                loading="eager"
-                decoding="async"
-                draggable={false}
-                className="w-full h-full object-cover transition-opacity duration-300 pointer-events-none"
-              />
+            {/* Main Featured Image Display with Native CSS Scroll-Snap Smooth Sliding Carousel (Hard/Square Corners) */}
+            <div className="relative aspect-square w-full flex-1 rounded-none overflow-hidden bg-slate-50 border border-slate-200/80 shadow-xs select-none group">
+              {/* Native Scroll-Snap Sliding Carousel Track */}
+              <div
+                ref={carouselRef}
+                onScroll={handleCarouselScroll}
+                className="flex w-full h-full overflow-x-auto snap-x snap-mandatory scroll-smooth no-scrollbar select-none touch-pan-x"
+                style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+              >
+                {imagesList.map((img, idx) => (
+                  <div
+                    key={idx}
+                    className="w-full h-full flex-shrink-0 snap-center snap-always relative overflow-hidden bg-slate-50"
+                  >
+                    <img
+                      src={img}
+                      alt={`${product.name} - slide ${idx + 1}`}
+                      loading={idx === 0 ? 'eager' : 'lazy'}
+                      decoding="async"
+                      draggable={false}
+                      className="w-full h-full object-cover pointer-events-none select-none"
+                    />
+                  </div>
+                ))}
+              </div>
 
               {/* Coming Soon / Sold Out Badge Overlay on Product Detail Image */}
               {product.isComingSoon ? (
-                <div className="absolute inset-0 flex items-center justify-center bg-black/10 backdrop-blur-2xs pointer-events-none">
+                <div className="absolute inset-0 flex items-center justify-center bg-black/10 backdrop-blur-2xs pointer-events-none z-20">
                   <div className="w-18 h-18 sm:w-22 sm:h-22 rounded-full bg-white/95 backdrop-blur-xs flex flex-col items-center justify-center text-center shadow-lg border border-slate-100 p-2">
                     <span className="text-[11px] sm:text-xs font-extrabold tracking-wider leading-tight text-slate-900">COMING</span>
                     <span className="text-[11px] sm:text-xs font-extrabold tracking-wider leading-tight text-slate-900">SOON</span>
                   </div>
                 </div>
               ) : isCurrentSoldOut ? (
-                <div className="absolute inset-0 flex items-center justify-center bg-black/10 backdrop-blur-2xs pointer-events-none">
+                <div className="absolute inset-0 flex items-center justify-center bg-black/10 backdrop-blur-2xs pointer-events-none z-20">
                   <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-white/95 backdrop-blur-xs flex flex-col items-center justify-center text-center shadow-lg border border-slate-100 p-2">
                     <span className="text-[10px] sm:text-xs font-extrabold tracking-wider leading-tight text-slate-900">SOLD</span>
                     <span className="text-[10px] sm:text-xs font-extrabold tracking-wider leading-tight text-slate-900">OUT</span>
@@ -574,12 +590,12 @@ export default function ProductDetailPage() {
 
               {/* Pagination Indicator Dots on Mobile */}
               {imagesList.length > 1 && (
-                <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 bg-black/35 backdrop-blur-xs px-2.5 py-1 rounded-full md:hidden">
+                <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 bg-black/35 backdrop-blur-xs px-2.5 py-1 rounded-full md:hidden z-20">
                   {imagesList.map((_, dotIdx) => (
                     <button
                       key={dotIdx}
                       type="button"
-                      onClick={() => setSelectedImage(imagesList[dotIdx])}
+                      onClick={() => handleSelectImage(imagesList[dotIdx], dotIdx)}
                       className={`h-1.5 rounded-full transition-all cursor-pointer ${
                         currentImageIndex === dotIdx
                           ? 'w-4 bg-white'

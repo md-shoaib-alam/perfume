@@ -181,7 +181,7 @@ export const ConfirmProvider: React.FC<{ children: ReactNode }> = ({ children })
           aria-modal="true" 
           aria-labelledby="dialog-title"
           aria-describedby="dialog-description"
-          className="fixed inset-0 z-[9999999] flex items-center justify-center p-4 overflow-y-auto"
+          className="fixed inset-0 z-9999999 flex items-center justify-center p-4 overflow-y-auto"
         >
           {/* Backdrop with Soft Luxury Blur */}
           <div
@@ -191,7 +191,7 @@ export const ConfirmProvider: React.FC<{ children: ReactNode }> = ({ children })
 
           {variant === 'danger' ? (
             /* Bespoke Luxury Delete Modal (Matching user reference) */
-            <div className="relative bg-[#faf8f5] border border-amber-200/50 text-slate-900 w-full max-w-[375px] sm:max-w-[395px] rounded-[32px] p-6 sm:p-7 shadow-2xl shadow-black/25 font-sans z-10 animate-scale-up text-center overflow-hidden my-auto">
+            <div className="relative bg-[#faf8f5] border border-amber-200/50 text-slate-900 w-full max-w-[375px] sm:max-w-[395px] rounded-4xl p-6 sm:p-7 shadow-2xl shadow-black/25 font-sans z-10 animate-scale-up text-center overflow-hidden my-auto">
               
               {/* Close Button Top-Right */}
               <button
