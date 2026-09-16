@@ -13,6 +13,7 @@ interface CampaignItem {
   title: string;
   gender: 'For Him' | 'For Her';
   image: string;
+  showTitle: boolean;
 }
 
 export const GenderCampaignBanners: React.FC<GenderCampaignBannersProps> = () => {
@@ -37,13 +38,15 @@ export const GenderCampaignBanners: React.FC<GenderCampaignBannersProps> = () =>
         id: 'for-him',
         title: 'For Him',
         gender: 'For Him',
-        image: himImg
+        image: himImg,
+        showTitle: himCollection?.showCampaignTitle !== false
       },
       {
         id: 'for-her',
         title: 'For Her',
         gender: 'For Her',
-        image: herImg
+        image: herImg,
+        showTitle: herCollection?.showCampaignTitle !== false
       }
     ];
 
@@ -76,12 +79,14 @@ export const GenderCampaignBanners: React.FC<GenderCampaignBannersProps> = () =>
                 <div className="w-full h-full bg-slate-100" />
               )}
 
-              {/* Top-Left Content with Clean Sans-Serif Typography */}
-              <div className="absolute top-5 left-5 sm:top-7 sm:left-7 md:top-8 md:left-8 z-10 text-left">
-                <h3 className="font-sans text-lg sm:text-xl md:text-2xl text-white font-medium tracking-normal leading-tight drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]">
-                  {item.title}
-                </h3>
-              </div>
+              {/* Top-Left Content with Clean Sans-Serif Typography (Toggled via Admin) */}
+              {item.showTitle && (
+                <div className="absolute top-5 left-5 sm:top-7 sm:left-7 md:top-8 md:left-8 z-10 text-left">
+                  <h3 className="font-sans text-lg sm:text-xl md:text-2xl text-white font-medium tracking-normal leading-tight drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]">
+                    {item.title}
+                  </h3>
+                </div>
+              )}
             </Link>
           ))}
         </div>

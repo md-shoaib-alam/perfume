@@ -10,6 +10,7 @@ export interface CollectionItem {
   bannerImage?: string;
   campaignImage?: string;
   showInStoryCircle?: boolean;
+  showCampaignTitle?: boolean;
 }
 
 export const STANDARD_LANDING_PAGES: CollectionItem[] = [

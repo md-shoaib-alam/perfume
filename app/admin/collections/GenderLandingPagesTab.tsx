@@ -281,6 +281,25 @@ export const GenderLandingPagesTab: React.FC<GenderLandingPagesTabProps> = ({
                     </label>
                   </div>
 
+                  {/* Campaign Card Title Overlay Toggle */}
+                  <div className="flex items-center justify-between p-3.5 bg-white rounded-xl border border-slate-200">
+                    <div>
+                      <span className="font-semibold text-slate-800 text-xs block">Show &quot;{page.subname || page.name}&quot; Text on Campaign Image</span>
+                      <span className="text-[11px] text-slate-500 block">
+                        Display the title text overlay on the homepage campaign card. Turn off if your image already has typography baked in.
+                      </span>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer shrink-0 ml-4">
+                      <input
+                        type="checkbox"
+                        checked={page.showCampaignTitle !== false}
+                        onChange={(e) => onUpdatePage(page.slug!, 'showCampaignTitle', e.target.checked)}
+                        className="sr-only peer"
+                      />
+                      <div className="w-10 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#caa04c]"></div>
+                    </label>
+                  </div>
+
                   {/* Save Button */}
                   <div className="flex justify-end pt-3 border-t border-slate-200">
                     <button

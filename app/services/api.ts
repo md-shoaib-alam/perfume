@@ -940,7 +940,8 @@ export const api = {
           subtitle: d.subtitle || '',
           editorial: d.editorial || '',
           badge: d.badge || '',
-          showInStoryCircle: Boolean(d.showInStoryCircle)
+          showInStoryCircle: Boolean(d.showInStoryCircle),
+          showCampaignTitle: d.showCampaignTitle !== undefined ? Boolean(d.showCampaignTitle) : true
         }));
       }
     } catch (err) {

@@ -58,7 +58,8 @@ export const CollectionsManager: React.FC = () => {
               image: match.image || '',
               bannerImage: match.bannerImage || '',
               campaignImage: match.campaignImage || '',
-              showInStoryCircle: Boolean(match.showInStoryCircle)
+              showInStoryCircle: Boolean(match.showInStoryCircle),
+              showCampaignTitle: match.showCampaignTitle !== undefined ? Boolean(match.showCampaignTitle) : true
             };
           }
           return preset;
@@ -120,7 +121,8 @@ export const CollectionsManager: React.FC = () => {
       image: pageItem.image || '',
       bannerImage: pageItem.bannerImage || '',
       campaignImage: pageItem.campaignImage || '',
-      showInStoryCircle: Boolean(pageItem.showInStoryCircle)
+      showInStoryCircle: Boolean(pageItem.showInStoryCircle),
+      showCampaignTitle: pageItem.showCampaignTitle !== undefined ? Boolean(pageItem.showCampaignTitle) : true
     };
 
     setSavingGenderSlug(slug);

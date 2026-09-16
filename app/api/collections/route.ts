@@ -16,7 +16,8 @@ const formatCollectionDoc = (doc: any) => ({
   subtitle: doc.subtitle || '',
   editorial: doc.editorial || '',
   badge: doc.badge || '',
-  showInStoryCircle: Boolean(doc.showInStoryCircle)
+  showInStoryCircle: Boolean(doc.showInStoryCircle),
+  showCampaignTitle: doc.showCampaignTitle !== undefined ? Boolean(doc.showCampaignTitle) : true
 });
 
 export async function GET() {
@@ -58,6 +59,7 @@ export async function POST(req: Request) {
     if (validBanner) cleanData.bannerImage = validBanner;
     if (validCampaign) cleanData.campaignImage = validCampaign;
     if (body.showInStoryCircle !== undefined) cleanData.showInStoryCircle = Boolean(body.showInStoryCircle);
+    if (body.showCampaignTitle !== undefined) cleanData.showCampaignTitle = Boolean(body.showCampaignTitle);
 
     if (body.subtitle !== undefined) cleanData.subtitle = body.subtitle || '';
     if (body.editorial !== undefined) cleanData.editorial = body.editorial || '';
@@ -72,10 +74,11 @@ export async function POST(req: Request) {
       );
       return NextResponse.json(formatCollectionDoc(doc));
     } catch (createErr: any) {
-      // If campaignImage or showInStoryCircle attribute doesn't exist yet in Appwrite, retry without them
-      if (createErr?.message?.includes('campaignImage') || createErr?.message?.includes('showInStoryCircle')) {
+      // If campaignImage, showInStoryCircle, or showCampaignTitle attribute doesn't exist yet in Appwrite, retry without them
+      if (createErr?.message?.includes('campaignImage') || createErr?.message?.includes('showInStoryCircle') || createErr?.message?.includes('showCampaignTitle')) {
         delete cleanData.campaignImage;
         delete cleanData.showInStoryCircle;
+        delete cleanData.showCampaignTitle;
         const doc = await databases.createDocument(
           APPWRITE_DATABASE_ID,
           'collections',
@@ -113,6 +116,7 @@ export async function PUT(req: Request) {
     if (validBanner !== undefined) cleanUpdates.bannerImage = validBanner;
     if (validCampaign !== undefined) cleanUpdates.campaignImage = validCampaign;
     if (updates.showInStoryCircle !== undefined) cleanUpdates.showInStoryCircle = Boolean(updates.showInStoryCircle);
+    if (updates.showCampaignTitle !== undefined) cleanUpdates.showCampaignTitle = Boolean(updates.showCampaignTitle);
 
     try {
       const doc = await databases.updateDocument(
@@ -123,10 +127,11 @@ export async function PUT(req: Request) {
       );
       return NextResponse.json(formatCollectionDoc(doc));
     } catch (updateErr: any) {
-      // If campaignImage or showInStoryCircle attribute doesn't exist yet in Appwrite, retry without them
-      if (updateErr?.message?.includes('campaignImage') || updateErr?.message?.includes('showInStoryCircle')) {
+      // If campaignImage, showInStoryCircle, or showCampaignTitle attribute doesn't exist yet in Appwrite, retry without them
+      if (updateErr?.message?.includes('campaignImage') || updateErr?.message?.includes('showInStoryCircle') || updateErr?.message?.includes('showCampaignTitle')) {
         delete cleanUpdates.campaignImage;
         delete cleanUpdates.showInStoryCircle;
+        delete cleanUpdates.showCampaignTitle;
         const doc = await databases.updateDocument(
           APPWRITE_DATABASE_ID,
           'collections',
