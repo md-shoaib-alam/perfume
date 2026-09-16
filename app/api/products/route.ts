@@ -35,6 +35,16 @@ const formatProductDoc = (doc: any) => {
     }
   }
 
+  let parsedShowcaseImages: string[] = [];
+  if (doc.showcaseImages) {
+    try {
+      parsedShowcaseImages = typeof doc.showcaseImages === 'string' ? JSON.parse(doc.showcaseImages) : doc.showcaseImages;
+      if (!Array.isArray(parsedShowcaseImages)) parsedShowcaseImages = [];
+    } catch (e) {
+      parsedShowcaseImages = [];
+    }
+  }
+
   return {
     id: doc.$id || doc.id,
     name: doc.name || 'Untitled Perfume',
@@ -48,6 +58,7 @@ const formatProductDoc = (doc: any) => {
     volume: doc.volume || '100ml',
     image: doc.image || '',
     hoverImage: doc.hoverImage || doc.image || '',
+    showcaseImages: parsedShowcaseImages,
     isBestseller: Boolean(doc.isBestseller),
     isNew: Boolean(doc.isNew),
     isPreOrder: Boolean(doc.isPreOrder),
@@ -179,6 +190,7 @@ export async function POST(req: Request) {
       collection: product.collection || '',
       sizeOptions: JSON.stringify(product.sizeOptions || []),
       storyBlocks: JSON.stringify(product.storyBlocks || []),
+      showcaseImages: JSON.stringify(product.showcaseImages || []),
       stock: product.stock == null ? 100 : Number(product.stock)
     };
 
@@ -226,6 +238,7 @@ export async function PUT(req: Request) {
     if (updates.badgeSubtext !== undefined) cleanData.badgeSubtext = updates.badgeSubtext;
     if (updates.sizeOptions !== undefined) cleanData.sizeOptions = typeof updates.sizeOptions === 'string' ? updates.sizeOptions : JSON.stringify(updates.sizeOptions);
     if (updates.storyBlocks !== undefined) cleanData.storyBlocks = typeof updates.storyBlocks === 'string' ? updates.storyBlocks : JSON.stringify(updates.storyBlocks);
+    if (updates.showcaseImages !== undefined) cleanData.showcaseImages = typeof updates.showcaseImages === 'string' ? updates.showcaseImages : JSON.stringify(updates.showcaseImages || []);
     if (updates.stock !== undefined) cleanData.stock = updates.stock == null ? 100 : Number(updates.stock);
 
     const doc = await databases.updateDocument(

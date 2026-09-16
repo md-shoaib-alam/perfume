@@ -67,6 +67,7 @@ export const ProductsManager: React.FC = () => {
     volume: '100ml',
     image: '',
     hoverImage: '',
+    showcaseImages: [],
     description: '',
     notes: { top: [], heart: [], base: [] },
     isBestseller: false,
@@ -247,6 +248,7 @@ export const ProductsManager: React.FC = () => {
       volume: '100ml',
       image: '',
       hoverImage: '',
+      showcaseImages: [],
       description: '',
       notes: { top: [], heart: [], base: [] },
       isBestseller: false,
@@ -307,6 +309,11 @@ export const ProductsManager: React.FC = () => {
       if (productToDelete) {
         if (productToDelete.image) deleteMediaFromAppwrite(productToDelete.image).catch(() => {});
         if (productToDelete.hoverImage) deleteMediaFromAppwrite(productToDelete.hoverImage).catch(() => {});
+        if (productToDelete.showcaseImages) {
+          productToDelete.showcaseImages.forEach(url => {
+            deleteMediaFromAppwrite(url).catch(() => {});
+          });
+        }
         if (productToDelete.storyBlocks) {
           productToDelete.storyBlocks.forEach(b => {
             if (b.image) deleteMediaFromAppwrite(b.image).catch(() => {});

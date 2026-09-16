@@ -25,6 +25,16 @@ const formatProductDoc = (doc: any): Product => {
     }
   }
 
+  let parsedShowcaseImages: string[] = [];
+  if (doc.showcaseImages) {
+    try {
+      parsedShowcaseImages = typeof doc.showcaseImages === 'string' ? JSON.parse(doc.showcaseImages) : doc.showcaseImages;
+      if (!Array.isArray(parsedShowcaseImages)) parsedShowcaseImages = [];
+    } catch (e) {
+      parsedShowcaseImages = [];
+    }
+  }
+
   const stableId = doc.$id || doc.id || (doc.name ? doc.name.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-') : 'prod-' + Math.random().toString(36).substring(2, 9));
 
   return {
@@ -40,6 +50,7 @@ const formatProductDoc = (doc: any): Product => {
     volume: doc.volume || '100ml',
     image: doc.image || '',
     hoverImage: doc.hoverImage || doc.image || '',
+    showcaseImages: parsedShowcaseImages,
     isBestseller: Boolean(doc.isBestseller),
     isNew: Boolean(doc.isNew),
     isPreOrder: Boolean(doc.isPreOrder),
@@ -203,6 +214,7 @@ export const api = {
         collection: product.collection || '',
         sizeOptions: JSON.stringify(product.sizeOptions || []),
         storyBlocks: JSON.stringify(product.storyBlocks || []),
+        showcaseImages: JSON.stringify(product.showcaseImages || []),
         stock: product.stock == null ? 100 : Number(product.stock)
       };
 
@@ -262,6 +274,7 @@ export const api = {
       if (updates.badgeSubtext !== undefined) cleanData.badgeSubtext = updates.badgeSubtext;
       if (updates.sizeOptions !== undefined) cleanData.sizeOptions = typeof updates.sizeOptions === 'string' ? updates.sizeOptions : JSON.stringify(updates.sizeOptions);
       if (updates.storyBlocks !== undefined) cleanData.storyBlocks = typeof updates.storyBlocks === 'string' ? updates.storyBlocks : JSON.stringify(updates.storyBlocks);
+      if (updates.showcaseImages !== undefined) cleanData.showcaseImages = typeof updates.showcaseImages === 'string' ? updates.showcaseImages : JSON.stringify(updates.showcaseImages || []);
       if (updates.stock !== undefined) cleanData.stock = updates.stock == null ? 100 : Number(updates.stock);
 
       const doc = await databases.updateDocument(

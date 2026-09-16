@@ -73,10 +73,15 @@ export const CustomerReviewsSection: React.FC<CustomerReviewsSectionProps> = ({
   const customerGallery = useMemo(() => {
     const list: { url: string; caption: string }[] = [];
     if (product.image) list.push({ url: product.image, caption: `${product.name} Flacon` });
-    if (product.hoverImage) list.push({ url: product.hoverImage, caption: `${product.name} Box` });
+    if (product.hoverImage && product.hoverImage !== product.image) list.push({ url: product.hoverImage, caption: `${product.name} Box` });
+    if (Array.isArray(product.showcaseImages)) {
+      product.showcaseImages.forEach((url, idx) => {
+        if (url) list.push({ url, caption: `${product.name} Photo ${idx + 1}` });
+      });
+    }
     if (Array.isArray(product.storyBlocks)) {
       product.storyBlocks.forEach((b, idx) => {
-        if (b.image) list.push({ url: b.image, caption: b.title || `Packaging ${idx + 1}` });
+        if (b.image) list.push({ url: b.image, caption: b.title || `Showcase ${idx + 1}` });
       });
     }
     // Customer lifestyle & unboxing snapshots

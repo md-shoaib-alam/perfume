@@ -32,6 +32,7 @@ export interface Product {
   volume: string;
   image: string;
   hoverImage: string;
+  showcaseImages?: string[];
   isBestseller?: boolean;
   isNew?: boolean;
   isPreOrder?: boolean;

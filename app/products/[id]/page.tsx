@@ -312,10 +312,12 @@ export default function ProductDetailPage() {
     if (!product) return [];
     const set = new Set<string>();
     if (product.image) set.add(product.image);
-    if (product.hoverImage) set.add(product.hoverImage);
-    if (Array.isArray(product.storyBlocks)) {
-      product.storyBlocks.forEach((b) => {
-        if (b.image) set.add(b.image);
+    // hoverImage is a single URL for product card hover — also show in detail carousel
+    if (product.hoverImage && product.hoverImage !== product.image) set.add(product.hoverImage);
+    // showcaseImages is the dedicated gallery for the product detail page carousel
+    if (Array.isArray(product.showcaseImages)) {
+      product.showcaseImages.forEach((url) => {
+        if (url) set.add(url);
       });
     }
     return Array.from(set);
@@ -975,9 +977,9 @@ export default function ProductDetailPage() {
       {/* 7. Footer */}
       <Footer />
 
-      {/* Sticky Bottom Add-to-Cart Bar (appears when main button scrolls out of view) */}
+      {/* Sticky Bottom Add-to-Cart Bar — mobile only (hidden on md+) */}
       {product && showStickyBar && (
-        <div className="fixed bottom-0 left-0 right-0 z-35 bg-white/95 backdrop-blur-md border-t border-slate-200 shadow-2xl px-3 sm:px-6 py-2.5 sm:py-3 animate-in slide-in-from-bottom duration-300">
+        <div className="md:hidden fixed bottom-0 left-0 right-0 z-35 bg-white/95 backdrop-blur-md border-t border-slate-200 shadow-2xl px-3 sm:px-6 py-2.5 sm:py-3 animate-in slide-in-from-bottom duration-300">
           <div className="max-w-4xl mx-auto flex items-center justify-between gap-3">
             {/* Left: Size & Price Dropdown Selector */}
             <div className="flex-1 max-w-[200px] sm:max-w-[260px] relative">

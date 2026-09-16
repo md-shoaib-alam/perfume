@@ -41,35 +41,43 @@ export function ProductEditor({
     }
   }, [initialData, availableCategories]);
 
-  // Derive extra showcase gallery media list
+  // Showcase gallery — dedicated field, separate from hoverImage and storyBlocks
   const extraMediaList: string[] = React.useMemo(() => {
-    if (!formData.hoverImage) return [];
-    try {
-      const parsed = JSON.parse(formData.hoverImage);
-      if (Array.isArray(parsed)) return parsed;
-    } catch {
-      // not a json array
-    }
-    return [];
-  }, [formData.hoverImage]);
+    return formData.showcaseImages || [];
+  }, [formData.showcaseImages]);
 
   const handleSaveGalleryMedia = (newUrl: string) => {
     if (!newUrl) return;
-    const currentList = [...extraMediaList, newUrl];
     setFormData((prev) => ({
       ...prev,
-      hoverImage: JSON.stringify(currentList),
+      showcaseImages: [...(prev.showcaseImages || []), newUrl],
     }));
   };
 
   const handleDeleteGalleryMedia = (urlToRemove: string) => {
     deleteMediaFromAppwrite(urlToRemove).catch(() => {});
-    const currentList = extraMediaList.filter((u) => u !== urlToRemove);
     setFormData((prev) => ({
       ...prev,
-      hoverImage: currentList.length > 0 ? JSON.stringify(currentList) : '',
+      showcaseImages: (prev.showcaseImages || []).filter((u) => u !== urlToRemove),
     }));
   };
+
+  // Drag-to-reorder for showcase gallery
+  const dragIdx = React.useRef<number | null>(null);
+
+  const handleGalleryDragStart = (idx: number) => {
+    dragIdx.current = idx;
+  };
+
+  const handleGalleryDrop = (dropIdx: number) => {
+    if (dragIdx.current === null || dragIdx.current === dropIdx) return;
+    const newList = [...(formData.showcaseImages || [])];
+    const [moved] = newList.splice(dragIdx.current, 1);
+    newList.splice(dropIdx, 0, moved);
+    dragIdx.current = null;
+    setFormData((prev) => ({ ...prev, showcaseImages: newList }));
+  };
+
 
   // Size Options Handlers
   const handleAddSizeOption = () => {
@@ -590,25 +598,47 @@ export function ProductEditor({
               </div>
             </div>
 
-            {/* Extra Showcase Gallery for Editing */}
-            {editingProduct && (
-              <div className="pt-4 border-t border-slate-100 space-y-4">
-                <div>
-                  <span className="font-bold text-slate-800 text-xs block">Additional Showcase Gallery Photos</span>
-                  <p className="text-[11px] text-slate-500 mt-0.5">
-                    Upload additional angles, lifestyle imagery, and unboxing photography for the product carousel.
-                  </p>
-                </div>
+            {/* Showcase Gallery Photos — always shown, works for both new & existing products */}
+            <div className="pt-4 border-t border-slate-100 space-y-4">
+              <div>
+                <span className="font-bold text-slate-800 text-xs block">Additional Showcase Gallery Photos</span>
+                <p className="text-[11px] text-slate-500 mt-0.5">
+                  Upload additional angles, lifestyle imagery, and unboxing photography for the product carousel.
+                </p>
+              </div>
 
-                {extraMediaList.length > 0 && (
+              {extraMediaList.length > 0 && (
+                <>
+                  <p className="text-[10px] text-slate-400 flex items-center gap-1">
+                    <svg className="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                    Drag images to reorder. Image #1 appears first in the product carousel.
+                  </p>
                   <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-3">
                     {extraMediaList.map((mediaUrl: string, idx: number) => (
-                      <div key={idx} className="group relative aspect-square rounded-xl overflow-hidden border border-slate-200 bg-white shadow-2xs">
+                      <div
+                        key={mediaUrl + idx}
+                        draggable
+                        onDragStart={() => handleGalleryDragStart(idx)}
+                        onDragOver={(e) => { e.preventDefault(); }}
+                        onDrop={() => handleGalleryDrop(idx)}
+                        className="group relative aspect-square rounded-xl overflow-hidden border border-slate-200 bg-white shadow-2xs cursor-grab active:cursor-grabbing transition-opacity"
+                      >
                         <img
                           src={mediaUrl}
                           alt={`Showcase ${idx + 1}`}
-                          className="w-full h-full object-cover"
+                          className="w-full h-full object-cover pointer-events-none"
+                          loading="lazy"
+                          decoding="async"
                         />
+                        {/* Drag handle indicator — top left */}
+                        <div className="absolute top-1.5 left-1.5 p-1 bg-black/50 rounded-md opacity-0 group-hover:opacity-100 transition-opacity">
+                          <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+                          </svg>
+                        </div>
+                        {/* Delete button — top right */}
                         <button
                           type="button"
                           onClick={() => handleDeleteGalleryMedia(mediaUrl)}
@@ -619,28 +649,29 @@ export function ProductEditor({
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                           </svg>
                         </button>
+                        {/* Position badge */}
                         <span className="absolute bottom-1.5 left-1.5 px-1.5 py-0.5 bg-black/60 text-white text-[9px] font-mono rounded">
                           #{idx + 1}
                         </span>
                       </div>
                     ))}
                   </div>
-                )}
+                </>
+              )}
 
-                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
-                  <MediaUploader
-                    label="Add Photo to Showcase Gallery"
-                    value=""
-                    onChange={(url) => {
-                      if (url) {
-                        handleSaveGalleryMedia(url);
-                      }
-                    }}
-                    helperText="Upload additional packaging or bottle photos. Saved to Appwrite Storage and linked to fragrance."
-                  />
-                </div>
+              <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                <MediaUploader
+                  label="Add Photo to Showcase Gallery"
+                  value=""
+                  onChange={(url) => {
+                    if (url) {
+                      handleSaveGalleryMedia(url);
+                    }
+                  }}
+                  helperText="Upload additional packaging or bottle photos. Saved to Appwrite Storage and linked to fragrance."
+                />
               </div>
-            )}
+            </div>
           </div>
 
           {/* Card 4: Olfactory Pyramid */}

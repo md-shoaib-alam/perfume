@@ -47,6 +47,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   const isCurrentlySoldOut = isProductSoldOut(product, selectedSize);
   const isComingSoon = Boolean(product.isComingSoon);
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [hoverImageLoaded, setHoverImageLoaded] = useState(false);
+  const hasHoverImage = Boolean(product.hoverImage && product.hoverImage !== product.image);
 
   return (
     <>
@@ -64,16 +66,29 @@ export const ProductCard: React.FC<ProductCardProps> = ({
               <div className="absolute inset-0 bg-slate-100 animate-pulse rounded-lg" />
             )}
 
+            {/* Main product image */}
             <img
               src={product.image}
               alt={product.name}
               loading="lazy"
               decoding="async"
               onLoad={() => setImageLoaded(true)}
-              className={`w-full h-full object-cover transition-opacity duration-300 ${
+              className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ${
                 imageLoaded ? 'opacity-100' : 'opacity-0'
-              }`}
+              } ${hasHoverImage ? 'group-hover:opacity-0' : ''}`}
             />
+
+            {/* Hover secondary image — fades in on hover, no zoom/scale */}
+            {hasHoverImage && (
+              <img
+                src={product.hoverImage}
+                alt={`${product.name} hover`}
+                loading="lazy"
+                decoding="async"
+                onLoad={() => setHoverImageLoaded(true)}
+                className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 opacity-0 group-hover:opacity-100`}
+              />
+            )}
 
             {/* Badge Overlay: Coming Soon takes priority, otherwise Sold Out */}
             {isComingSoon ? (
