@@ -323,9 +323,12 @@ export default function ProductDetailPage() {
     return Array.from(set);
   }, [product]);
 
-  // Carousel Controller & Smooth Slide State
-  const carouselRef = useRef<HTMLDivElement | null>(null);
-  const isProgrammaticScroll = useRef(false);
+  // Touch & Swipe Controller (Strictly 1 Slide per Swipe)
+  const touchStartX = useRef<number | null>(null);
+  const touchStartY = useRef<number | null>(null);
+  const [dragOffset, setDragOffset] = useState<number>(0);
+  const [isDragging, setIsDragging] = useState<boolean>(false);
+  const isHorizontalSwipe = useRef<boolean | null>(null);
 
   const currentImageIndex = useMemo(() => {
     if (imagesList.length === 0) return 0;
@@ -336,45 +339,58 @@ export default function ProductDetailPage() {
 
   const handleSelectImage = (img: string, index: number) => {
     setSelectedImage(img);
-    if (carouselRef.current) {
-      isProgrammaticScroll.current = true;
-      const width = carouselRef.current.clientWidth;
-      carouselRef.current.scrollTo({
-        left: index * width,
-        behavior: 'smooth'
-      });
-      setTimeout(() => {
-        isProgrammaticScroll.current = false;
-      }, 500);
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (imagesList.length <= 1) return;
+    touchStartX.current = e.targetTouches[0].clientX;
+    touchStartY.current = e.targetTouches[0].clientY;
+    setIsDragging(true);
+    setDragOffset(0);
+    isHorizontalSwipe.current = null;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (touchStartX.current === null || touchStartY.current === null || imagesList.length <= 1) return;
+    const currentX = e.targetTouches[0].clientX;
+    const currentY = e.targetTouches[0].clientY;
+    const diffX = currentX - touchStartX.current;
+    const diffY = currentY - touchStartY.current;
+
+    if (isHorizontalSwipe.current === null) {
+      if (Math.abs(diffX) > 6 || Math.abs(diffY) > 6) {
+        isHorizontalSwipe.current = Math.abs(diffX) >= Math.abs(diffY);
+      }
+    }
+
+    if (isHorizontalSwipe.current) {
+      // Clamped drag: allows user to see the slide moving with their finger without skipping
+      const clampedDiff = Math.max(-140, Math.min(140, diffX));
+      const isAtFirst = currentImageIndex === 0 && clampedDiff > 0;
+      const isAtLast = currentImageIndex === imagesList.length - 1 && clampedDiff < 0;
+      setDragOffset(isAtFirst || isAtLast ? clampedDiff * 0.25 : clampedDiff);
     }
   };
 
-  const handleCarouselScroll = () => {
-    if (!carouselRef.current || isProgrammaticScroll.current) return;
-    const { scrollLeft, clientWidth } = carouselRef.current;
-    if (clientWidth === 0) return;
-    const newIndex = Math.round(scrollLeft / clientWidth);
-    if (newIndex >= 0 && newIndex < imagesList.length) {
-      const targetImg = imagesList[newIndex];
-      if (targetImg && targetImg !== (selectedImage || product?.image)) {
-        setSelectedImage(targetImg);
+  const handleTouchEnd = () => {
+    if (isDragging && isHorizontalSwipe.current) {
+      const swipeThreshold = 35; // px to trigger exactly 1 slide
+      if (dragOffset < -swipeThreshold && currentImageIndex < imagesList.length - 1) {
+        // Swipe Left: Strictly advance 1 single image
+        const next = currentImageIndex + 1;
+        setSelectedImage(imagesList[next]);
+      } else if (dragOffset > swipeThreshold && currentImageIndex > 0) {
+        // Swipe Right: Strictly advance 1 single image back
+        const prev = currentImageIndex - 1;
+        setSelectedImage(imagesList[prev]);
       }
     }
+    setIsDragging(false);
+    setDragOffset(0);
+    touchStartX.current = null;
+    touchStartY.current = null;
+    isHorizontalSwipe.current = null;
   };
-
-
-  // Keep carousel aligned if selectedImage changes from outside
-  useEffect(() => {
-    if (carouselRef.current && !isProgrammaticScroll.current) {
-      const idx = imagesList.findIndex((img) => img === selectedImage);
-      if (idx >= 0) {
-        const width = carouselRef.current.clientWidth;
-        if (width > 0 && Math.abs(carouselRef.current.scrollLeft - idx * width) > 10) {
-          carouselRef.current.scrollTo({ left: idx * width, behavior: 'smooth' });
-        }
-      }
-    }
-  }, [selectedImage, imagesList]);
 
   const handleReviewSubmitData = async (data: {
     author: string;
@@ -545,19 +561,30 @@ export default function ProductDetailPage() {
               </div>
             )}
 
-            {/* Main Featured Image Display with Native CSS Scroll-Snap Smooth Sliding Carousel (Hard/Square Corners) */}
-            <div className="relative aspect-square w-full flex-1 rounded-none overflow-hidden bg-slate-50 border border-slate-200/80 shadow-xs select-none group">
-              {/* Native Scroll-Snap Sliding Carousel Track */}
+            {/* Main Featured Image Display (Strictly 1 Slide Per Swipe) */}
+            <div
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleTouchEnd}
+              onTouchCancel={handleTouchEnd}
+              className="relative aspect-square w-full flex-1 rounded-none overflow-hidden bg-slate-50 border border-slate-200/80 shadow-xs select-none touch-pan-y group"
+            >
+              {/* Sliding Track: Width = imagesList.length * 100%, each slide = 100% of container */}
               <div
-                ref={carouselRef}
-                onScroll={handleCarouselScroll}
-                className="flex w-full h-full overflow-x-auto snap-x snap-mandatory scroll-smooth no-scrollbar select-none touch-pan-x"
-                style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                className="flex h-full will-change-transform"
+                style={{
+                  width: `${Math.max(1, imagesList.length) * 100}%`,
+                  transform: `translateX(calc(-${(currentImageIndex * 100) / Math.max(1, imagesList.length)}% + ${dragOffset}px))`,
+                  transition: isDragging
+                    ? 'none'
+                    : 'transform 380ms cubic-bezier(0.22, 1, 0.36, 1)'
+                }}
               >
                 {imagesList.map((img, idx) => (
                   <div
                     key={idx}
-                    className="w-full h-full flex-shrink-0 snap-center snap-always relative overflow-hidden bg-slate-50"
+                    className="h-full relative overflow-hidden bg-slate-50 flex-shrink-0"
+                    style={{ width: `${100 / Math.max(1, imagesList.length)}%` }}
                   >
                     <img
                       src={img}
