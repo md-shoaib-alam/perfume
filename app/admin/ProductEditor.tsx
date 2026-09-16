@@ -27,7 +27,7 @@ export function ProductEditor({
   onSaveSuccess,
   onOpenCategoryManager,
 }: ProductEditorProps) {
-  const { showAlert } = useConfirm();
+  const { showAlert, showConfirm } = useConfirm();
   const [formData, setFormData] = useState<Partial<Product>>(initialData);
   const [isCustomCategory, setIsCustomCategory] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -54,7 +54,16 @@ export function ProductEditor({
     }));
   };
 
-  const handleDeleteGalleryMedia = (urlToRemove: string) => {
+  const handleDeleteGalleryMedia = async (urlToRemove: string) => {
+    const confirmed = await showConfirm({
+      title: 'Delete Item?',
+      message: 'Are you sure you want to delete this item? This action cannot be undone.',
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      variant: 'danger',
+    });
+    if (!confirmed) return;
+
     deleteMediaFromAppwrite(urlToRemove).catch(() => {});
     setFormData((prev) => ({
       ...prev,
@@ -161,7 +170,16 @@ export function ProductEditor({
     });
   };
 
-  const handleRemoveStoryBlock = (index: number) => {
+  const handleRemoveStoryBlock = async (index: number) => {
+    const confirmed = await showConfirm({
+      title: 'Remove Story Block',
+      message: 'Are you sure you want to remove this narrative story block? Any uploaded photo will be deleted.',
+      confirmText: 'Remove Block',
+      cancelText: 'Cancel',
+      variant: 'danger',
+    });
+    if (!confirmed) return;
+
     const current = formData.storyBlocks || [];
     const blockToRemove = current[index];
     if (blockToRemove?.image) {

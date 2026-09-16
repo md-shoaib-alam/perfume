@@ -61,7 +61,7 @@ export const GenderCampaignBanners: React.FC<GenderCampaignBannersProps> = () =>
               key={item.id}
               href={`/collections/${item.id}`}
               aria-label={`Shop ${item.title}`}
-              className="group relative aspect-[2/3] overflow-hidden rounded-none cursor-pointer block bg-slate-900 shadow-xs text-left w-full"
+              className="group relative aspect-[2/3] overflow-hidden rounded-none cursor-pointer block bg-slate-100 shadow-xs text-left w-full"
             >
               {/* Background Image (Exact 2:3 Ratio Fit) */}
               {item.image ? (
@@ -73,20 +73,14 @@ export const GenderCampaignBanners: React.FC<GenderCampaignBannersProps> = () =>
                   className="w-full h-full object-cover object-top"
                 />
               ) : (
-                <div className="w-full h-full bg-slate-900" />
+                <div className="w-full h-full bg-slate-100" />
               )}
-
-              {/* Gradient Overlay for Text Readability */}
-              <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/10 to-black/25 group-hover:from-black/60 transition-colors duration-300" />
 
               {/* Top-Left Content with Clean Sans-Serif Typography */}
               <div className="absolute top-5 left-5 sm:top-7 sm:left-7 md:top-8 md:left-8 z-10 text-left">
-                <h3 className="font-sans text-lg sm:text-xl md:text-2xl text-white font-medium tracking-normal leading-tight drop-shadow-sm">
+                <h3 className="font-sans text-lg sm:text-xl md:text-2xl text-white font-medium tracking-normal leading-tight drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]">
                   {item.title}
                 </h3>
-                <span className="font-sans text-[10px] sm:text-[11px] uppercase tracking-widest text-white font-medium border-b border-white pb-0.5 mt-1 sm:mt-1.5 inline-block group-hover:text-[#d6a750] group-hover:border-[#d6a750] transition-colors">
-                  DISCOVER
-                </span>
               </div>
             </Link>
           ))}
