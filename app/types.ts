@@ -67,6 +67,7 @@ export interface Review {
   verified: boolean;
   productName: string;
   approved?: boolean;
+  image?: string;
 }
 
 export interface HeroSlide {

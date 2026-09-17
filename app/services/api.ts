@@ -45,7 +45,7 @@ const formatProductDoc = (doc: any): Product => {
     gender: doc.gender || 'Unisex',
     price: Number(doc.price) || 0,
     originalPrice: Number(doc.originalPrice || doc.price) || 0,
-    rating: Number(doc.rating) || 4.8,
+    rating: Number(doc.rating) || 0,
     reviewsCount: Number(doc.reviewsCount) || 0,
     volume: doc.volume || '100ml',
     image: doc.image || '',
@@ -241,7 +241,7 @@ export const api = {
         gender: product.gender || 'Unisex',
         price: Number(product.price || 0),
         originalPrice: Number(product.originalPrice || product.price || 0),
-        rating: Number(product.rating || 4.8),
+        rating: Number(product.rating || 0),
         reviewsCount: Number(product.reviewsCount || 0),
         volume: product.volume || '100ml',
         image: product.image || '',
@@ -596,7 +596,8 @@ export const api = {
             comment: d.comment,
             verified: Boolean(d.verified),
             productName: d.productName,
-            approved: d.approved !== undefined ? Boolean(d.approved) : true
+            approved: d.approved !== undefined ? Boolean(d.approved) : true,
+            image: d.image || undefined
           });
         }
         return list;

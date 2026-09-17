@@ -69,11 +69,11 @@ export const CustomerReviewsSection: React.FC<CustomerReviewsSectionProps> = ({
     }
   }, [userName, existingUserReview]);
 
-  // Curated customer gallery images (from product images, reviews, and unboxing shots)
+  // Customer gallery images (strictly from real product photos and verified customer review attachments)
   const customerGallery = useMemo(() => {
     const list: { url: string; caption: string }[] = [];
     if (product.image) list.push({ url: product.image, caption: `${product.name} Flacon` });
-    if (product.hoverImage && product.hoverImage !== product.image) list.push({ url: product.hoverImage, caption: `${product.name} Box` });
+    if (product.hoverImage && product.hoverImage !== product.image) list.push({ url: product.hoverImage, caption: `${product.name} Presentation` });
     if (Array.isArray(product.showcaseImages)) {
       product.showcaseImages.forEach((url, idx) => {
         if (url) list.push({ url, caption: `${product.name} Photo ${idx + 1}` });
@@ -84,87 +84,26 @@ export const CustomerReviewsSection: React.FC<CustomerReviewsSectionProps> = ({
         if (b.image) list.push({ url: b.image, caption: b.title || `Showcase ${idx + 1}` });
       });
     }
-    // Customer lifestyle & unboxing snapshots
-    const fallbackCustomerSnaps = [
-      { url: 'https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?w=600&auto=format&fit=crop&q=80', caption: 'Travel Atomizer' },
-      { url: 'https://images.unsplash.com/photo-1547887537-6158d64c35b3?w=600&auto=format&fit=crop&q=80', caption: 'Flacon Silhouette' },
-      { url: 'https://images.unsplash.com/photo-1523293182086-7651a899d37f?w=600&auto=format&fit=crop&q=80', caption: 'Collector Box' },
-      { url: 'https://images.unsplash.com/photo-1588405748880-12d1d2a59f75?w=600&auto=format&fit=crop&q=80', caption: 'Extrait de Parfum' },
-    ];
-    fallbackCustomerSnaps.forEach((s) => {
-      if (list.length < 8) list.push(s);
-    });
+    // Real photos uploaded by customers with their reviews
+    if (Array.isArray(reviews)) {
+      reviews.forEach((r) => {
+        if (r.image) {
+          list.push({ url: r.image, caption: `${r.author}'s Review Photo` });
+        }
+      });
+    }
     return list;
-  }, [product]);
+  }, [product, reviews]);
 
-  // Baseline connoisseur reviews matching customer screenshots
+  // Display only genuine reviews from Appwrite database
   const allDisplayReviews = useMemo(() => {
-    if (reviews && reviews.length > 0) return reviews;
+    return Array.isArray(reviews) ? reviews : [];
+  }, [reviews]);
 
-    const defaultReviews: Review[] = [
-      {
-        id: 'rev-sample-1',
-        author: 'Mihir Patel',
-        rating: 5,
-        date: 'Recent',
-        title: 'Great',
-        comment: 'It was really mesmerizing. The depth of the natural oils and the projection in the drydown is exceptional.',
-        verified: true,
-        productName: product.name,
-        approved: true,
-      },
-      {
-        id: 'rev-sample-2',
-        author: 'MANAS KUMAR JENA',
-        rating: 5,
-        date: 'Recent',
-        title: 'Outstanding longevity and scent trail',
-        comment: "Amazing smell and it persists long. Projects easily for 8+ hours even in warm weather.",
-        verified: true,
-        productName: product.name,
-        approved: true,
-      },
-      {
-        id: 'rev-sample-3',
-        author: 'Anonymous',
-        rating: 5,
-        date: 'Recent',
-        title: 'Beautiful aquatic jasmine forward fragrance',
-        comment: `${product.name} opens with a fresh bright floral blast with predominant notes that settle into a magnificent clean trail. Very smooth, office safe, and garners compliments effortlessly.`,
-        verified: true,
-        productName: product.name,
-        approved: true,
-      },
-      {
-        id: 'rev-sample-4',
-        author: 'Sthiti',
-        rating: 5,
-        date: 'Recent',
-        title: 'Good and long lasting',
-        comment: "It's quite good and long lasting. Rich projection that lingers beautifully throughout the evening.",
-        verified: true,
-        productName: product.name,
-        approved: true,
-      },
-      {
-        id: 'rev-sample-5',
-        author: 'Ajay Anjaria',
-        rating: 5,
-        date: 'Recent',
-        title: 'Masterpiece formulation',
-        comment: 'Authentic royal formulation. High concentration of oils gives exceptional sillage without overpowering the room.',
-        verified: true,
-        productName: product.name,
-        approved: true,
-      },
-    ];
-    return defaultReviews;
-  }, [reviews, product.name]);
-
-  // Statistics calculation
+  // Statistics calculation (strictly from real database reviews)
   const totalCount = allDisplayReviews.length;
-  const ratingSum = allDisplayReviews.reduce((acc, r) => acc + (r.rating || 5), 0);
-  const averageRating = totalCount > 0 ? (ratingSum / totalCount).toFixed(2) : '4.80';
+  const ratingSum = allDisplayReviews.reduce((acc, r) => acc + (Number(r.rating) || 5), 0);
+  const averageRating = totalCount > 0 ? (ratingSum / totalCount).toFixed(1) : '0.0';
 
   // Counts by star
   const countsByStar = useMemo(() => {
@@ -232,7 +171,7 @@ export const CustomerReviewsSection: React.FC<CustomerReviewsSectionProps> = ({
   };
 
   return (
-    <section className="my-16 pt-12 border-t border-slate-200 max-w-5xl mx-auto px-4 font-sans text-slate-800">
+    <section id="reviews-section" className="my-16 pt-12 border-t border-slate-200 max-w-5xl mx-auto px-4 font-sans text-slate-800">
       {/* 1. Header */}
       <h2 className="font-serif text-2xl sm:text-3xl md:text-4xl text-slate-900 text-center tracking-tight mb-8 sm:mb-10 font-normal">
         Customer Reviews
@@ -244,7 +183,7 @@ export const CustomerReviewsSection: React.FC<CustomerReviewsSectionProps> = ({
         <div className="flex flex-col items-center text-center shrink-0 w-full md:w-auto">
           <div className="flex items-center gap-1 text-[#caa04c] mb-1.5">
             {[1, 2, 3, 4, 5].map((s) => {
-              const numRating = parseFloat(averageRating) || 5;
+              const numRating = totalCount > 0 ? (parseFloat(averageRating) || 0) : 0;
               const diff = numRating - (s - 1);
               const isFull = diff >= 0.75;
               const isHalf = diff >= 0.25 && diff < 0.75;
@@ -270,10 +209,16 @@ export const CustomerReviewsSection: React.FC<CustomerReviewsSectionProps> = ({
             })}
           </div>
           <p className="text-sm sm:text-base font-semibold text-slate-900 font-sans">
-            {averageRating} <span className="font-normal text-slate-700">out of 5</span>
+            {totalCount > 0 ? (
+              <>
+                {averageRating} <span className="font-normal text-slate-700">out of 5</span>
+              </>
+            ) : (
+              <span className="font-normal text-slate-500">No ratings yet</span>
+            )}
           </p>
           <p className="text-xs text-slate-400 mt-0.5">
-            Based on {totalCount} reviews
+            {totalCount > 0 ? `Based on ${totalCount} ${totalCount === 1 ? 'review' : 'reviews'}` : '0 customer reviews'}
           </p>
         </div>
 
@@ -450,7 +395,8 @@ export const CustomerReviewsSection: React.FC<CustomerReviewsSectionProps> = ({
         </form>
       )}
 
-      {/* 4. Customer Photos & Videos Section (Screenshot Match) */}
+      {/* 4. Customer Photos & Videos Section - Temporarily commented out as requested */}
+      {/*
       {customerGallery.length > 0 && (
         <div className="py-6 border-b border-slate-200">
           <h3 className="font-sans text-xs sm:text-sm font-semibold text-slate-900 mb-3 tracking-wide">
@@ -485,28 +431,38 @@ export const CustomerReviewsSection: React.FC<CustomerReviewsSectionProps> = ({
           </div>
         </div>
       )}
+      */}
 
-      {/* 6. Sorting Bar */}
-      <div className="py-4 border-b border-slate-200 flex items-center justify-between">
-        <LuxurySelect
-          value={sortBy}
-          onChange={(val) => setSortBy(val as any)}
-          position="bottom"
-          options={[
-            { value: 'recent', label: 'Most Recent' },
-            { value: 'highest', label: 'Highest Rating' },
-            { value: 'lowest', label: 'Lowest Rating' }
-          ]}
-          triggerClassName="py-1.5 px-3 border-slate-200 text-[#caa04c] font-bold"
-          contentClassName="min-w-[150px]"
-        />
-      </div>
+      {/* 6. Sorting Bar (Only shown when reviews exist) */}
+      {totalCount > 0 && (
+        <div className="py-4 border-b border-slate-200 flex items-center justify-between">
+          <LuxurySelect
+            value={sortBy}
+            onChange={(val) => setSortBy(val as any)}
+            position="bottom"
+            options={[
+              { value: 'recent', label: 'Most Recent' },
+              { value: 'highest', label: 'Highest Rating' },
+              { value: 'lowest', label: 'Lowest Rating' }
+            ]}
+            triggerClassName="py-1.5 px-3 border-slate-200 text-[#caa04c] font-bold"
+            contentClassName="min-w-[150px]"
+          />
+        </div>
+      )}
 
       {/* 7. Reviews List (Screenshot Match) */}
       <div className="divide-y divide-slate-200">
         {visibleReviews.length === 0 ? (
-          <div className="py-12 text-center text-slate-500 text-xs font-sans">
-            No reviews match the selected filter.
+          <div className="py-14 text-center text-slate-500 font-sans space-y-2">
+            <p className="text-base font-semibold text-slate-800">
+              {totalCount === 0 ? 'No customer reviews yet' : 'No reviews match the selected filter'}
+            </p>
+            <p className="text-xs text-slate-500 max-w-sm mx-auto">
+              {totalCount === 0
+                ? `Be the first connoisseur to share your olfactory impressions of ${product.name}.`
+                : 'Try adjusting your sorting preference.'}
+            </p>
           </div>
         ) : (
           visibleReviews.map((rev) => (

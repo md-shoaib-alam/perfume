@@ -109,24 +109,26 @@ export default function ProductDetailPage() {
 
   // Derived review metrics synchronized dynamically with customer reviews
   const reviewStats = useMemo(() => {
+    const dbRating = Number(product?.rating) || 0;
+    const dbCount = Number(product?.reviewsCount) || 0;
+
     if (!reviews || reviews.length === 0) {
-      const fallbackRating = Number(product?.rating) || 5;
-      const fallbackCount = product?.reviewsCount || 0;
+      const hasDbStats = dbCount > 0 && dbRating > 0;
       return {
-        averageRating: fallbackRating.toFixed(2),
-        numericRating: fallbackRating,
-        totalCount: fallbackCount,
-        hasReviews: false,
+        averageRating: hasDbStats ? dbRating.toFixed(2) : '0.0',
+        numericRating: hasDbStats ? dbRating : 0,
+        totalCount: dbCount,
+        hasReviews: hasDbStats,
       };
     }
 
-    const ratingSum = reviews.reduce((acc, r) => acc + (Number(r.rating) || 5), 0);
-    const avg = ratingSum / reviews.length;
+    const ratingSum = reviews.reduce((acc, r) => acc + (Number(r.rating) || 0), 0);
+    const avg = reviews.length > 0 ? ratingSum / reviews.length : 0;
     return {
-      averageRating: avg.toFixed(2),
+      averageRating: avg > 0 ? avg.toFixed(2) : '0.0',
       numericRating: avg,
       totalCount: reviews.length,
-      hasReviews: true,
+      hasReviews: reviews.length > 0,
     };
   }, [reviews, product?.rating, product?.reviewsCount]);
 
@@ -710,40 +712,55 @@ export default function ProductDetailPage() {
 
               {/* Star Rating Badge (Synchronized Dynamically with Customer Reviews) */}
               <div className="flex items-center gap-2 mt-3">
-                <div className="flex items-center gap-0.5 text-[#caa04c]">
-                  {[1, 2, 3, 4, 5].map((star) => {
-                    const diff = reviewStats.numericRating - (star - 1);
-                    const isFull = diff >= 0.75;
-                    const isHalf = diff >= 0.25 && diff < 0.75;
+                {reviewStats.hasReviews && reviewStats.totalCount > 0 ? (
+                  <>
+                    <div className="flex items-center gap-0.5 text-[#caa04c]">
+                      {[1, 2, 3, 4, 5].map((star) => {
+                        const diff = reviewStats.numericRating - (star - 1);
+                        const isFull = diff >= 0.75;
+                        const isHalf = diff >= 0.25 && diff < 0.75;
 
-                    return (
-                      <div key={star} className="relative w-4 h-4">
-                        {/* Background empty star */}
-                        <svg className="w-4 h-4 text-slate-200 fill-current" viewBox="0 0 20 20">
-                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                        </svg>
-                        {/* Filled star overlay */}
-                        {isFull ? (
-                          <svg className="w-4 h-4 text-[#caa04c] fill-current absolute inset-0" viewBox="0 0 20 20">
-                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                          </svg>
-                        ) : isHalf ? (
-                          <div className="absolute inset-0 overflow-hidden w-1/2">
-                            <svg className="w-4 h-4 text-[#caa04c] fill-current" viewBox="0 0 20 20">
+                        return (
+                          <div key={star} className="relative w-4 h-4">
+                            {/* Background empty star */}
+                            <svg className="w-4 h-4 text-slate-200 fill-current" viewBox="0 0 20 20">
                               <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                             </svg>
+                            {/* Filled star overlay */}
+                            {isFull ? (
+                              <svg className="w-4 h-4 text-[#caa04c] fill-current absolute inset-0" viewBox="0 0 20 20">
+                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                              </svg>
+                            ) : isHalf ? (
+                              <div className="absolute inset-0 overflow-hidden w-1/2">
+                                <svg className="w-4 h-4 text-[#caa04c] fill-current" viewBox="0 0 20 20">
+                                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                </svg>
+                              </div>
+                            ) : null}
                           </div>
-                        ) : null}
-                      </div>
-                    );
-                  })}
-                </div>
-                <span className="text-xs font-bold text-slate-800">
-                  {reviewStats.averageRating}
-                </span>
-                <span className="text-xs text-slate-400">
-                  ({reviewStats.totalCount} {reviewStats.totalCount === 1 ? 'verified review' : 'verified reviews'})
-                </span>
+                        );
+                      })}
+                    </div>
+                    <span className="text-xs font-bold text-slate-800">
+                      {reviewStats.averageRating}
+                    </span>
+                    <span className="text-xs text-slate-400">
+                      ({reviewStats.totalCount} {reviewStats.totalCount === 1 ? 'verified review' : 'verified reviews'})
+                    </span>
+                  </>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const el = document.getElementById('reviews-section');
+                      if (el) el.scrollIntoView({ behavior: 'smooth' });
+                    }}
+                    className="text-xs text-[#b88f3e] hover:text-[#97732a] font-medium transition-colors cursor-pointer"
+                  >
+                    No customer reviews yet — Be the first to review
+                  </button>
+                )}
               </div>
             </div>
 

@@ -26,6 +26,9 @@ export const ReviewsSection: React.FC = () => {
 
   if (approvedReviews.length === 0) return null;
 
+  const ratingSum = approvedReviews.reduce((acc, r) => acc + (Number(r.rating) || 5), 0);
+  const avgRating = (ratingSum / approvedReviews.length).toFixed(1);
+
   return (
     <section className="py-20 bg-[#fafafa] border-t border-slate-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -33,10 +36,10 @@ export const ReviewsSection: React.FC = () => {
         <div className="text-center max-w-2xl mx-auto mb-14">
           <span className="text-xs uppercase tracking-[0.3em] text-[#caa04c] font-semibold">Verified Testimonials</span>
           <h2 className="font-serif text-3xl sm:text-4xl font-normal text-slate-900 mt-2">
-            Loved By Over 50,000+ Fragrance Lovers
+            Loved By Fragrance Connoisseurs
           </h2>
           <div className="flex items-center justify-center gap-2 mt-3">
-            <div className="flex items-center gap-1 text-[#caa04c]" role="img" aria-label="5 out of 5 stars">
+            <div className="flex items-center gap-1 text-[#caa04c]" role="img" aria-label={`${avgRating} out of 5 stars`}>
               {[1, 2, 3, 4, 5].map((star) => (
                 <svg
                   key={star}
@@ -53,7 +56,9 @@ export const ReviewsSection: React.FC = () => {
                 </svg>
               ))}
             </div>
-            <span className="text-slate-600 font-semibold text-sm">4.9 / 5.0 Average Rating</span>
+            <span className="text-slate-600 font-semibold text-sm">
+              {avgRating} / 5.0 Average Rating ({approvedReviews.length} {approvedReviews.length === 1 ? 'Review' : 'Reviews'})
+            </span>
           </div>
         </div>
 
