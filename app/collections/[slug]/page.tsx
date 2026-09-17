@@ -324,17 +324,15 @@ export default function CollectionPage() {
 
   return (
     <>
-      <head>
-        <title>{`${meta.title} – BakhoorBliss`}</title>
-        <meta name="description" content={meta.subtitle || meta.editorial || 'Explore BakhoorBliss luxury fragrances and artisanal perfumes.'} />
-        <link rel="canonical" href={`https://bakhoorbliss.in/collections/${slug}`} />
-        <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
-        <meta property="og:title" content={`${meta.title} – BakhoorBliss`} />
-        <meta property="og:description" content={meta.subtitle || meta.editorial || 'Explore BakhoorBliss luxury fragrances and artisanal perfumes.'} />
-        <meta property="og:url" content={`https://bakhoorbliss.in/collections/${slug}`} />
-        <meta property="og:type" content="website" />
-        {meta.bannerImage && <meta property="og:image" content={meta.bannerImage} />}
-      </head>
+      <title>{`${meta.title} – BakhoorBliss`}</title>
+      <meta name="description" content={meta.subtitle || meta.editorial || 'Explore BakhoorBliss luxury fragrances and artisanal perfumes.'} />
+      <link rel="canonical" href={`https://bakhoorbliss.in/collections/${slug}`} />
+      <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
+      <meta property="og:title" content={`${meta.title} – BakhoorBliss`} />
+      <meta property="og:description" content={meta.subtitle || meta.editorial || 'Explore BakhoorBliss luxury fragrances and artisanal perfumes.'} />
+      <meta property="og:url" content={`https://bakhoorbliss.in/collections/${slug}`} />
+      <meta property="og:type" content="website" />
+      {meta.bannerImage && <meta property="og:image" content={meta.bannerImage} />}
       <div className="min-h-screen bg-white text-slate-900 font-sans selection:bg-[#d6a13d] selection:text-black">
         {/* 1. Top Announcement Bar */}
       <AnnouncementBar />

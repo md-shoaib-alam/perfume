@@ -25,8 +25,17 @@ export const HeroManager: React.FC = () => {
       if (data && data.length > 0) {
         setSlides(data);
         setInitialSlides(JSON.parse(JSON.stringify(data)));
+        if (typeof window !== 'undefined') {
+          try {
+            localStorage.setItem('bb_hero_slides_cache', JSON.stringify({ data, timestamp: Date.now() }));
+          } catch {}
+        }
         queryClient.invalidateQueries({ queryKey: queryKeys.heroSlides });
         return;
+      } else if (typeof window !== 'undefined') {
+        try {
+          localStorage.removeItem('bb_hero_slides_cache');
+        } catch {}
       }
       // If no slides in database, create 1 editable slide in state
       const defaultSlide: HeroSlide = {

@@ -38,6 +38,11 @@ export default function ProductDetailPage() {
   const rawId = (params?.id as string) || '';
   const productId = decodeURIComponent(rawId);
   const { showAlert } = useConfirm();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const {
     cartItems,
@@ -511,49 +516,47 @@ export default function ProductDetailPage() {
 
   return (
     <>
-      <head>
-        <title>{product ? `${product.name} – BakhoorBliss` : 'BakhoorBliss | Luxury Fragrance'}</title>
-        <meta name="description" content={productDescription} />
-        <link rel="canonical" href={productCanonicalUrl} />
-        <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
-        <meta property="og:title" content={product ? `${product.name} – BakhoorBliss` : 'BakhoorBliss'} />
-        <meta property="og:description" content={productDescription} />
-        <meta property="og:url" content={productCanonicalUrl} />
-        <meta property="og:type" content="product" />
-        {product?.image && <meta property="og:image" content={product.image} />}
-        {product && (
-          <script
-            type="application/ld+json"
-            dangerouslySetInnerHTML={{
-              __html: JSON.stringify({
-                "@context": "https://schema.org/",
-                "@type": "Product",
-                "name": product.name,
-                "image": imagesList.length > 0 ? imagesList : [product.image].filter(Boolean),
-                "description": productDescription,
-                "brand": {
-                  "@type": "Brand",
-                  "name": "BakhoorBliss"
-                },
-                "offers": {
-                  "@type": "Offer",
-                  "url": productCanonicalUrl,
-                  "priceCurrency": "INR",
-                  "price": productPrice,
-                  "availability": isCurrentSoldOut ? "https://schema.org/OutOfStock" : "https://schema.org/InStock"
-                },
-                ...(product.rating ? {
-                  "aggregateRating": {
-                    "@type": "AggregateRating",
-                    "ratingValue": product.rating,
-                    "reviewCount": Math.max(1, localReviews.length)
-                  }
-                } : {})
-              })
-            }}
-          />
-        )}
-      </head>
+      <title>{product ? `${product.name} – BakhoorBliss` : 'BakhoorBliss | Luxury Fragrance'}</title>
+      <meta name="description" content={productDescription} />
+      <link rel="canonical" href={productCanonicalUrl} />
+      <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+      <meta property="og:title" content={product ? `${product.name} – BakhoorBliss` : 'BakhoorBliss'} />
+      <meta property="og:description" content={productDescription} />
+      <meta property="og:url" content={productCanonicalUrl} />
+      <meta property="og:type" content="product" />
+      {product?.image && <meta property="og:image" content={product.image} />}
+      {mounted && product && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org/",
+              "@type": "Product",
+              "name": product.name,
+              "image": imagesList.length > 0 ? imagesList : [product.image].filter(Boolean),
+              "description": productDescription,
+              "brand": {
+                "@type": "Brand",
+                "name": "BakhoorBliss"
+              },
+              "offers": {
+                "@type": "Offer",
+                "url": productCanonicalUrl,
+                "priceCurrency": "INR",
+                "price": productPrice,
+                "availability": isCurrentSoldOut ? "https://schema.org/OutOfStock" : "https://schema.org/InStock"
+              },
+              ...(product.rating ? {
+                "aggregateRating": {
+                  "@type": "AggregateRating",
+                  "ratingValue": product.rating,
+                  "reviewCount": Math.max(1, localReviews.length)
+                }
+              } : {})
+            })
+          }}
+        />
+      )}
       <div className="min-h-screen bg-white text-slate-900 font-sans selection:bg-[#d6a13d] selection:text-black">
         {/* 1. Header & Navigation */}
         <AnnouncementBar />

@@ -50,8 +50,8 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onShopNow }) => {
 
   if (slides.length === 0) {
     return (
-      <div className="w-full bg-black/95 aspect-[4/5] sm:aspect-[16/7] md:aspect-[21/9] flex items-center justify-center border-b border-[#b69254]/30 relative overflow-hidden">
-        <div className="w-full h-full bg-gradient-to-r from-black via-zinc-900 to-black animate-pulse" />
+      <div className="w-full bg-[#0a0a0a] aspect-[822/1280] md:aspect-[1280/563] flex items-center justify-center border-b border-[#b69254]/30 relative overflow-hidden">
+        <div className="w-full h-full bg-gradient-to-r from-zinc-950 via-zinc-900 to-zinc-950" />
       </div>
     );
   }
@@ -127,8 +127,11 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onShopNow }) => {
                 alt={slide.name || 'Hero Banner'}
                 loading={index === 0 ? 'eager' : 'lazy'}
                 fetchPriority={index === 0 ? 'high' : 'auto'}
-                decoding="async"
-                className="hidden md:block w-full h-auto select-none mx-auto"
+                decoding={index === 0 ? 'sync' : 'async'}
+                width={1280}
+                height={563}
+                style={{ aspectRatio: '1280 / 563' }}
+                className="hidden md:block w-full h-auto select-none mx-auto object-cover"
               />
 
               {/* Mobile Image Banner (Full intrinsic ratio - Never crops top or text) */}
@@ -137,8 +140,11 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onShopNow }) => {
                 alt={slide.name || 'Hero Banner Mobile'}
                 loading={index === 0 ? 'eager' : 'lazy'}
                 fetchPriority={index === 0 ? 'high' : 'auto'}
-                decoding="async"
-                className="block md:hidden w-full h-auto select-none mx-auto"
+                decoding={index === 0 ? 'sync' : 'async'}
+                width={822}
+                height={1280}
+                style={{ aspectRatio: '822 / 1280' }}
+                className="block md:hidden w-full h-auto select-none mx-auto object-cover"
               />
             </a>
           </div>

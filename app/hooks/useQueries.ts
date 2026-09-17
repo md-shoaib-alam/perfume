@@ -23,8 +23,10 @@ export const queryKeys = {
 };
 
 // ---------------------------------------------------------------------------
-// 1. Products Queries
+// 1. Products Queries (15-Minute LocalStorage Persistent Cache)
 // ---------------------------------------------------------------------------
+const PRODUCTS_CACHE_TTL_MS = 15 * 60 * 1000; // 15 minutes
+
 export function useProductsQuery(category?: string, gender?: string) {
   return useQuery({
     queryKey: queryKeys.products(category, gender),
@@ -32,7 +34,8 @@ export function useProductsQuery(category?: string, gender?: string) {
       const data = await api.getProducts(category, gender);
       return data || [];
     },
-    staleTime: 1000 * 60 * 10, // 10 mins
+    staleTime: 1000 * 60 * 15, // 15 mins fresh
+    gcTime: 1000 * 60 * 30,
   });
 }
 
@@ -59,12 +62,34 @@ export function useProductQuery(productIdOrSlug: string) {
         }
       }
 
+      // Check localStorage cache
+      if (typeof window !== 'undefined') {
+        try {
+          const raw = localStorage.getItem('bb_products_cache');
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            const allProducts: Product[] = Array.isArray(parsed) ? parsed : parsed?.data;
+            const timestamp = Array.isArray(parsed) ? 0 : parsed?.timestamp || 0;
+            if (Array.isArray(allProducts) && Date.now() - timestamp < PRODUCTS_CACHE_TTL_MS) {
+              const match = allProducts.find(
+                (p) =>
+                  p.id === productIdOrSlug ||
+                  slugify(p.name) === normalizedParam ||
+                  slugify(p.name) === slugify(productIdOrSlug)
+              );
+              if (match) return match;
+            }
+          }
+        } catch {}
+      }
+
       // If not in cache, fetch directly via api
       const product = await api.getProductById(productIdOrSlug);
       return product || null;
     },
     enabled: Boolean(productIdOrSlug),
-    staleTime: 1000 * 60 * 10,
+    staleTime: 1000 * 60 * 15,
+    gcTime: 1000 * 60 * 30,
   });
 }
 
@@ -75,24 +100,68 @@ export function useCollectionsQuery() {
   return useQuery({
     queryKey: queryKeys.collections,
     queryFn: async () => {
+      if (typeof window !== 'undefined') {
+        try {
+          const raw = localStorage.getItem('bb_collections_cache');
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            const data = Array.isArray(parsed) ? parsed : parsed?.data;
+            const timestamp = Array.isArray(parsed) ? 0 : parsed?.timestamp || 0;
+            if (Array.isArray(data) && data.length > 0 && Date.now() - timestamp < 15 * 60 * 1000) {
+              return data;
+            }
+          }
+        } catch {}
+      }
       const data = await api.getCollections();
+      if (Array.isArray(data) && data.length > 0 && typeof window !== 'undefined') {
+        try {
+          localStorage.setItem('bb_collections_cache', JSON.stringify({ data, timestamp: Date.now() }));
+        } catch {}
+      }
       return data || [];
     },
     staleTime: 1000 * 60 * 15,
+    gcTime: 1000 * 60 * 30,
   });
 }
 
 // ---------------------------------------------------------------------------
-// 3. Hero Slides Query
+// 3. Hero Slides Query (15-Minute LocalStorage Cache)
 // ---------------------------------------------------------------------------
+const HERO_CACHE_TTL_MS = 15 * 60 * 1000; // 15 minutes
+
 export function useHeroSlidesQuery() {
   return useQuery({
     queryKey: queryKeys.heroSlides,
     queryFn: async () => {
+      const now = Date.now();
+      // 1. If cached within 15 minutes, return directly without database call
+      if (typeof window !== 'undefined') {
+        try {
+          const raw = localStorage.getItem('bb_hero_slides_cache');
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            const data = Array.isArray(parsed) ? parsed : parsed?.data;
+            const timestamp = Array.isArray(parsed) ? 0 : parsed?.timestamp || 0;
+            if (Array.isArray(data) && data.length > 0 && now - timestamp < HERO_CACHE_TTL_MS) {
+              return data;
+            }
+          }
+        } catch {}
+      }
+
+      // 2. Otherwise fetch fresh from database/API
       const data = await api.getHeroSlides();
+      if (Array.isArray(data) && data.length > 0 && typeof window !== 'undefined') {
+        try {
+          localStorage.setItem('bb_hero_slides_cache', JSON.stringify({ data, timestamp: Date.now() }));
+        } catch {}
+      }
       return data || [];
     },
-    staleTime: 1000 * 60 * 15,
+    staleTime: 1000 * 60 * 15, // 15 minutes
+    gcTime: 1000 * 60 * 30,    // 30 minutes
   });
 }
 
