@@ -691,6 +691,16 @@ export default function CheckoutPage() {
             ondismiss: () => {
               isSubmittingRef.current = false;
               setIsSubmitting(false);
+              if (orderRes?.orderId) {
+                api.cancelRazorpayOrder(orderRes.orderId).catch((err) => {
+                  console.warn('Non-blocking order cancellation notice on dismiss:', err);
+                });
+              }
+              toast({
+                title: 'Payment Exited',
+                description: 'Payment was cancelled. Your bag items have been retained.'
+              });
+              router.push('/');
             }
           },
           handler: async (response: any) => {
@@ -728,6 +738,11 @@ export default function CheckoutPage() {
             setErrorMsg(failResp?.error?.description || 'Payment transaction failed');
             isSubmittingRef.current = false;
             setIsSubmitting(false);
+            if (orderRes?.orderId) {
+              api.cancelRazorpayOrder(orderRes.orderId).catch((err) => {
+                console.warn('Non-blocking order cancellation notice on payment failure:', err);
+              });
+            }
           });
           rzpInstance.open();
         } else {

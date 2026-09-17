@@ -519,6 +519,24 @@ export const api = {
     return await res.json();
   },
 
+  async cancelRazorpayOrder(orderId: string): Promise<any> {
+    try {
+      const res = await fetch('/api/razorpay/cancel', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId })
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || 'Failed to cancel order');
+      }
+      return await res.json();
+    } catch (err: any) {
+      console.warn('cancelRazorpayOrder notice:', err.message || err);
+      return { success: false, error: err.message };
+    }
+  },
+
   async updateOrderStatus(id: string, status: string, trackingNumber?: string, trackingUrl?: string, customerData?: any): Promise<any> {
     try {
       const res = await fetch('/api/orders', {

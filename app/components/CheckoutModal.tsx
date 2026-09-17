@@ -301,6 +301,15 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
           modal: {
             ondismiss: () => {
               setIsSubmitting(false);
+              if (orderRes?.orderId) {
+                api.cancelRazorpayOrder(orderRes.orderId).catch((err) => {
+                  console.warn('Non-blocking order cancellation notice on dismiss:', err);
+                });
+              }
+              toast({
+                title: 'Payment Exited',
+                description: 'Payment was cancelled. Your bag items have been retained.'
+              });
             }
           },
           handler: async (response: any) => {
@@ -339,6 +348,11 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
           rzpInstance.on('payment.failed', (failResp: any) => {
             setErrorMsg(failResp?.error?.description || 'Payment transaction failed');
             setIsSubmitting(false);
+            if (orderRes?.orderId) {
+              api.cancelRazorpayOrder(orderRes.orderId).catch((err) => {
+                console.warn('Non-blocking order cancellation notice on payment failure:', err);
+              });
+            }
           });
           rzpInstance.open();
         } else {

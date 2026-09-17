@@ -1,10 +1,91 @@
 import { NextResponse } from 'next/server';
+import Razorpay from 'razorpay';
 import { databases, APPWRITE_DATABASE_ID } from '@/lib/appwrite';
 import { ID, Query } from 'appwrite';
 import { auth } from '@clerk/nextjs/server';
 import { checkRole } from '@/lib/roles';
 import { calculateOrderBreakdown, isProductSoldOut } from '@/lib/pricing';
 
+async function reconcilePendingRazorpayOrder(doc: any) {
+  try {
+    let parsedShipping: any = {};
+    try {
+      parsedShipping = typeof doc.shippingAddress === 'string' ? JSON.parse(doc.shippingAddress) : (doc.shippingAddress || {});
+    } catch {
+      parsedShipping = {};
+    }
+
+    const paymentMethod = doc.paymentMethod || parsedShipping?.paymentMethod;
+    if (paymentMethod !== 'razorpay') return doc;
+
+    const rawStatus = (doc.status || 'pending').toLowerCase();
+    const rawPaymentStatus = (doc.paymentStatus || 'pending').toLowerCase();
+
+    // Only reconcile if both status and paymentStatus are pending
+    if (rawStatus !== 'pending' || rawPaymentStatus !== 'pending') return doc;
+
+    // If order was created less than 2 minutes ago, the user might actively be on checkout
+    const createdAtTime = doc.$createdAt ? new Date(doc.$createdAt).getTime() : 0;
+    const ageInMs = Date.now() - createdAtTime;
+    if (ageInMs < 120_000) {
+      return doc;
+    }
+
+    const storedRazorpayOrderId: string | undefined = parsedShipping.razorpayOrderId;
+    const keyId = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || '';
+    const keySecret = process.env.RAZORPAY_KEY_SECRET || '';
+
+    let paymentReceived = false;
+
+    if (
+      keyId &&
+      keySecret &&
+      !keyId.includes('your_key_id') &&
+      storedRazorpayOrderId &&
+      !storedRazorpayOrderId.startsWith('order_sim_') &&
+      !storedRazorpayOrderId.startsWith('order_test_')
+    ) {
+      try {
+        const rzp = new Razorpay({ key_id: keyId, key_secret: keySecret });
+        const paymentsRes: any = await rzp.orders.fetchPayments(storedRazorpayOrderId);
+        const payments = Array.isArray(paymentsRes?.items) ? paymentsRes.items : [];
+        const successfulPayment = payments.find(
+          (p: any) => p.status === 'captured' || p.status === 'authorized'
+        );
+        if (successfulPayment) {
+          paymentReceived = true;
+        } else {
+          const rzpOrder: any = await rzp.orders.fetch(storedRazorpayOrderId);
+          if (rzpOrder?.status === 'paid') {
+            paymentReceived = true;
+          }
+        }
+      } catch (rzpErr: any) {
+        console.warn('[orders/reconcile] Razorpay status query note:', rzpErr?.message || rzpErr);
+      }
+    }
+
+    if (paymentReceived) {
+      await databases.updateDocument(APPWRITE_DATABASE_ID, 'orders', doc.$id, {
+        paymentStatus: 'paid',
+        status: 'processing'
+      });
+      doc.paymentStatus = 'paid';
+      doc.status = 'processing';
+    } else {
+      // Payment was not received; cancel the abandoned pending order
+      await databases.updateDocument(APPWRITE_DATABASE_ID, 'orders', doc.$id, {
+        paymentStatus: 'cancelled',
+        status: 'cancelled'
+      });
+      doc.paymentStatus = 'cancelled';
+      doc.status = 'cancelled';
+    }
+  } catch (err: any) {
+    console.warn('[orders/reconcile] Reconcile order note:', doc.$id, err?.message);
+  }
+  return doc;
+}
 
 const formatOrderDoc = (doc: any) => {
   let parsedItems = [];
@@ -95,7 +176,8 @@ export async function GET(req: Request) {
     // Admins without a param see all orders
 
     const res = await databases.listDocuments(APPWRITE_DATABASE_ID, 'orders', queries);
-    const orders = (res.documents || []).map(formatOrderDoc);
+    const reconciledDocs = await Promise.all((res.documents || []).map(reconcilePendingRazorpayOrder));
+    const orders = reconciledDocs.map(formatOrderDoc);
     return NextResponse.json(orders);
   } catch (err: any) {
     console.error('API /api/orders GET error:', err);
