@@ -529,7 +529,7 @@ export default function ProductDetailPage() {
                 "@context": "https://schema.org/",
                 "@type": "Product",
                 "name": product.name,
-                "image": [product.image, ...(product.gallery || [])].filter(Boolean),
+                "image": imagesList.length > 0 ? imagesList : [product.image].filter(Boolean),
                 "description": productDescription,
                 "brand": {
                   "@type": "Brand",
