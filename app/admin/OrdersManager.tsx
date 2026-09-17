@@ -134,7 +134,7 @@ export const OrdersManager: React.FC = () => {
   const { showConfirm, showAlert } = useConfirm();
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [statusFilter, setStatusFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('Order Placed');
   const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
 
   // Pagination State
