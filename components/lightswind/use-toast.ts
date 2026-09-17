@@ -2,7 +2,7 @@ import * as React from "react";
 import type { ToastProps } from "./toast";
 
 const TOAST_LIMIT = 3;
-const TOAST_REMOVE_DELAY = 1000;
+const TOAST_REMOVE_DELAY = 400;
 
 export type ToasterToast = ToastProps & {
   id: string;
@@ -170,7 +170,7 @@ function parseToastInput(input: ToastInput, defaultVariant?: ToasterToast["varia
 function toast(props: ToastInput) {
   const id = genId();
   const parsed = parseToastInput(props);
-  const duration = parsed.duration !== undefined ? parsed.duration : 4000;
+  const duration = parsed.duration !== undefined ? parsed.duration : 2200;
 
   const update = (props: ToasterToast) =>
     dispatch({

@@ -25,16 +25,16 @@ export type ToastPosition =
   | "bottom-center";
 
 const toastViewportVariants = cva(
-  "fixed z-[9999] flex flex-col gap-2.5 p-4 w-full sm:max-w-[420px] pointer-events-none",
+  "fixed z-[9999] flex flex-col gap-2 p-2 sm:p-4 w-full sm:max-w-[420px] pointer-events-none transition-all duration-300",
   {
     variants: {
       position: {
-        "top-right": "top-0 right-0 flex-col items-end",
-        "top-left": "top-0 left-0 flex-col items-start",
-        "bottom-right": "bottom-0 right-0 flex-col-reverse items-end",
-        "bottom-left": "bottom-0 left-0 flex-col-reverse items-start",
-        "top-center": "top-0 left-1/2 -translate-x-1/2 flex-col items-center",
-        "bottom-center": "bottom-0 left-1/2 -translate-x-1/2 flex-col-reverse items-center",
+        "top-right": "top-2 sm:top-5 right-0 sm:right-5 left-0 sm:left-auto flex-col items-center sm:items-end px-3 sm:px-0",
+        "top-left": "top-2 sm:top-5 left-0 sm:left-5 right-0 sm:right-auto flex-col items-center sm:items-start px-3 sm:px-0",
+        "bottom-right": "bottom-2 sm:bottom-5 right-0 sm:right-5 left-0 sm:left-auto flex-col-reverse items-center sm:items-end px-3 sm:px-0",
+        "bottom-left": "bottom-2 sm:bottom-5 left-0 sm:left-5 right-0 sm:right-auto flex-col-reverse items-center sm:items-start px-3 sm:px-0",
+        "top-center": "top-2 sm:top-5 left-1/2 -translate-x-1/2 flex-col items-center px-3 sm:px-0",
+        "bottom-center": "bottom-2 sm:bottom-5 left-1/2 -translate-x-1/2 flex-col-reverse items-center px-3 sm:px-0",
       },
     },
     defaultVariants: {
@@ -60,7 +60,7 @@ const ToastViewport = React.forwardRef<HTMLDivElement, ToastViewportProps>(
 ToastViewport.displayName = "ToastViewport";
 
 const toastVariants = cva(
-  "group pointer-events-auto relative flex w-full max-w-sm items-center justify-between gap-3 overflow-hidden rounded-2xl border p-4 pr-10 shadow-2xl backdrop-blur-2xl transition-all duration-200",
+  "group pointer-events-auto relative flex w-full max-w-[calc(100vw-24px)] sm:max-w-[390px] items-center justify-between gap-2.5 sm:gap-3 overflow-hidden rounded-xl sm:rounded-2xl border p-3.5 sm:p-4 pr-9 sm:pr-10 shadow-xl sm:shadow-2xl backdrop-blur-2xl transition-all duration-200",
   {
     variants: {
       variant: {
@@ -100,7 +100,7 @@ const Toast = React.forwardRef<HTMLDivElement, ToastProps>(
     {
       className,
       variant = "default",
-      duration = 4000,
+      duration = 2200,
       open = true,
       onOpenChange,
       onClose,
@@ -114,7 +114,7 @@ const Toast = React.forwardRef<HTMLDivElement, ToastProps>(
     ref
   ) => {
     const [paused, setPaused] = React.useState(false);
-    const durationMs = duration !== undefined ? duration : 4000;
+    const durationMs = duration !== undefined ? duration : 2200;
 
     // Auto dismiss after duration, paused when hovered
     React.useEffect(() => {
@@ -143,9 +143,26 @@ const Toast = React.forwardRef<HTMLDivElement, ToastProps>(
       <motion.div
         ref={ref}
         layout
+        drag
+        dragDirectionLock
+        dragConstraints={{ left: 0, right: 0, top: 0, bottom: 0 }}
+        dragElastic={{ top: 0.7, bottom: 0.15, left: 0.7, right: 0.7 }}
+        onDragStart={() => setPaused(true)}
+        onDragEnd={(_event, info) => {
+          setPaused(false);
+          const isDismiss =
+            Math.abs(info.offset.x) > 45 ||
+            Math.abs(info.velocity.x) > 250 ||
+            Math.abs(info.offset.y) > 30 ||
+            Math.abs(info.velocity.y) > 200;
+          if (isDismiss) {
+            onOpenChange?.(false);
+            onClose?.();
+          }
+        }}
         initial={{ opacity: 0, y: -12, scale: 0.95 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
-        exit={{ opacity: 0, y: -10, scale: 0.95, transition: { duration: 0.15 } }}
+        exit={{ opacity: 0, y: -14, scale: 0.92, transition: { duration: 0.15 } }}
         transition={{
           type: "spring",
           damping: 24,
@@ -156,11 +173,12 @@ const Toast = React.forwardRef<HTMLDivElement, ToastProps>(
         style={{
           backdropFilter: "blur(24px) saturate(190%)",
           WebkitBackdropFilter: "blur(24px) saturate(190%)",
+          touchAction: "none",
           ...style,
         }}
         className={cn(
           toastVariants({ variant }),
-          "relative z-50 overflow-hidden font-sans select-none",
+          "relative z-50 overflow-hidden font-sans select-none cursor-grab active:cursor-grabbing",
           className
         )}
         {...props}
@@ -249,7 +267,7 @@ const ToastTitle = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <h2
     ref={ref}
-    className={cn("text-sm font-semibold text-slate-900 tracking-tight", className)}
+    className={cn("text-[13px] sm:text-sm font-semibold text-slate-900 tracking-tight leading-snug", className)}
     {...props}
   />
 ));
@@ -261,7 +279,7 @@ const ToastDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <p
     ref={ref}
-    className={cn("text-xs text-slate-600 mt-0.5 leading-relaxed", className)}
+    className={cn("text-[11.5px] sm:text-xs text-slate-600 mt-0.5 leading-relaxed", className)}
     {...props}
   />
 ));
