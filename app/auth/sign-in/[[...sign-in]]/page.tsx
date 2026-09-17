@@ -119,12 +119,25 @@ export default function CustomSignInPage() {
     setIsLoading(true);
     setErrorMsg('');
 
-    const isEmail = val.includes('@');
+    const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/;
 
-    if (isEmail) {
+    const hasAtSymbol = val.includes('@');
+
+    if (hasAtSymbol) {
+      if (!EMAIL_REGEX.test(val)) {
+        setErrorMsg('Please enter a valid email address (e.g. name@example.com).');
+        setIsLoading(false);
+        return;
+      }
       setEmailAddress(val);
       await sendClerkOtp(val);
     } else {
+      const cleanPhone = val.replace(/[^0-9]/g, '');
+      if (cleanPhone.length < 10) {
+        setErrorMsg('Please enter a valid 10-digit mobile number or email address.');
+        setIsLoading(false);
+        return;
+      }
       savePhoneToDB(val);
       setTimeout(() => {
         setStep('link_email');
@@ -136,8 +149,9 @@ export default function CustomSignInPage() {
   const handleLinkEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const email = emailAddress.trim();
-    if (!email || !email.includes('@')) {
-      setErrorMsg('Please enter a valid email address.');
+    const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/;
+    if (!email || !EMAIL_REGEX.test(email)) {
+      setErrorMsg('Please enter a valid email address (e.g. name@example.com).');
       return;
     }
 
@@ -165,6 +179,13 @@ export default function CustomSignInPage() {
     setIsLoading(true);
     setErrorMsg('');
     const cleanEmail = targetEmail.trim();
+    const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/;
+
+    if (!EMAIL_REGEX.test(cleanEmail)) {
+      setErrorMsg('Please enter a valid email address (e.g. name@example.com).');
+      setIsLoading(false);
+      return;
+    }
 
     try {
       const client = await getClerkClient();
@@ -230,7 +251,11 @@ export default function CustomSignInPage() {
           }
         }
 
-        if (client.signUp && client.signUp.status === 'missing_requirements') {
+        if (
+          client.signUp &&
+          client.signUp.status === 'missing_requirements' &&
+          client.signUp.emailAddress === cleanEmail
+        ) {
           await client.signUp.prepareEmailAddressVerification({
             strategy: 'email_code',
           });
@@ -245,11 +270,27 @@ export default function CustomSignInPage() {
       }
     } catch (err: any) {
       console.error('Clerk OTP Send Error:', err);
-      const msg =
+      let msg =
         err?.errors?.[0]?.longMessage ||
         err?.errors?.[0]?.message ||
         err?.message ||
-        'Failed to send OTP. Please check your email.';
+        '';
+
+      const lowerMsg = (msg || '').toLowerCase();
+      const code = err?.errors?.[0]?.code || '';
+
+      if (
+        code.includes('invalid') ||
+        code.includes('format') ||
+        lowerMsg.includes('missing on sign up preparation') ||
+        lowerMsg.includes('unable to complete a get request') ||
+        lowerMsg.includes('invalid email')
+      ) {
+        msg = 'Please enter a valid email address (e.g. name@example.com).';
+      } else if (!msg) {
+        msg = 'Failed to verify email address. Please check your credentials and try again.';
+      }
+
       setErrorMsg(msg);
       setIsLoading(false);
     }
