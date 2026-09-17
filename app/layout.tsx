@@ -47,15 +47,14 @@ export const metadata: Metadata = {
     address: false,
     telephone: false,
   },
-  alternates: {
-    canonical: "/",
-  },
   robots: {
     index: true,
     follow: true,
+    nocache: false,
     googleBot: {
       index: true,
       follow: true,
+      noimageindex: false,
       "max-video-preview": -1,
       "max-image-preview": "large",
       "max-snippet": -1,
@@ -96,6 +95,38 @@ export default function RootLayout({
       suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} ${playfair.variable} h-full antialiased`}
     >
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@graph": [
+                {
+                  "@type": "Organization",
+                  "@id": "https://bakhoorbliss.in/#organization",
+                  "name": "BakhoorBliss",
+                  "url": "https://bakhoorbliss.in",
+                  "logo": "https://bakhoorbliss.in/assets/bakhoorblissnav.avif",
+                  "description": "Luxury Extrait De Parfum & Artisanal Attars"
+                },
+                {
+                  "@type": "WebSite",
+                  "@id": "https://bakhoorbliss.in/#website",
+                  "url": "https://bakhoorbliss.in",
+                  "name": "BakhoorBliss",
+                  "publisher": { "@id": "https://bakhoorbliss.in/#organization" },
+                  "potentialAction": {
+                    "@type": "SearchAction",
+                    "target": "https://bakhoorbliss.in/collections/all?q={search_term_string}",
+                    "query-input": "required name=search_term_string"
+                  }
+                }
+              ]
+            })
+          }}
+        />
+      </head>
       <body suppressHydrationWarning className="min-h-full flex flex-col bg-white text-slate-900">
         <ClerkProvider>
           <QueryProvider>

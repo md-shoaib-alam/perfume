@@ -81,9 +81,16 @@ export default function ContactPage() {
   };
 
   return (
-    <div className="min-h-screen bg-white text-slate-900 flex flex-col font-sans selection:bg-[#caa04c]/20">
-      {/* Top Announcement Bar */}
-      <AnnouncementBar />
+    <>
+      <head>
+        <title>Contact Us – BakhoorBliss Luxury Perfumery</title>
+        <meta name="description" content="Get in touch with BakhoorBliss customer concierge for perfume consultation, bespoke orders, and order inquiries." />
+        <link rel="canonical" href="https://bakhoorbliss.in/contact" />
+        <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
+      </head>
+      <div className="min-h-screen bg-white text-slate-900 flex flex-col font-sans selection:bg-[#caa04c]/20">
+        {/* Top Announcement Bar */}
+        <AnnouncementBar />
 
       {/* Main Storefront Navigation */}
       <Navbar
@@ -368,5 +375,6 @@ export default function ContactPage() {
       {/* Luxury Footer */}
       <Footer />
     </div>
+    </>
   );
 }

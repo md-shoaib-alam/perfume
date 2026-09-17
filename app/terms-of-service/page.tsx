@@ -22,9 +22,16 @@ export default function TermsOfServicePage() {
   const [searchQuery, setSearchQuery] = useState('');
 
   return (
-    <div className="min-h-screen bg-white text-slate-900 flex flex-col font-sans selection:bg-[#caa04c]/20">
-      {/* Top Announcement Bar */}
-      <AnnouncementBar />
+    <>
+      <head>
+        <title>Terms of Service &amp; Purchase Policy – BakhoorBliss</title>
+        <meta name="description" content="Review the Terms of Service, shipping policies, returns, and ordering guidelines for BakhoorBliss luxury perfumery." />
+        <link rel="canonical" href="https://bakhoorbliss.in/terms-of-service" />
+        <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
+      </head>
+      <div className="min-h-screen bg-white text-slate-900 flex flex-col font-sans selection:bg-[#caa04c]/20">
+        {/* Top Announcement Bar */}
+        <AnnouncementBar />
 
       {/* Main Storefront Navigation */}
       <Navbar
@@ -331,5 +338,6 @@ export default function TermsOfServicePage() {
       {/* Luxury Footer */}
       <Footer />
     </div>
+    </>
   );
 }

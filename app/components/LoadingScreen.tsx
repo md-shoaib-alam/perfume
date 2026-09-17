@@ -1,15 +1,23 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-
+import React from 'react';
 import Image from 'next/image';
 
 interface LoadingScreenProps {
   isLoading: boolean;
 }
 
+/**
+ * LoadingScreen is currently disabled to ensure Googlebot and web crawlers
+ * can immediately read all store content, headings, and images without
+ * being blocked by a full-viewport overlay.
+ * 
+ * To re-enable in the future: change `const IS_ENABLED = false;` to `true`.
+ */
+const IS_ENABLED = false;
+
 export const LoadingScreen: React.FC<LoadingScreenProps> = ({ isLoading }) => {
-  if (!isLoading) return null;
+  if (!IS_ENABLED || !isLoading) return null;
 
   return (
     <div

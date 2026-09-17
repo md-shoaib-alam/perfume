@@ -92,8 +92,16 @@ export default function Page() {
   }, [searchQuery, productsList, activeTab]);
 
   return (
-    <div className="min-h-screen bg-white text-slate-900 font-sans selection:bg-[#d6a13d] selection:text-black relative">
-      <LoadingScreen isLoading={showLoadingScreen} />
+    <>
+      <head>
+        <title>BakhoorBliss | Luxury Extrait De Parfum & Attars</title>
+        <meta name="description" content="Experience artisanal extrait de parfums, pure concentrated attars, and luxury Middle Eastern fragrance oils crafted with master perfumers." />
+        <link rel="canonical" href="https://bakhoorbliss.in/" />
+        <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+      </head>
+      <div className="min-h-screen bg-white text-slate-900 font-sans selection:bg-[#d6a13d] selection:text-black relative">
+        {/* LoadingScreen disabled for optimal Googlebot crawlability & SEO */}
+        {/* <LoadingScreen isLoading={showLoadingScreen} /> */}
       
       {/* 1. Gold Announcement Offer Bar */}
       <AnnouncementBar />
@@ -254,7 +262,7 @@ export default function Page() {
       {/* 8. Celebrity Showcase */}
       <CelebritySection />
 
-      {/* 8.5 Collections Category Circles */}
+      {/* 8.5 Collections Circles Section */}
       <CollectionsCirclesSection />
 
       {/* 8.6 Gender Campaign Banners */}
@@ -403,5 +411,6 @@ export default function Page() {
       )}
 
     </div>
+    </>
   );
 }
