@@ -14,7 +14,7 @@ interface LoadingScreenProps {
  * 
  * To re-enable in the future: change `const IS_ENABLED = false;` to `true`.
  */
-const IS_ENABLED = false;
+const IS_ENABLED = true;
 
 export const LoadingScreen: React.FC<LoadingScreenProps> = ({ isLoading }) => {
   if (!IS_ENABLED || !isLoading) return null;

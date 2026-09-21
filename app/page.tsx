@@ -98,8 +98,7 @@ export default function Page() {
       <link rel="canonical" href="https://bakhoorbliss.in/" />
       <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
       <div className="min-h-screen bg-white text-slate-900 font-sans selection:bg-[#d6a13d] selection:text-black relative">
-        {/* LoadingScreen disabled for optimal Googlebot crawlability & SEO */}
-        {/* <LoadingScreen isLoading={showLoadingScreen} /> */}
+        <LoadingScreen isLoading={showLoadingScreen} />
       
       {/* 1. Gold Announcement Offer Bar */}
       <AnnouncementBar />
