@@ -95,7 +95,22 @@
   animation: slideInRight 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* Product opening: purchase details fade and rise into place */
+/* Product opening: image fades in with a small settle, details rise into place */
+@keyframes productImageEnter {
+  from {
+    opacity: 0;
+    transform: scale(1.03);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-product-image-enter {
+  animation: productImageEnter 480ms cubic-bezier(0.16, 1, 0.3, 1) 40ms backwards;
+}
+
 @keyframes productEnter {
   from {
     opacity: 0;
@@ -112,6 +127,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .animate-product-image-enter,
   .animate-product-enter {
     animation: none !important;
   }

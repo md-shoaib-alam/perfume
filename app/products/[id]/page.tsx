@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
@@ -595,18 +596,19 @@ export default function ProductDetailPage() {
                     key={idx}
                     type="button"
                     onClick={() => handleSelectImage(img, idx)}
-                    className={`w-16 h-16 sm:w-18 sm:h-18 md:w-20 md:h-20 rounded-none overflow-hidden border-2 transition-all cursor-pointer shrink-0 bg-slate-50 ${
+                    className={`relative w-16 h-16 sm:w-18 sm:h-18 md:w-20 md:h-20 rounded-none overflow-hidden border-2 transition-all cursor-pointer shrink-0 bg-slate-50 ${
                       (selectedImage || product.image) === img
                         ? 'border-[#c59b48] shadow-sm ring-1 ring-[#c59b48]'
                         : 'border-slate-200 opacity-70 hover:opacity-100 hover:border-slate-300'
                     }`}
                   >
-                    <img
+                    <Image
                       src={img}
                       alt={`${product.name} view ${idx + 1}`}
+                      fill
+                      sizes="80px"
                       loading="lazy"
-                      decoding="async"
-                      className="w-full h-full object-cover"
+                      className="object-cover"
                     />
                   </button>
                 ))}
@@ -615,11 +617,12 @@ export default function ProductDetailPage() {
 
             {/* Main Featured Image Display (Strictly 1 Slide Per Swipe) */}
             <div
+              key={product.id}
               onTouchStart={handleTouchStart}
               onTouchMove={handleTouchMove}
               onTouchEnd={handleTouchEnd}
               onTouchCancel={handleTouchEnd}
-              className="relative aspect-square w-full flex-1 rounded-none overflow-hidden bg-slate-50 border border-slate-200/80 shadow-xs select-none touch-pan-y group"
+              className="animate-product-image-enter relative aspect-square w-full flex-1 rounded-none overflow-hidden bg-slate-50 border border-slate-200/80 shadow-xs select-none touch-pan-y group"
             >
               {/* Sliding Track: Width = imagesList.length * 100%, each slide = 100% of container */}
               <div
@@ -638,13 +641,15 @@ export default function ProductDetailPage() {
                     className="h-full relative overflow-hidden bg-slate-50 flex-shrink-0"
                     style={{ width: `${100 / Math.max(1, imagesList.length)}%` }}
                   >
-                    <img
+                    <Image
                       src={img}
                       alt={`${product.name} - slide ${idx + 1}`}
+                      fill
+                      sizes="(max-width: 1024px) 100vw, 50vw"
                       loading={idx === 0 ? 'eager' : 'lazy'}
-                      decoding="async"
+                      fetchPriority={idx === 0 ? 'high' : 'auto'}
                       draggable={false}
-                      className="w-full h-full object-cover pointer-events-none select-none"
+                      className="object-cover pointer-events-none select-none"
                     />
                   </div>
                 ))}
@@ -995,12 +1000,13 @@ export default function ProductDetailPage() {
               <div key={idx} className="w-full space-y-8">
                 {/* Full-Bleed Cinematic Showcase Banner (Hero Showcase Style) */}
                 <div className="w-full relative aspect-[4/5] sm:aspect-[16/9] md:aspect-[21/9] lg:aspect-[2.35/1] max-h-[85vh] sm:max-h-[640px] overflow-hidden bg-[#faf9f6]">
-                  <img
+                  <Image
                     src={block.image}
                     alt={block.title || product.name}
+                    fill
+                    sizes="100vw"
                     loading="lazy"
-                    decoding="async"
-                    className="w-full h-full object-cover object-center"
+                    className="object-cover object-center"
                   />
                 </div>
 
