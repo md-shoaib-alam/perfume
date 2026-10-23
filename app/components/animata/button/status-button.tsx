@@ -38,6 +38,7 @@ export default function StatusButton({ label, onAdd, className }: StatusButtonPr
       disabled={!isEnabled}
       className={cn(
         "group/status w-full py-2 sm:py-3 px-3 font-sans font-bold text-[10.5px] leading-4 sm:text-xs uppercase tracking-wider shadow-2xs rounded-md bg-[#caa04c] text-white hover:bg-[#b88f3e] active:scale-98 disabled:hover:bg-[#caa04c] transition-all duration-300 cursor-pointer disabled:cursor-default",
+        status === "loading" && "bg-[#b88f3e] hover:bg-[#b88f3e] disabled:hover:bg-[#b88f3e]",
         className
       )}
     >
@@ -64,7 +65,10 @@ export default function StatusButton({ label, onAdd, className }: StatusButtonPr
           )}
 
           {status === "loading" ? (
-            <CircleDashed className="h-4 w-4 animate-spin" />
+            <>
+              <CircleDashed className="h-4 w-4 animate-spin" />
+              <span>Adding…</span>
+            </>
           ) : status === "added" ? (
             "Added to Cart"
           ) : (
