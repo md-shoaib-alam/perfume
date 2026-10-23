@@ -60,7 +60,7 @@ const COLLECTION_INFO_MAP: Record<string, CollectionMetadata> = {
   'extrait-de-parfum': {
     badge: 'HAUTE EXTRAIT (30%+ CONCENTRATION)',
     title: 'Extrait De Parfum',
-    subtitle: 'Ultra-concentrated 30%+ pure oil perfume formulations guaranteeing 10+ hours of lingering sillage.',
+    subtitle: 'Ultra-concentrated 30%+ pure oil perfume formulations guaranteeing 12+ hours of lingering sillage.',
     editorial: 'Crafted with master perfumers from Grasse and Dubai, our Extrait De Parfum line is macerated for 90 days in dark oak casks, ensuring unparalleled projection, complexity, and longevity.',
     bannerImage: '',
     categoryFilter: 'extrait-de-parfum'
@@ -261,6 +261,7 @@ export default function CollectionPage() {
       const cleanSlug = slug.replace(/[-_]/g, ' ');
       list = list.filter(
         (p) =>
+          (p.collection || '').toLowerCase() === slug ||
           p.name.toLowerCase().includes(cleanSlug) ||
           p.subtitle?.toLowerCase().includes(cleanSlug) ||
           p.description?.toLowerCase().includes(cleanSlug)

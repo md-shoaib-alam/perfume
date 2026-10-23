@@ -99,30 +99,34 @@ export const MenuDrawer: React.FC<MenuDrawerProps> = ({
     }
   }, [isOpen]);
 
-  const menuItems: MenuItemConfig[] = [
-    { name: 'Shop All', hasArrow: false, href: '/collections/all' },
-    { name: 'For Him', hasArrow: false, href: '/collections/for-him' },
-    { name: 'For Her', hasArrow: false, href: '/collections/for-her' },
-    { name: 'Shop by Collection', hasArrow: true },
-    { name: 'Trial Sets', hasArrow: false, href: '/collections/discovery-set' },
-    { name: 'Collector\'s Edition', hasArrow: true },
-    { name: 'Combo', hasArrow: true },
-    { name: 'My Closet (4x10ml)', hasArrow: false, href: '/collections/travel-set' },
-    { name: 'BakhoorBliss Gift Sets', hasArrow: false, href: '/collections/gift-set' },
-    { name: 'Our Story', hasArrow: false, href: '/#heritage' },
-  ];
+  const hasGenderProducts = (gender: 'For Him' | 'For Her') =>
+    products.some((p) => p.gender === gender || p.gender === 'Unisex');
 
-  // 1. Derive dynamic 'Shop by Collection' links from Appwrite collections
-  const collectionSubMenuItems = (collections.length > 0
-    ? collections
-    : [
-        { slug: 'bureau', name: 'Bureau Collection' },
-        { slug: 'luxe', name: 'Luxe Collection' },
-        { slug: 'haute', name: 'Haute Collection' },
-        { slug: 'miss_neesh', name: 'Miss Neesh Collection' }
-      ]
-  )
-    .filter((col) => col.slug && col.slug !== 'for-him' && col.slug !== 'for-her')
+  const hasCategoryProducts = (category: string) =>
+    products.some((p) => (p.category || '').toLowerCase() === category);
+
+  // Mirrors the /collections/[slug] filter so the drawer never links to an empty page
+  const matchesCollectionPage = (slug: string, product: Product) => {
+    const term = slug.replace(/[-_]/g, ' ');
+    return (
+      (product.collection || '').toLowerCase() === slug ||
+      (product.name || '').toLowerCase().includes(term) ||
+      (product.subtitle || '').toLowerCase().includes(term) ||
+      (product.description || '').toLowerCase().includes(term)
+    );
+  };
+
+  // 1. Derive dynamic 'Shop by Collection' links from collections that actually contain products
+  const collectionSubMenuItems = collections
+    .filter((col) => {
+      const colSlug = (col.slug || '').toLowerCase();
+      return (
+        colSlug &&
+        colSlug !== 'for-him' &&
+        colSlug !== 'for-her' &&
+        products.some((p) => matchesCollectionPage(colSlug, p))
+      );
+    })
     .map((col) => {
       const name = col.name || '';
       const subname = col.subname || '';
@@ -137,69 +141,80 @@ export const MenuDrawer: React.FC<MenuDrawerProps> = ({
     });
 
   // 2. Derive dynamic "Collector's Edition" links from Appwrite products
-  const collectorsEditionItems = (() => {
-    if (products.length > 0) {
-      const collectorProds = products.filter((p) => {
-        const pCollection = (p.collection || '').toLowerCase();
-        const pCategory = (p.category || '').toLowerCase();
-        const pName = (p.name || '').toLowerCase();
-        const pTagline = (p.tagline || '').toLowerCase();
-        return (
-          pCollection.includes('collector') ||
-          pCategory.includes('collector') ||
-          pName.includes('tsunara') ||
-          pName.includes('glazed') ||
-          pName.includes('oriental') ||
-          pTagline.includes('collector')
-        );
-      });
-
-      if (collectorProds.length > 0) {
-        return collectorProds.slice(0, 6).map((p) => ({
-          label: p.name,
-          href: `/products/${p.id}`
-        }));
-      }
-    }
-    return [
-      { label: 'Tsunara Extrait De Parfum', href: '/collections/all?q=tsunara' },
-      { label: 'Glazed Oud Special', href: '/collections/all?q=glazed' },
-      { label: 'Oriental Leather', href: '/collections/all?q=oriental' }
-    ];
-  })();
+  const collectorsEditionItems = products
+    .filter((p) => {
+      const pCollection = (p.collection || '').toLowerCase();
+      const pCategory = (p.category || '').toLowerCase();
+      const pName = (p.name || '').toLowerCase();
+      const pTagline = (p.tagline || '').toLowerCase();
+      return (
+        pCollection.includes('collector') ||
+        pCategory.includes('collector') ||
+        pName.includes('tsunara') ||
+        pName.includes('glazed') ||
+        pName.includes('oriental') ||
+        pTagline.includes('collector')
+      );
+    })
+    .slice(0, 6)
+    .map((p) => ({
+      label: p.name,
+      href: `/products/${p.id}`
+    }));
 
   // 3. Derive dynamic "Combo" / Gift Pack links from Appwrite products
-  const comboSubMenuItems = (() => {
-    if (products.length > 0) {
-      const comboProds = products.filter((p) => {
-        const pCategory = (p.category || '').toLowerCase();
-        const pGender = (p.gender || '').toLowerCase();
-        const pName = (p.name || '').toLowerCase();
-        return (
-          pCategory === 'gift-set' ||
-          pCategory === 'discovery-set' ||
-          pGender === 'gift sets' ||
-          pName.includes('combo') ||
-          pName.includes('pack') ||
-          pName.includes('duo') ||
-          pName.includes('trio') ||
-          pName.includes('set')
-        );
-      });
+  const comboSubMenuItems = products
+    .filter((p) => {
+      const pCategory = (p.category || '').toLowerCase();
+      const pGender = (p.gender || '').toLowerCase();
+      const pName = (p.name || '').toLowerCase();
+      return (
+        pCategory === 'gift-set' ||
+        pCategory === 'discovery-set' ||
+        pGender === 'gift sets' ||
+        pName.includes('combo') ||
+        pName.includes('pack') ||
+        pName.includes('duo') ||
+        pName.includes('trio') ||
+        pName.includes('set')
+      );
+    })
+    .slice(0, 6)
+    .map((p) => ({
+      label: p.name,
+      href: `/products/${p.id}`
+    }));
 
-      if (comboProds.length > 0) {
-        return comboProds.slice(0, 6).map((p) => ({
-          label: p.name,
-          href: `/products/${p.id}`
-        }));
-      }
-    }
-    return [
-      { label: 'Luxury Duo Pack', href: '/collections/gift-set' },
-      { label: 'Daily Wear Combo', href: '/collections/gift-set' },
-      { label: 'Signature Trio Pack', href: '/collections/gift-set' }
-    ];
-  })();
+  const hasMyClosetProducts = products.some(
+    (p) =>
+      (p.category || '').toLowerCase() === 'discovery-set' ||
+      (p.name || '').toLowerCase().includes('closet') ||
+      (p.name || '').toLowerCase().includes('travel') ||
+      (p.subtitle || '').toLowerCase().includes('travel')
+  );
+
+  const menuItems: MenuItemConfig[] = [
+    { name: 'Shop All', hasArrow: false, href: '/collections/all' },
+    ...(hasGenderProducts('For Him')
+      ? [{ name: 'For Him', hasArrow: false, href: '/collections/for-him' }]
+      : []),
+    ...(hasGenderProducts('For Her')
+      ? [{ name: 'For Her', hasArrow: false, href: '/collections/for-her' }]
+      : []),
+    ...(collectionSubMenuItems.length > 0 ? [{ name: 'Shop by Collection', hasArrow: true }] : []),
+    ...(hasCategoryProducts('discovery-set')
+      ? [{ name: 'Trial Sets', hasArrow: false, href: '/collections/discovery-set' }]
+      : []),
+    ...(collectorsEditionItems.length > 0 ? [{ name: "Collector's Edition", hasArrow: true }] : []),
+    ...(comboSubMenuItems.length > 0 ? [{ name: 'Combo', hasArrow: true }] : []),
+    ...(hasMyClosetProducts
+      ? [{ name: 'My Closet (4x10ml)', hasArrow: false, href: '/collections/travel-set' }]
+      : []),
+    ...(hasCategoryProducts('gift-set')
+      ? [{ name: 'BakhoorBliss Gift Sets', hasArrow: false, href: '/collections/gift-set' }]
+      : []),
+    { name: 'Our Story', hasArrow: false, href: '/#heritage' }
+  ];
 
   const subMenus: Record<string, { label: string; href: string }[]> = {
     'Shop by Collection': collectionSubMenuItems,
@@ -228,7 +243,7 @@ export const MenuDrawer: React.FC<MenuDrawerProps> = ({
               <div className="w-1/2 h-full flex flex-col justify-between px-6 pt-6 pb-6 overflow-y-auto">
                 <nav className="space-y-4">
                   {menuItems.map((item) => {
-                    if (item.hasArrow && subMenus[item.name]) {
+                    if (item.hasArrow && (subMenus[item.name]?.length ?? 0) > 0) {
                       return (
                         <button
                           key={item.name}
