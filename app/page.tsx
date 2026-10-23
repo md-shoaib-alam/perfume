@@ -9,6 +9,7 @@ import { AnnouncementBar } from './components/AnnouncementBar';
 import { Navbar } from './components/Navbar';
 import { HeroSection } from './components/HeroSection';
 import { ProductCard } from './components/ProductCard';
+import { ProductCardSkeleton } from './components/ProductCardSkeleton';
 import { LoadingScreen } from './components/LoadingScreen';
 import { MasterPerfumersSection } from './components/MasterPerfumersSection';
 import { ReelShortsSection } from './components/ReelShortsSection';
@@ -169,35 +170,14 @@ export default function Page() {
 
         {/* Product Cards Container (4 per row on Tablets and Desktops) */}
         {loading ? (
-          <div className="flex flex-nowrap overflow-x-auto snap-x snap-mandatory gap-3 sm:gap-4 md:gap-4 lg:gap-6 pb-4 no-scrollbar sm:grid sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-4 sm:overflow-x-visible sm:pb-0">
-            {[1, 2, 3, 4].map((item) => (
-              <div
-                key={item}
-                className="w-[72vw] max-w-[260px] shrink-0 snap-center sm:w-auto sm:max-w-none bg-white p-1 sm:p-2 rounded-xl flex flex-col justify-between"
-              >
-                <div className="w-full flex flex-col items-center">
-                  {/* Square Image Skeleton */}
-                  <div className="w-full aspect-square bg-slate-100 rounded-lg animate-pulse mb-3 sm:mb-4" />
-                  {/* Title Skeleton */}
-                  <div className="h-6 w-3/4 bg-slate-100 rounded-md animate-pulse mb-2" />
-                  {/* Subtitle Skeleton */}
-                  <div className="h-3.5 w-1/2 bg-slate-100 rounded-md animate-pulse mb-2" />
-                  {/* Note/Description Lines Skeleton */}
-                  <div className="h-2.5 w-5/6 bg-slate-100 rounded-md animate-pulse mb-1.5" />
-                  <div className="h-2.5 w-4/6 bg-slate-100 rounded-md animate-pulse mb-3" />
-                  {/* Price Skeleton */}
-                  <div className="h-4 w-1/3 bg-slate-100 rounded-md animate-pulse mb-3 sm:mb-4" />
-                  {/* Size Options Pills Skeleton */}
-                  <div className="flex items-center justify-center gap-2 mb-3 sm:mb-4">
-                    <div className="h-6 w-12 bg-slate-100 rounded-full animate-pulse" />
-                    <div className="h-6 w-12 bg-slate-100 rounded-full animate-pulse" />
-                    <div className="h-6 w-12 bg-slate-100 rounded-full animate-pulse" />
-                  </div>
+          <div className="overflow-x-auto no-scrollbar snap-x snap-mandatory pb-4 sm:overflow-x-visible sm:pb-0">
+            <div className="flex w-max min-w-full flex-nowrap justify-center gap-3 sm:grid sm:w-auto sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-4 sm:gap-4 md:gap-4 lg:gap-6">
+              {[1, 2, 3, 4].map((item) => (
+                <div key={item} className="w-[72vw] max-w-[260px] shrink-0 snap-center sm:w-auto sm:max-w-none">
+                  <ProductCardSkeleton />
                 </div>
-                {/* Add to Bag Button Skeleton */}
-                <div className="w-full h-11 bg-slate-100 rounded-lg animate-pulse mt-auto" />
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         ) : filteredProducts.length === 0 ? (
           <div className="pt-2 pb-10 sm:pt-4 sm:pb-14 px-6 text-center max-w-lg mx-auto space-y-3">
@@ -235,15 +215,17 @@ export default function Page() {
             )}
           </div>
         ) : (
-          <div className="flex flex-nowrap overflow-x-auto snap-x snap-mandatory gap-3 sm:gap-4 md:gap-4 lg:gap-6 pb-4 no-scrollbar sm:grid sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-4 sm:overflow-x-visible sm:pb-0">
-            {filteredProducts.map((product) => (
-              <div key={product.id} className="w-[72vw] max-w-[260px] shrink-0 snap-center sm:w-auto sm:max-w-none">
-                <ProductCard
-                  product={product}
-                  onAddToCart={addToCart}
-                />
-              </div>
-            ))}
+          <div className="overflow-x-auto no-scrollbar snap-x snap-mandatory pb-4 sm:overflow-x-visible sm:pb-0">
+            <div className="flex w-max min-w-full flex-nowrap justify-center gap-3 sm:grid sm:w-auto sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-4 sm:gap-4 md:gap-4 lg:gap-6">
+              {filteredProducts.map((product) => (
+                <div key={product.id} className="w-[72vw] max-w-[260px] shrink-0 snap-center sm:w-auto sm:max-w-none">
+                  <ProductCard
+                    product={product}
+                    onAddToCart={addToCart}
+                  />
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </section>

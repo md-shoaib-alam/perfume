@@ -137,7 +137,7 @@ export const ReelShortsSection: React.FC = () => {
           onMouseMove={handleMouseMove}
           className="max-w-[1680px] mx-auto px-4 sm:px-6 lg:px-8 overflow-x-auto select-none py-2 cursor-grab active:cursor-grabbing [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
         >
-          <div className="flex gap-4 sm:gap-5 min-w-max">
+          <div className="flex w-max min-w-full justify-center gap-4 sm:gap-5">
             {reelsList.map((reel: any, idx) => {
               const slug = reel.productId || (reel.title ? slugify(reel.title) : '');
               const href = slug ? `/products/${slug}` : '#';
