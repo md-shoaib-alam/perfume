@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { publicCacheHeaders } from '@/lib/httpCache';
 import { adminGuard } from '@/lib/roles';
 import { databases, APPWRITE_DATABASE_ID } from '@/lib/appwriteServer';
 import { ID, Query } from '@/lib/appwriteServer';
@@ -25,7 +26,7 @@ export async function GET() {
   try {
     const res = await databases.listDocuments(APPWRITE_DATABASE_ID, 'collections', [Query.limit(50)]);
     const colls = (res.documents || []).map(formatCollectionDoc);
-    return NextResponse.json(colls);
+    return NextResponse.json(colls, { headers: publicCacheHeaders });
   } catch (err: any) {
     console.error('API /api/collections error:', err);
     return NextResponse.json({ error: err.message || 'Failed to load collections' }, { status: 500 });

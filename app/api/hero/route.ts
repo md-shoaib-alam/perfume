@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { publicCacheHeaders } from '@/lib/httpCache';
 import { adminGuard } from '@/lib/roles';
 import { databases, APPWRITE_DATABASE_ID } from '@/lib/appwriteServer';
 import { ID, Query } from '@/lib/appwriteServer';
@@ -15,11 +16,7 @@ export async function GET() {
   try {
     const res = await databases.listDocuments(APPWRITE_DATABASE_ID, 'hero_slides', [Query.limit(50)]);
     const slides = (res.documents || []).map(formatHeroDoc);
-    return NextResponse.json(slides, {
-      headers: {
-        'Cache-Control': 'no-store'
-      }
-    });
+    return NextResponse.json(slides, { headers: publicCacheHeaders });
   } catch (err: any) {
     console.error('API /api/hero error:', err);
     return NextResponse.json({ error: err.message || 'Failed to load slides' }, { status: 500 });

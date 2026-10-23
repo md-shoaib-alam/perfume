@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { publicCacheHeaders } from '@/lib/httpCache';
 import { adminGuard } from '@/lib/roles';
 import { databases, APPWRITE_DATABASE_ID, ID } from '@/lib/appwriteServer';
 
@@ -53,9 +54,7 @@ async function readPosts(): Promise<any[]> {
 export async function GET() {
   try {
     const [config, docs] = await Promise.all([readConfig(), readPosts()]);
-    return NextResponse.json(formatData(config, docs), {
-      headers: { 'Cache-Control': 'no-store' }
-    });
+    return NextResponse.json(formatData(config, docs), { headers: publicCacheHeaders });
   } catch (err: any) {
     console.error('API /api/instagram error:', err);
     return NextResponse.json({ error: err.message || 'Failed to load Instagram showcase' }, { status: 500 });

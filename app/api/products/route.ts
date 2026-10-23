@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { publicCacheHeaders } from '@/lib/httpCache';
 import { databases, APPWRITE_DATABASE_ID } from '@/lib/appwriteServer';
 import { ID, Query } from '@/lib/appwriteServer';
 import { auth } from '@clerk/nextjs/server';
@@ -87,7 +88,7 @@ export async function GET(req: Request) {
     if (id) {
       try {
         const doc = await databases.getDocument(APPWRITE_DATABASE_ID, 'products', id);
-        return NextResponse.json(formatProductDoc(doc));
+        return NextResponse.json(formatProductDoc(doc), { headers: publicCacheHeaders });
       } catch (docErr) {
         // Fallback: look up by slug in all products
         const listRes = await databases.listDocuments(APPWRITE_DATABASE_ID, 'products', [Query.limit(100)]);
@@ -105,7 +106,7 @@ export async function GET(req: Request) {
         });
 
         if (found) {
-          return NextResponse.json(formatProductDoc(found));
+          return NextResponse.json(formatProductDoc(found), { headers: publicCacheHeaders });
         }
         return NextResponse.json(null, { status: 404 });
       }
@@ -147,11 +148,7 @@ export async function GET(req: Request) {
 
     const res = await databases.listDocuments(APPWRITE_DATABASE_ID, 'products', queries);
     const products = (res.documents || []).map(formatProductDoc);
-    return NextResponse.json(products, {
-      headers: {
-        'Cache-Control': 'no-store'
-      }
-    });
+    return NextResponse.json(products, { headers: publicCacheHeaders });
   } catch (err: any) {
     console.error('API /api/products error:', err);
     return NextResponse.json({ error: err.message || 'Failed to load products' }, { status: 500 });

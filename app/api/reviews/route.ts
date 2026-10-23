@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { publicCacheHeaders } from '@/lib/httpCache';
 import { databases, APPWRITE_DATABASE_ID, ID, Query } from '@/lib/appwriteServer';
 import { auth } from '@clerk/nextjs/server';
 import { adminGuard } from '@/lib/roles';
@@ -44,7 +45,7 @@ export async function GET(req: Request) {
       reviews.push(formatReviewDoc(d));
     }
 
-    return NextResponse.json(reviews);
+    return NextResponse.json(reviews, { headers: publicCacheHeaders });
   } catch (err: any) {
     console.error('API /api/reviews GET error:', err);
     return NextResponse.json({ error: err.message || 'Failed to load reviews' }, { status: 500 });

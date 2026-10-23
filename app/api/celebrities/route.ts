@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { publicCacheHeaders } from '@/lib/httpCache';
 import fs from 'fs';
 import path from 'path';
 import { adminGuard } from '@/lib/roles';
@@ -38,7 +39,7 @@ function writeCelebrities(data: any) {
 
 export async function GET() {
   const data = readCelebrities();
-  return NextResponse.json(data);
+  return NextResponse.json(data, { headers: publicCacheHeaders });
 }
 
 export async function POST(req: Request) {

@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server';
+import { publicCacheHeaders } from '@/lib/httpCache';
 import { databases, APPWRITE_DATABASE_ID, ID, Query } from '@/lib/appwriteServer';
 import { adminGuard } from '@/lib/roles';
 
 export async function GET() {
   try {
     const res = await databases.listDocuments(APPWRITE_DATABASE_ID, 'settings', [Query.limit(1)]);
-    return NextResponse.json(res.documents?.[0] ?? null);
+    return NextResponse.json(res.documents?.[0] ?? null, { headers: publicCacheHeaders });
   } catch (err: any) {
     console.error('API /api/settings GET error:', err);
     return NextResponse.json(null);
