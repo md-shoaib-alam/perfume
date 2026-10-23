@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
-import { databases, APPWRITE_DATABASE_ID } from '@/lib/appwrite';
+import { databases, APPWRITE_DATABASE_ID } from '@/lib/appwriteServer';
 
 // ─── Security constants ────────────────────────────────────────────────────
 // Sandbox simulation tokens are ONLY accepted in non-production environments.

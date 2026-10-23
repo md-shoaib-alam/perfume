@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { databases, APPWRITE_DATABASE_ID } from '@/lib/appwrite';
-import { ID, Query } from 'appwrite';
+import { databases, APPWRITE_DATABASE_ID } from '@/lib/appwriteServer';
+import { ID, Query } from '@/lib/appwriteServer';
 import { Webhook } from 'svix';
 
 // Clerk signs every webhook with CLERK_WEBHOOK_SECRET.

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { databases, APPWRITE_DATABASE_ID } from '@/lib/appwrite';
-import { ID, Query } from 'appwrite';
+import { databases, APPWRITE_DATABASE_ID } from '@/lib/appwriteServer';
+import { ID, Query } from '@/lib/appwriteServer';
 import { auth } from '@clerk/nextjs/server';
 import { checkRole } from '@/lib/roles';
 import { resolveProductSizeOptions } from '@/lib/pricing';
@@ -149,12 +149,12 @@ export async function GET(req: Request) {
     const products = (res.documents || []).map(formatProductDoc);
     return NextResponse.json(products, {
       headers: {
-        'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300'
+        'Cache-Control': 'no-store'
       }
     });
   } catch (err: any) {
     console.error('API /api/products error:', err);
-    return NextResponse.json([], { status: 200 });
+    return NextResponse.json({ error: err.message || 'Failed to load products' }, { status: 500 });
   }
 }
 

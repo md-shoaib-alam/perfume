@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import Razorpay from 'razorpay';
-import { databases, APPWRITE_DATABASE_ID } from '@/lib/appwrite';
+import { databases, APPWRITE_DATABASE_ID } from '@/lib/appwriteServer';
 import { auth } from '@clerk/nextjs/server';
 import { checkRole } from '@/lib/roles';
 

@@ -1,7 +1,12 @@
 'use client';
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { api } from '../services/api';
+import {
+  api,
+  PRODUCTS_CACHE_TTL_MS,
+  HERO_CACHE_TTL_MS,
+  COLLECTIONS_CACHE_TTL_MS,
+} from '../services/api';
 import type { Product, Review } from '../types';
 import { slugify } from '../utils/slug';
 
@@ -23,9 +28,8 @@ export const queryKeys = {
 };
 
 // ---------------------------------------------------------------------------
-// 1. Products Queries (15-Minute LocalStorage Persistent Cache)
+// 1. Products Queries (short-lived localStorage cache, invalidated on admin writes)
 // ---------------------------------------------------------------------------
-const PRODUCTS_CACHE_TTL_MS = 15 * 60 * 1000; // 15 minutes
 
 export function useProductsQuery(category?: string, gender?: string) {
   return useQuery({
@@ -34,7 +38,7 @@ export function useProductsQuery(category?: string, gender?: string) {
       const data = await api.getProducts(category, gender);
       return data || [];
     },
-    staleTime: 1000 * 60 * 15, // 15 mins fresh
+    staleTime: PRODUCTS_CACHE_TTL_MS,
     gcTime: 1000 * 60 * 30,
   });
 }
@@ -88,7 +92,7 @@ export function useProductQuery(productIdOrSlug: string) {
       return product || null;
     },
     enabled: Boolean(productIdOrSlug),
-    staleTime: 1000 * 60 * 15,
+    staleTime: PRODUCTS_CACHE_TTL_MS,
     gcTime: 1000 * 60 * 30,
   });
 }
@@ -107,7 +111,7 @@ export function useCollectionsQuery() {
             const parsed = JSON.parse(raw);
             const data = Array.isArray(parsed) ? parsed : parsed?.data;
             const timestamp = Array.isArray(parsed) ? 0 : parsed?.timestamp || 0;
-            if (Array.isArray(data) && data.length > 0 && Date.now() - timestamp < 15 * 60 * 1000) {
+            if (Array.isArray(data) && data.length > 0 && Date.now() - timestamp < COLLECTIONS_CACHE_TTL_MS) {
               return data;
             }
           }
@@ -121,15 +125,14 @@ export function useCollectionsQuery() {
       }
       return data || [];
     },
-    staleTime: 1000 * 60 * 15,
+    staleTime: COLLECTIONS_CACHE_TTL_MS,
     gcTime: 1000 * 60 * 30,
   });
 }
 
 // ---------------------------------------------------------------------------
-// 3. Hero Slides Query (15-Minute LocalStorage Cache)
+// 3. Hero Slides Query (localStorage cache, invalidated on admin writes)
 // ---------------------------------------------------------------------------
-const HERO_CACHE_TTL_MS = 15 * 60 * 1000; // 15 minutes
 
 export function useHeroSlidesQuery() {
   return useQuery({
@@ -160,8 +163,8 @@ export function useHeroSlidesQuery() {
       }
       return data || [];
     },
-    staleTime: 1000 * 60 * 15, // 15 minutes
-    gcTime: 1000 * 60 * 30,    // 30 minutes
+    staleTime: HERO_CACHE_TTL_MS,
+    gcTime: 1000 * 60 * 30,
   });
 }
 

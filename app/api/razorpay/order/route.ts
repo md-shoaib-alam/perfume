@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import Razorpay from 'razorpay';
-import { databases, APPWRITE_DATABASE_ID } from '@/lib/appwrite';
-import { ID, Query } from 'appwrite';
+import { databases, APPWRITE_DATABASE_ID } from '@/lib/appwriteServer';
+import { ID, Query } from '@/lib/appwriteServer';
 import { auth } from '@clerk/nextjs/server';
 import { calculateOrderBreakdown, isProductSoldOut } from '@/lib/pricing';
 

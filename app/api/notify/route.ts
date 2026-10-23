@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { databases, APPWRITE_DATABASE_ID } from '@/lib/appwrite';
-import { ID, Query } from 'appwrite';
+import { databases, APPWRITE_DATABASE_ID } from '@/lib/appwriteServer';
+import { ID, Query } from '@/lib/appwriteServer';
 import { adminGuard } from '@/lib/roles';
 
 const COLLECTION_NAME = 'restock_notifications';

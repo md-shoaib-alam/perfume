@@ -1,6 +1,6 @@
 import type { MetadataRoute } from 'next';
-import { databases, APPWRITE_DATABASE_ID } from '@/lib/appwrite';
-import { Query } from 'appwrite';
+import { databases, APPWRITE_DATABASE_ID } from '@/lib/appwriteServer';
+import { Query } from '@/lib/appwriteServer';
 import { slugify } from './utils/slug';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {

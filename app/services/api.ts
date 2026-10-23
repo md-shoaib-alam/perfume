@@ -1,79 +1,30 @@
-import { databases, APPWRITE_DATABASE_ID } from '@/lib/appwrite';
-import { ID, Query } from 'appwrite';
 import type { Product, Review } from '../types';
-import { resolveProductSizeOptions } from '@/lib/pricing';
-
-// Helper to format Appwrite Product document to Product interface
-const formatProductDoc = (doc: any): Product => {
-  let parsedNotes = { top: [] as string[], heart: [] as string[], base: [] as string[] };
-  if (doc.notes) {
-    try {
-      parsedNotes = typeof doc.notes === 'string' ? JSON.parse(doc.notes) : doc.notes;
-    } catch (e) {
-      parsedNotes = { top: [String(doc.notes)], heart: [], base: [] };
-    }
-  }
-
-  const parsedSizeOptions = resolveProductSizeOptions(doc);
-
-  let parsedStoryBlocks = [];
-  if (doc.storyBlocks) {
-    try {
-      parsedStoryBlocks = typeof doc.storyBlocks === 'string' ? JSON.parse(doc.storyBlocks) : doc.storyBlocks;
-    } catch (e) {
-      parsedStoryBlocks = [];
-    }
-  }
-
-  let parsedShowcaseImages: string[] = [];
-  if (doc.showcaseImages) {
-    try {
-      parsedShowcaseImages = typeof doc.showcaseImages === 'string' ? JSON.parse(doc.showcaseImages) : doc.showcaseImages;
-      if (!Array.isArray(parsedShowcaseImages)) parsedShowcaseImages = [];
-    } catch (e) {
-      parsedShowcaseImages = [];
-    }
-  }
-
-  const stableId = doc.$id || doc.id || (doc.name ? doc.name.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-') : 'prod-' + Math.random().toString(36).substring(2, 9));
-
-  return {
-    id: stableId,
-    name: doc.name || 'Untitled Perfume',
-    subtitle: doc.subtitle || '',
-    category: doc.category || 'extrait-de-parfum',
-    gender: doc.gender || 'Unisex',
-    price: Number(doc.price) || 0,
-    originalPrice: Number(doc.originalPrice || doc.price) || 0,
-    rating: Number(doc.rating) || 0,
-    reviewsCount: Number(doc.reviewsCount) || 0,
-    volume: doc.volume || '100ml',
-    image: doc.image || '',
-    hoverImage: doc.hoverImage || doc.image || '',
-    showcaseImages: parsedShowcaseImages,
-    isBestseller: Boolean(doc.isBestseller),
-    isNew: Boolean(doc.isNew),
-    isPreOrder: Boolean(doc.isPreOrder),
-    isComingSoon: Boolean(doc.isComingSoon),
-    shippingNote: doc.shippingNote || '',
-    buttonText: doc.buttonText || '',
-    tagline: doc.tagline || '',
-    badgeText: doc.badgeText || '',
-    badgeSubtext: doc.badgeSubtext || '',
-    notes: parsedNotes,
-    description: doc.description || '',
-    stock: doc.stock == null ? 100 : Number(doc.stock),
-    collection: doc.collection || '',
-    sizeOptions: parsedSizeOptions,
-    storyBlocks: parsedStoryBlocks
-  };
-};
 
 // Client in-memory cache for ultra-fast instant rendering
 const productsMemoryCache = new Map<string, { data: Product[]; timestamp: number }>();
 let heroSlidesMemoryCache: { data: any[]; timestamp: number } | null = null;
-const PRODUCTS_CACHE_TTL_MS = 15 * 60 * 1000; // 15 minutes cache
-const CACHE_TTL_MS = PRODUCTS_CACHE_TTL_MS;
+export const PRODUCTS_CACHE_TTL_MS = 2 * 60 * 1000;
+export const HERO_CACHE_TTL_MS = 2 * 60 * 1000;
+export const COLLECTIONS_CACHE_TTL_MS = 2 * 60 * 1000;
+
+// Every mutation goes through a guarded /api route; the browser never writes to Appwrite directly.
+async function apiRequest<T>(url: string, init: RequestInit, failMessage: string): Promise<T> {
+  let res: Response;
+  try {
+    res = await fetch(url, init);
+  } catch {
+    throw new Error(failMessage);
+  }
+  const payload = await res.json().catch(() => null);
+  if (!res.ok) throw new Error(payload?.error || failMessage);
+  return payload as T;
+}
+
+const jsonInit = (method: string, body: unknown): RequestInit => ({
+  method,
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify(body),
+});
 
 export const api = {
   // Clear cache helper
@@ -93,9 +44,16 @@ export const api = {
       } catch {}
     }
   },
+  invalidateCollectionsCache() {
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.removeItem('bb_collections_cache');
+      } catch {}
+    }
+  },
 
   // =========================================================================
-  // 1. PRODUCTS (15-Minute Persistent LocalStorage & Memory Cache)
+  // 1. PRODUCTS (short-lived localStorage & memory cache)
   // =========================================================================
   async getProducts(category?: string, gender?: string): Promise<Product[]> {
     const cacheKey = `${category || ''}_${gender || ''}`;
@@ -107,7 +65,7 @@ export const api = {
       return cached.data;
     }
 
-    // 2. Check localStorage cache with 15-minute TTL (zero network hit)
+    // 2. Check localStorage cache (zero network hit while the TTL is fresh)
     if (typeof window !== 'undefined') {
       try {
         const raw = localStorage.getItem('bb_products_cache');
@@ -150,29 +108,7 @@ export const api = {
         }
       }
     } catch (err) {
-      console.warn('API /api/products proxy error, trying direct SDK:', err);
-    }
-
-    try {
-      const queries: string[] = [Query.limit(100)];
-      if (category) queries.push(Query.equal('category', category));
-      if (gender && gender !== 'All') queries.push(Query.equal('gender', gender));
-
-      const res = await databases.listDocuments(APPWRITE_DATABASE_ID, 'products', queries);
-      if (res && res.documents) {
-        const formatted = res.documents.map(formatProductDoc);
-        if (formatted.length > 0) {
-          productsMemoryCache.set(cacheKey, { data: formatted, timestamp: Date.now() });
-          if (!category && (!gender || gender === 'All') && typeof window !== 'undefined') {
-            try {
-              localStorage.setItem('bb_products_cache', JSON.stringify({ data: formatted, timestamp: Date.now() }));
-            } catch {}
-          }
-        }
-        return formatted;
-      }
-    } catch (err) {
-      console.warn('Appwrite getProducts query error:', err);
+      console.warn('API /api/products proxy error:', err);
     }
 
     if (cached && cached.data.length > 0) {
@@ -190,170 +126,37 @@ export const api = {
         if (data && data.id) return data;
       }
     } catch (err) {
-      console.warn('API /api/products/[id] error, trying direct SDK:', err);
+      console.warn('API /api/products?id error:', err);
     }
-
-    try {
-      const doc = await databases.getDocument(APPWRITE_DATABASE_ID, 'products', id);
-      return formatProductDoc(doc);
-    } catch (err) {
-      try {
-        const list = await databases.listDocuments(APPWRITE_DATABASE_ID, 'products', [Query.limit(100)]);
-        const match = (list.documents || []).find((d: any) => {
-          const s = (d.name || '')
-            .toLowerCase()
-            .trim()
-            .replace(/\s+/g, '-')
-            .replace(/&/g, '-and-')
-            .replace(/[^\w\-]+/g, '')
-            .replace(/\-\-+/g, '-')
-            .replace(/^-+/, '')
-            .replace(/-+$/, '');
-          return s === id.toLowerCase() || d.$id === id;
-        });
-        if (match) return formatProductDoc(match);
-      } catch (listErr) {
-        console.warn('Appwrite getProductById query error:', listErr);
-      }
-      return null;
-    }
+    return null;
   },
 
   async createProduct(product: Partial<Product>): Promise<Product> {
-    try {
-      const res = await fetch('/api/products', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(product)
-      });
-      if (res.ok) {
-        return await res.json();
-      }
-    } catch (err) {
-      console.warn('API createProduct failed, fallback to SDK:', err);
-    }
-
-    try {
-      const docData: any = {
-        name: product.name || 'Untitled Perfume',
-        subtitle: product.subtitle || '',
-        category: product.category || 'extrait-de-parfum',
-        gender: product.gender || 'Unisex',
-        price: Number(product.price || 0),
-        originalPrice: Number(product.originalPrice || product.price || 0),
-        rating: Number(product.rating || 0),
-        reviewsCount: Number(product.reviewsCount || 0),
-        volume: product.volume || '100ml',
-        image: product.image || '',
-        hoverImage: product.hoverImage || product.image || '',
-        description: product.description || '',
-        notes: JSON.stringify(product.notes || {}),
-        isBestseller: Boolean(product.isBestseller),
-        isNew: Boolean(product.isNew),
-        isPreOrder: Boolean(product.isPreOrder),
-        isComingSoon: Boolean(product.isComingSoon),
-        shippingNote: product.shippingNote || '',
-        buttonText: product.buttonText || '',
-        tagline: product.tagline || '',
-        badgeText: product.badgeText || '',
-        badgeSubtext: product.badgeSubtext || '',
-        collection: product.collection || '',
-        sizeOptions: JSON.stringify(product.sizeOptions || []),
-        storyBlocks: JSON.stringify(product.storyBlocks || []),
-        showcaseImages: JSON.stringify(product.showcaseImages || []),
-        stock: product.stock == null ? 100 : Number(product.stock)
-      };
-
-      const doc = await databases.createDocument(
-        APPWRITE_DATABASE_ID,
-        'products',
-        ID.unique(),
-        docData
-      );
-      this.invalidateProductsCache();
-      return formatProductDoc(doc);
-    } catch (err: any) {
-      console.error('Appwrite createProduct error:', err);
-      throw new Error(err.message || 'Failed to create product in Appwrite');
-    }
+    const created = await apiRequest<Product>(
+      '/api/products',
+      jsonInit('POST', product),
+      'Failed to create product'
+    );
+    this.invalidateProductsCache();
+    return created;
   },
 
   async updateProduct(id: string, updates: Partial<Product>): Promise<Product> {
-    try {
-      const res = await fetch('/api/products', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, updates })
-      });
-      if (res.ok) {
-        this.invalidateProductsCache();
-        return await res.json();
-      }
-    } catch (err) {
-      console.warn('API updateProduct failed, fallback to SDK:', err);
-    }
-
-    try {
-      const cleanData: any = {};
-      if (updates.name !== undefined) cleanData.name = updates.name;
-      if (updates.subtitle !== undefined) cleanData.subtitle = updates.subtitle;
-      if (updates.category !== undefined) cleanData.category = updates.category;
-      if (updates.gender !== undefined) cleanData.gender = updates.gender;
-      if (updates.collection !== undefined) cleanData.collection = updates.collection;
-      if (updates.price !== undefined) cleanData.price = Number(updates.price);
-      if (updates.originalPrice !== undefined) cleanData.originalPrice = Number(updates.originalPrice);
-      if (updates.rating !== undefined) cleanData.rating = Number(updates.rating);
-      if (updates.reviewsCount !== undefined) cleanData.reviewsCount = Number(updates.reviewsCount);
-      if (updates.volume !== undefined) cleanData.volume = updates.volume;
-      if (updates.image !== undefined) cleanData.image = updates.image;
-      if (updates.hoverImage !== undefined) cleanData.hoverImage = updates.hoverImage;
-      if (updates.description !== undefined) cleanData.description = updates.description;
-      if (updates.notes !== undefined) cleanData.notes = typeof updates.notes === 'string' ? updates.notes : JSON.stringify(updates.notes);
-      if (updates.isBestseller !== undefined) cleanData.isBestseller = Boolean(updates.isBestseller);
-      if (updates.isNew !== undefined) cleanData.isNew = Boolean(updates.isNew);
-      if (updates.isPreOrder !== undefined) cleanData.isPreOrder = Boolean(updates.isPreOrder);
-      if (updates.isComingSoon !== undefined) cleanData.isComingSoon = Boolean(updates.isComingSoon);
-      if (updates.shippingNote !== undefined) cleanData.shippingNote = updates.shippingNote;
-      if (updates.buttonText !== undefined) cleanData.buttonText = updates.buttonText;
-      if (updates.tagline !== undefined) cleanData.tagline = updates.tagline;
-      if (updates.badgeText !== undefined) cleanData.badgeText = updates.badgeText;
-      if (updates.badgeSubtext !== undefined) cleanData.badgeSubtext = updates.badgeSubtext;
-      if (updates.sizeOptions !== undefined) cleanData.sizeOptions = typeof updates.sizeOptions === 'string' ? updates.sizeOptions : JSON.stringify(updates.sizeOptions);
-      if (updates.storyBlocks !== undefined) cleanData.storyBlocks = typeof updates.storyBlocks === 'string' ? updates.storyBlocks : JSON.stringify(updates.storyBlocks);
-      if (updates.showcaseImages !== undefined) cleanData.showcaseImages = typeof updates.showcaseImages === 'string' ? updates.showcaseImages : JSON.stringify(updates.showcaseImages || []);
-      if (updates.stock !== undefined) cleanData.stock = updates.stock == null ? 100 : Number(updates.stock);
-
-      const doc = await databases.updateDocument(
-        APPWRITE_DATABASE_ID,
-        'products',
-        id,
-        cleanData
-      );
-      this.invalidateProductsCache();
-      return formatProductDoc(doc);
-    } catch (err: any) {
-      console.error('Appwrite updateProduct error:', err);
-      throw new Error(err.message || 'Failed to update product in Appwrite');
-    }
+    const updated = await apiRequest<Product>(
+      '/api/products',
+      jsonInit('PUT', { id, updates }),
+      'Failed to update product'
+    );
+    this.invalidateProductsCache();
+    return updated;
   },
 
   async deleteProduct(id: string): Promise<boolean> {
     try {
-      const res = await fetch(`/api/products?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
-      if (res.ok) {
-        this.invalidateProductsCache();
-        return true;
-      }
-    } catch (err) {
-      console.warn('API deleteProduct failed, fallback to SDK:', err);
-    }
-
-    try {
-      await databases.deleteDocument(APPWRITE_DATABASE_ID, 'products', id);
+      await apiRequest(`/api/products?id=${encodeURIComponent(id)}`, { method: 'DELETE' }, 'Failed to delete product');
       this.invalidateProductsCache();
       return true;
-    } catch (err: any) {
-      console.error('Appwrite deleteProduct error:', err);
+    } catch {
       return false;
     }
   },
@@ -370,122 +173,13 @@ export const api = {
         if (Array.isArray(data)) return data;
       }
     } catch (err) {
-      console.warn('API /api/orders error, trying direct SDK:', err);
-    }
-
-    try {
-      const queries: string[] = [Query.limit(100), Query.orderDesc('$createdAt')];
-      if (userId) {
-        queries.push(Query.equal('userId', userId));
-      }
-
-      const res = await databases.listDocuments(APPWRITE_DATABASE_ID, 'orders', queries);
-      if (res && res.documents) {
-        return res.documents.map((doc: any) => {
-          let parsedItems = [];
-          try {
-            parsedItems = typeof doc.items === 'string' ? JSON.parse(doc.items) : (doc.items || []);
-          } catch (e) {
-            parsedItems = [];
-          }
-          let parsedShipping: any = {};
-          try {
-            parsedShipping = typeof doc.shippingAddress === 'string' ? JSON.parse(doc.shippingAddress) : (doc.shippingAddress || {});
-          } catch (e) {
-            parsedShipping = typeof doc.shippingAddress === 'string' ? { address: doc.shippingAddress } : {};
-          }
-          const custName = doc.customerName || parsedShipping?.name || 'Anonymous Customer';
-          const custEmail = doc.customerEmail || parsedShipping?.email || '';
-          const custPhone = doc.customerPhone || parsedShipping?.phone || '';
-          const custAddress = typeof parsedShipping?.address === 'string' ? parsedShipping.address : (doc.shippingAddress || '');
-          const custCity = parsedShipping?.city || '';
-          const custState = parsedShipping?.state || '';
-          const custPincode = parsedShipping?.pincode || parsedShipping?.postalCode || '';
-          const custCountry = parsedShipping?.country || 'India';
-
-          return {
-            _id: doc.$id,
-            id: doc.$id,
-            orderNumber: `NSH-${doc.$id.slice(-5).toUpperCase()}`,
-            userId: doc.userId,
-            customerName: custName,
-            customerEmail: custEmail,
-            customerPhone: custPhone,
-            shippingAddress: doc.shippingAddress,
-            customer: {
-              name: custName,
-              email: custEmail,
-              phone: custPhone,
-              address: custAddress,
-              city: custCity,
-              state: custState,
-              pincode: custPincode,
-              postalCode: custPincode,
-              country: custCountry
-            },
-            total: Number(doc.totalAmount || 0),
-            totalAmount: Number(doc.totalAmount || 0),
-            status: doc.status || 'pending',
-            orderStatus: doc.status || 'pending',
-            paymentStatus: doc.paymentStatus || 'pending',
-            paymentMethod: doc.paymentMethod || parsedShipping?.paymentMethod || (doc.paymentStatus === 'paid' ? 'razorpay' : 'cod'),
-            items: parsedItems,
-            createdAt: doc.$createdAt
-          };
-        });
-      }
-    } catch (err) {
-      console.warn('Appwrite getOrders error:', err);
+      console.warn('API /api/orders error:', err);
     }
     return [];
   },
 
   async createOrder(orderData: any): Promise<any> {
-    try {
-      const res = await fetch('/api/orders', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(orderData)
-      });
-      if (res.ok) {
-        return await res.json();
-      }
-    } catch (err) {
-      console.warn('API createOrder failed, fallback to direct SDK:', err);
-    }
-
-    try {
-      const shippingObj = typeof orderData.shippingAddress === 'object' && orderData.shippingAddress !== null
-        ? { ...orderData.shippingAddress, paymentMethod: orderData.paymentMethod || 'cod' }
-        : { address: String(orderData.shippingAddress || '').trim(), paymentMethod: orderData.paymentMethod || 'cod' };
-
-      const doc = await databases.createDocument(
-        APPWRITE_DATABASE_ID,
-        'orders',
-        ID.unique(),
-        {
-          userId: orderData.userId || '',
-          customerName: orderData.customerName || orderData.name || 'Customer',
-          customerEmail: orderData.customerEmail || orderData.email || '',
-          customerPhone: orderData.customerPhone || orderData.phone || '',
-          shippingAddress: JSON.stringify(shippingObj),
-          totalAmount: Number(orderData.total || orderData.totalAmount || 0),
-          status: orderData.status || 'pending',
-          paymentStatus: orderData.paymentStatus || 'pending',
-          items: JSON.stringify(orderData.items || [])
-        }
-      );
-      return {
-        _id: doc.$id,
-        id: doc.$id,
-        orderNumber: `NSH-${doc.$id.slice(-5).toUpperCase()}`,
-        ...orderData,
-        createdAt: doc.$createdAt
-      };
-    } catch (err: any) {
-      console.error('Appwrite createOrder error:', err);
-      throw new Error(err.message || 'Failed to place order in Appwrite');
-    }
+    return apiRequest('/api/orders', jsonInit('POST', orderData), 'Failed to place order');
   },
 
   async createRazorpayOrder(payload: { items: any[]; customer: any; couponCode?: string }): Promise<any> {
@@ -538,48 +232,20 @@ export const api = {
   },
 
   async updateOrderStatus(id: string, status: string, trackingNumber?: string, trackingUrl?: string, customerData?: any): Promise<any> {
-    try {
-      const res = await fetch('/api/orders', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          id,
-          status,
-          trackingNumber,
-          trackingUrl,
-          customerName: customerData?.name,
-          customerEmail: customerData?.email,
-          customerPhone: customerData?.phone,
-          shippingAddress: customerData?.address ? customerData : undefined
-        })
-      });
-      if (res.ok) {
-        return await res.json();
-      }
-    } catch (err) {
-      console.warn('API updateOrderStatus failed, fallback to direct SDK:', err);
-    }
-
-    try {
-      const payload: any = { status };
-      if (trackingNumber !== undefined) payload.trackingNumber = trackingNumber;
-      if (trackingUrl !== undefined) payload.trackingUrl = trackingUrl;
-      if (customerData?.name) payload.customerName = customerData.name;
-      if (customerData?.email) payload.customerEmail = customerData.email;
-      if (customerData?.phone) payload.customerPhone = customerData.phone;
-      if (customerData?.address) payload.shippingAddress = JSON.stringify(customerData);
-
-      const doc = await databases.updateDocument(
-        APPWRITE_DATABASE_ID,
-        'orders',
+    return apiRequest(
+      '/api/orders',
+      jsonInit('PUT', {
         id,
-        payload
-      );
-      return { id: doc.$id, status: doc.status, trackingNumber: (doc as any).trackingNumber, trackingUrl: (doc as any).trackingUrl };
-    } catch (err: any) {
-      console.error('Appwrite updateOrderStatus error:', err);
-      throw new Error(err.message || 'Failed to update order status');
-    }
+        status,
+        trackingNumber,
+        trackingUrl,
+        customerName: customerData?.name,
+        customerEmail: customerData?.email,
+        customerPhone: customerData?.phone,
+        shippingAddress: customerData?.address ? customerData : undefined
+      }),
+      'Failed to update order status'
+    );
   },
 
   // =========================================================================
@@ -587,159 +253,31 @@ export const api = {
   // =========================================================================
   async getReviews(productName?: string): Promise<Review[]> {
     try {
-      const queries: string[] = [Query.limit(100), Query.orderDesc('$createdAt')];
-      if (productName) {
-        queries.push(Query.equal('productName', productName));
-      }
-      const res = await databases.listDocuments(APPWRITE_DATABASE_ID, 'reviews', queries);
-      if (res && res.documents) {
-        const seenIds = new Set<string>();
-        const seenContent = new Set<string>();
-        const list: Review[] = [];
-
-        for (const d of res.documents) {
-          if (!d || !d.$id || seenIds.has(d.$id)) continue;
-          seenIds.add(d.$id);
-
-          const contentKey = `${(d.productName || '').trim().toLowerCase()}_${(d.author || '').trim().toLowerCase()}_${(d.comment || '').trim()}`;
-          if (seenContent.has(contentKey)) continue;
-          seenContent.add(contentKey);
-
-          list.push({
-            id: d.$id,
-            author: d.author,
-            rating: Number(d.rating) || 5,
-            date: d.date || 'Recent',
-            title: d.title || '',
-            comment: d.comment,
-            verified: Boolean(d.verified),
-            productName: d.productName,
-            approved: d.approved !== undefined ? Boolean(d.approved) : true,
-            image: d.image || undefined
-          });
-        }
-        return list;
+      const url = productName
+        ? `/api/reviews?productName=${encodeURIComponent(productName)}`
+        : '/api/reviews';
+      const res = await fetch(url, { cache: 'no-store' });
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data)) return data;
       }
     } catch (err) {
-      console.warn('Appwrite getReviews error:', err);
+      console.warn('API /api/reviews error:', err);
     }
     return [];
   },
 
   async createReview(reviewData: Partial<Review>): Promise<Review> {
-    try {
-      const prodName = (reviewData.productName || 'General').trim();
-      const authorName = (reviewData.author || 'Verified Customer').trim();
-
-      // Check if this user already reviewed this specific fragrance
-      let existingDocId: string | null = null;
-      try {
-        const queries: string[] = [Query.limit(100)];
-        if (prodName && prodName !== 'General') {
-          queries.push(Query.equal('productName', prodName));
-        }
-        const existingRes = await databases.listDocuments(APPWRITE_DATABASE_ID, 'reviews', queries);
-        if (existingRes && existingRes.documents) {
-          const match = existingRes.documents.find((d) => {
-            const authorMatches = (d.author || '').trim().toLowerCase() === authorName.toLowerCase();
-            const productMatches = (d.productName || '').trim().toLowerCase() === prodName.toLowerCase();
-            return authorMatches && (prodName === 'General' || productMatches);
-          });
-          if (match) {
-            existingDocId = match.$id;
-          }
-        }
-      } catch (checkErr) {
-        console.warn('Check existing review warning:', checkErr);
-      }
-
-      let doc: any;
-      if (existingDocId) {
-        // Update / replace old review with new one
-        doc = await databases.updateDocument(
-          APPWRITE_DATABASE_ID,
-          'reviews',
-          existingDocId,
-          {
-            productName: prodName,
-            author: authorName,
-            rating: Number(reviewData.rating || 5),
-            title: reviewData.title || '',
-            comment: reviewData.comment || '',
-            verified: true,
-            approved: true,
-            date: new Date().toISOString().split('T')[0]
-          }
-        );
-      } else {
-        // Create new review
-        doc = await databases.createDocument(
-          APPWRITE_DATABASE_ID,
-          'reviews',
-          ID.unique(),
-          {
-            productName: prodName,
-            author: authorName,
-            rating: Number(reviewData.rating || 5),
-            title: reviewData.title || '',
-            comment: reviewData.comment || '',
-            verified: true,
-            approved: true,
-            date: new Date().toISOString().split('T')[0]
-          }
-        );
-      }
-
-      return {
-        id: doc.$id,
-        author: doc.author,
-        rating: Number(doc.rating),
-        date: doc.date,
-        title: doc.title,
-        comment: doc.comment,
-        verified: doc.verified,
-        productName: doc.productName,
-        approved: doc.approved !== undefined ? Boolean(doc.approved) : true
-      };
-    } catch (err: any) {
-      console.error('Appwrite createReview error:', err);
-      throw new Error(err.message || 'Failed to submit review');
-    }
+    return apiRequest('/api/reviews', jsonInit('POST', reviewData), 'Failed to submit review');
   },
 
   async updateReview(id: string, data: Partial<Review>): Promise<Review> {
-    try {
-      const doc = await databases.updateDocument(
-        APPWRITE_DATABASE_ID,
-        'reviews',
-        id,
-        data
-      );
-      return {
-        id: doc.$id,
-        author: doc.author,
-        rating: Number(doc.rating),
-        date: doc.date,
-        title: doc.title,
-        comment: doc.comment,
-        verified: doc.verified,
-        productName: doc.productName,
-        approved: doc.approved !== undefined ? Boolean(doc.approved) : true
-      };
-    } catch (err: any) {
-      console.error('Appwrite updateReview error:', err);
-      throw err;
-    }
+    return apiRequest('/api/reviews', jsonInit('PUT', { id, updates: data }), 'Failed to update review');
   },
 
   async deleteReview(id: string): Promise<boolean> {
-    try {
-      await databases.deleteDocument(APPWRITE_DATABASE_ID, 'reviews', id);
-      return true;
-    } catch (err: any) {
-      console.error('Appwrite deleteReview error:', err);
-      throw err;
-    }
+    await apiRequest(`/api/reviews?id=${encodeURIComponent(id)}`, { method: 'DELETE' }, 'Failed to delete review');
+    return true;
   },
 
   // =========================================================================
@@ -747,19 +285,13 @@ export const api = {
   // =========================================================================
   async getCoupons(): Promise<any[]> {
     try {
-      const res = await databases.listDocuments(APPWRITE_DATABASE_ID, 'coupons', [Query.limit(50)]);
-      if (res && res.documents) {
-        return res.documents.map(d => ({
-          id: d.$id,
-          code: d.code,
-          discountPercentage: Number(d.discountPercentage || 0),
-          discountAmount: Number(d.discountAmount || 0),
-          minOrderAmount: Number(d.minOrderAmount || 0),
-          isActive: d.isActive !== false
-        }));
+      const res = await fetch('/api/coupons', { cache: 'no-store' });
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data)) return data;
       }
     } catch (err) {
-      console.warn('Appwrite getCoupons error:', err);
+      console.warn('API /api/coupons error:', err);
     }
     return [];
   },
@@ -771,24 +303,7 @@ export const api = {
     minOrderAmount?: number;
     isActive?: boolean;
   }): Promise<any> {
-    try {
-      const res = await databases.createDocument(
-        APPWRITE_DATABASE_ID,
-        'coupons',
-        ID.unique(),
-        {
-          code: data.code.trim().toUpperCase(),
-          discountPercentage: Number(data.discountPercentage || 0),
-          discountAmount: Number(data.discountAmount || 0),
-          minOrderAmount: Number(data.minOrderAmount || 0),
-          isActive: data.isActive !== false
-        }
-      );
-      return res;
-    } catch (err: any) {
-      console.error('Failed to create coupon in Appwrite:', err);
-      throw err;
-    }
+    return apiRequest('/api/coupons', jsonInit('POST', data), 'Failed to create coupon');
   },
 
   async updateCoupon(id: string, data: Partial<{
@@ -798,73 +313,26 @@ export const api = {
     minOrderAmount: number;
     isActive: boolean;
   }>): Promise<any> {
-    try {
-      const res = await databases.updateDocument(
-        APPWRITE_DATABASE_ID,
-        'coupons',
-        id,
-        data
-      );
-      return res;
-    } catch (err: any) {
-      console.error('Failed to update coupon in Appwrite:', err);
-      throw err;
-    }
+    return apiRequest('/api/coupons', jsonInit('PUT', { id, updates: data }), 'Failed to update coupon');
   },
 
   async deleteCoupon(id: string): Promise<boolean> {
-    try {
-      await databases.deleteDocument(APPWRITE_DATABASE_ID, 'coupons', id);
-      return true;
-    } catch (err: any) {
-      console.error('Failed to delete coupon from Appwrite:', err);
-      throw err;
-    }
+    await apiRequest(`/api/coupons?id=${encodeURIComponent(id)}`, { method: 'DELETE' }, 'Failed to delete coupon');
+    return true;
   },
 
   async validateCoupon(code: string, orderTotal: number): Promise<{ valid: boolean; discount: number; message: string }> {
     try {
-      const cleanCode = code.trim().toUpperCase();
-      const res = await databases.listDocuments(
-        APPWRITE_DATABASE_ID,
-        'coupons',
-        [Query.equal('code', cleanCode), Query.equal('isActive', true)]
-      );
-
-      if (res.documents && res.documents.length > 0) {
-        const coupon = res.documents[0];
-        if (orderTotal < Number(coupon.minOrderAmount || 0)) {
-          return {
-            valid: false,
-            discount: 0,
-            message: `Minimum order amount of Rs.${coupon.minOrderAmount} required.`
-          };
-        }
-
-        let discount = 0;
-        if (coupon.discountPercentage > 0) {
-          discount = Math.round((orderTotal * coupon.discountPercentage) / 100);
-        } else if (coupon.discountAmount > 0) {
-          discount = Number(coupon.discountAmount);
-        }
-
-        return {
-          valid: true,
-          discount,
-          message: `Coupon ${cleanCode} applied! Saved Rs.${discount}`
-        };
-      }
-    } catch (err) {
-      console.warn('Appwrite validateCoupon error:', err);
+      return await apiRequest('/api/coupons/validate', jsonInit('POST', { code, orderTotal }), 'Invalid or expired coupon code');
+    } catch {
+      return { valid: false, discount: 0, message: 'Invalid or expired coupon code' };
     }
-    return { valid: false, discount: 0, message: 'Invalid or expired coupon code' };
   },
 
   // =========================================================================
-  // 5. HERO SLIDES (15-Minute LocalStorage Cache)
+  // 5. HERO SLIDES (short-lived localStorage cache)
   // =========================================================================
   async getHeroSlides(): Promise<any[]> {
-    const HERO_CACHE_TTL_MS = 15 * 60 * 1000;
     const now = Date.now();
 
     // 1. Check in-memory cache (fastest)
@@ -888,7 +356,7 @@ export const api = {
       } catch {}
     }
 
-    // 3. If cache missing or older than 15 minutes -> fetch fresh from API/Appwrite
+    // 3. If cache missing or expired -> fetch fresh from the API route
     try {
       const res = await fetch('/api/hero');
       if (res.ok) {
@@ -904,31 +372,7 @@ export const api = {
         }
       }
     } catch (err) {
-      console.warn('API /api/hero error, trying direct SDK:', err);
-    }
-
-    try {
-      const res = await databases.listDocuments(APPWRITE_DATABASE_ID, 'hero_slides', [Query.limit(10)]);
-      if (res && res.documents) {
-        const formatted = res.documents.map(d => ({
-          id: d.$id,
-          name: d.name,
-          desktopImage: d.desktopImage,
-          mobileImage: d.mobileImage,
-          linkUrl: d.linkUrl
-        }));
-        if (formatted.length > 0) {
-          heroSlidesMemoryCache = { data: formatted, timestamp: Date.now() };
-          if (typeof window !== 'undefined') {
-            try {
-              localStorage.setItem('bb_hero_slides_cache', JSON.stringify({ data: formatted, timestamp: Date.now() }));
-            } catch {}
-          }
-        }
-        return formatted;
-      }
-    } catch (err) {
-      console.warn('Appwrite getHeroSlides error:', err);
+      console.warn('API /api/hero error:', err);
     }
 
     if (heroSlidesMemoryCache && heroSlidesMemoryCache.data.length > 0) {
@@ -939,70 +383,22 @@ export const api = {
   },
 
   async saveHeroSlide(slide: any): Promise<any> {
-    try {
-      let res;
-      if (slide.id && !slide.id.startsWith('slide-')) {
-        res = await databases.updateDocument(
-          APPWRITE_DATABASE_ID,
-          'hero_slides',
-          slide.id,
-          {
-            name: slide.name,
-            desktopImage: slide.desktopImage,
-            mobileImage: slide.mobileImage,
-            linkUrl: slide.linkUrl
-          }
-        );
-      } else {
-        res = await databases.createDocument(
-          APPWRITE_DATABASE_ID,
-          'hero_slides',
-          ID.unique(),
-          {
-            name: slide.name,
-            desktopImage: slide.desktopImage,
-            mobileImage: slide.mobileImage,
-            linkUrl: slide.linkUrl
-          }
-        );
-      }
-      this.invalidateHeroCache();
-      return res;
-    } catch (err: any) {
-      console.error('Appwrite saveHeroSlide error:', err);
-      throw err;
-    }
+    const isExisting = slide.id && !String(slide.id).startsWith('slide-');
+    const saved = await apiRequest(
+      '/api/hero',
+      jsonInit(isExisting ? 'PUT' : 'POST', slide),
+      'Failed to save hero slide'
+    );
+    this.invalidateHeroCache();
+    return saved;
   },
 
   async deleteHeroSlide(id: string): Promise<boolean> {
-    // 1. Try server API route first
     try {
-      const res = await fetch(`/api/hero?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
-      if (res.ok) {
-        this.invalidateHeroCache();
-        return true;
-      }
-      const data = await res.json().catch(() => null);
-      if (data?.alreadyDeleted) {
-        this.invalidateHeroCache();
-        return true;
-      }
-    } catch {
-      // Fall through to direct SDK call
-    }
-
-    // 2. Direct client SDK fallback
-    try {
-      await databases.deleteDocument(APPWRITE_DATABASE_ID, 'hero_slides', id);
+      await apiRequest(`/api/hero?id=${encodeURIComponent(id)}`, { method: 'DELETE' }, 'Failed to delete slide');
       this.invalidateHeroCache();
       return true;
-    } catch (err: any) {
-      // If the document is already deleted or not found (404), treat as successfully removed
-      if (err?.code === 404 || err?.message?.includes('could not be found') || err?.message?.includes('404')) {
-        this.invalidateHeroCache();
-        return true;
-      }
-      console.error('Appwrite deleteHeroSlide error:', err);
+    } catch {
       return false;
     }
   },
@@ -1018,49 +414,19 @@ export const api = {
         if (Array.isArray(data)) return data;
       }
     } catch (err) {
-      console.warn('API /api/collections error, trying direct SDK:', err);
-    }
-
-    try {
-      const res = await databases.listDocuments(APPWRITE_DATABASE_ID, 'collections', [Query.limit(50)]);
-      if (res && res.documents) {
-        return res.documents.map((d: any) => ({
-          id: d.$id,
-          slug: d.slug || (d.name ? d.name.toLowerCase().replace(/[^a-z0-9]+/g, '-') : ''),
-          name: d.name || '',
-          subname: d.subname || '',
-          image: d.image || '',
-          bannerImage: d.bannerImage || '',
-          campaignImage: d.campaignImage || '',
-          subtitle: d.subtitle || '',
-          editorial: d.editorial || '',
-          badge: d.badge || '',
-          showInStoryCircle: Boolean(d.showInStoryCircle),
-          showCampaignTitle: d.showCampaignTitle !== undefined ? Boolean(d.showCampaignTitle) : true
-        }));
-      }
-    } catch (err) {
-      console.warn('Appwrite getCollections error:', err);
+      console.warn('API /api/collections error:', err);
     }
     return [];
   },
 
   async updateCollection(id: string, data: any): Promise<any> {
-    try {
-      const res = await fetch('/api/collections', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, updates: data })
-      });
-      if (res.ok) {
-        return await res.json();
-      }
-      const errData = await res.json().catch(() => ({}));
-      throw new Error(errData.error || 'Failed to update collection');
-    } catch (err: any) {
-      console.error('updateCollection error:', err);
-      throw err;
-    }
+    const updated = await apiRequest(
+      '/api/collections',
+      jsonInit('PUT', { id, updates: data }),
+      'Failed to update collection'
+    );
+    this.invalidateCollectionsCache();
+    return updated;
   },
 
   // =========================================================================
@@ -1068,119 +434,25 @@ export const api = {
   // =========================================================================
   async getSettings(): Promise<any> {
     try {
-      const res = await databases.listDocuments(APPWRITE_DATABASE_ID, 'settings', [Query.limit(1)]);
-      if (res.documents && res.documents.length > 0) {
-        return res.documents[0];
+      const res = await fetch('/api/settings', { cache: 'no-store' });
+      if (res.ok) {
+        return await res.json();
       }
     } catch (err) {
-      console.warn('Appwrite getSettings error:', err);
+      console.warn('API /api/settings error:', err);
     }
     return null;
   },
 
   async updateSettings(settings: any): Promise<any> {
-    try {
-      const existing = await databases.listDocuments(APPWRITE_DATABASE_ID, 'settings', [Query.limit(1)]);
-      if (existing.documents && existing.documents.length > 0) {
-        const docId = existing.documents[0].$id;
-        const doc = await databases.updateDocument(
-          APPWRITE_DATABASE_ID,
-          'settings',
-          docId,
-          settings
-        );
-        return doc;
-      } else {
-        const doc = await databases.createDocument(
-          APPWRITE_DATABASE_ID,
-          'settings',
-          ID.unique(),
-          settings
-        );
-        return doc;
-      }
-    } catch (err: any) {
-      console.error('Appwrite updateSettings error:', err);
-      throw err;
-    }
+    return apiRequest('/api/settings', jsonInit('PUT', settings), 'Failed to save settings');
   },
 
   // =========================================================================
   // 8. ADMIN STATS
   // =========================================================================
   async getStats(): Promise<any> {
-    try {
-      const [prodsRes, ordersRes, reviewsRes] = await Promise.all([
-        databases.listDocuments(APPWRITE_DATABASE_ID, 'products', [Query.limit(100)]),
-        databases.listDocuments(APPWRITE_DATABASE_ID, 'orders', [Query.limit(100), Query.orderDesc('$createdAt')]),
-        databases.listDocuments(APPWRITE_DATABASE_ID, 'reviews', [Query.limit(100)])
-      ]);
-
-      const orders = ordersRes.documents;
-      const totalRevenue = orders.reduce((sum, o: any) => sum + (Number(o.totalAmount) || 0), 0);
-      const pendingOrders = orders.filter((o: any) => o.status === 'pending' || o.status === 'processing').length;
-
-      // Dynamic past 7 days velocity
-      const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-      const past7Days = Array.from({ length: 7 }, (_, i) => {
-        const d = new Date();
-        d.setDate(d.getDate() - (6 - i));
-        return {
-          day: days[d.getDay()],
-          dateStr: d.toISOString().split('T')[0],
-          revenue: 0,
-          orders: 0
-        };
-      });
-
-      orders.forEach((o: any) => {
-        const orderDate = (o.$createdAt || '').split('T')[0];
-        const match = past7Days.find(p => p.dateStr === orderDate);
-        if (match) {
-          match.revenue += Number(o.totalAmount || 0);
-          match.orders += 1;
-        }
-      });
-
-      const maxDayRevenue = Math.max(...past7Days.map(d => d.revenue), 1);
-      const weeklyTrends = past7Days.map(d => ({
-        day: d.day,
-        amt: d.revenue >= 1000 ? `₹${(d.revenue / 1000).toFixed(0)}k` : `₹${d.revenue}`,
-        val: d.revenue === 0 ? 8 : Math.max(12, Math.round((d.revenue / maxDayRevenue) * 100))
-      }));
-
-      const stockAlerts = prodsRes.documents.slice(0, 5).map((p: any) => ({
-        id: p.$id,
-        name: p.name,
-        volume: p.volume || '100ml',
-        stock: Number(p.stock !== undefined ? p.stock : 100),
-        isLow: Number(p.stock !== undefined ? p.stock : 100) < 20,
-        isPreOrder: Boolean(p.isPreOrder)
-      }));
-
-      return {
-        totalRevenue,
-        totalOrders: orders.length,
-        totalProducts: prodsRes.total,
-        totalReviews: reviewsRes.total,
-        pendingOrders,
-        lowStockProducts: prodsRes.documents.filter((p: any) => Number(p.stock) < 20).length,
-        weeklyTrends,
-        stockAlerts,
-        recentOrders: orders.slice(0, 5).map(o => ({
-          _id: o.$id,
-          id: o.$id,
-          orderNumber: `NSH-${o.$id.slice(-5).toUpperCase()}`,
-          customerName: o.customerName,
-          total: Number(o.totalAmount),
-          status: o.status,
-          createdAt: o.$createdAt
-        }))
-      };
-    } catch (err) {
-      console.warn('Appwrite getStats error:', err);
-      throw err;
-    }
+    return apiRequest('/api/stats', { cache: 'no-store' }, 'Failed to load dashboard stats');
   },
 
   // =========================================================================
@@ -1358,24 +630,25 @@ export const api = {
       console.warn('Failed to fetch Instagram posts:', err);
     }
     return {
-      title: 'Get Inspired',
-      handle: '@bakhoorbliss',
-      profileUrl: 'https://instagram.com',
+      title: '',
+      handle: '',
+      profileUrl: '',
       items: []
     };
   },
 
-  async saveInstagramPosts(data: any): Promise<boolean> {
+  async saveInstagramPosts(data: any): Promise<any | null> {
     try {
       const res = await fetch('/api/instagram', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
       });
-      return res.ok;
+      if (!res.ok) return null;
+      return await res.json();
     } catch (err) {
       console.error('Failed to save Instagram posts:', err);
-      return false;
+      return null;
     }
   }
 };

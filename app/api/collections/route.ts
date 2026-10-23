@@ -1,13 +1,14 @@
 import { NextResponse } from 'next/server';
 import { adminGuard } from '@/lib/roles';
-import { databases, APPWRITE_DATABASE_ID } from '@/lib/appwrite';
-import { ID, Query } from 'appwrite';
+import { databases, APPWRITE_DATABASE_ID } from '@/lib/appwriteServer';
+import { ID, Query } from '@/lib/appwriteServer';
+import { slugify } from '@/app/utils/slug';
 
 const PLACEHOLDER_IMAGE = 'https://bakhoorbliss.in/placeholder-circle.png';
 
 const formatCollectionDoc = (doc: any) => ({
   id: doc.$id || doc.id,
-  slug: doc.slug || '',
+  slug: doc.slug || slugify(doc.name || ''),
   name: doc.name || '',
   subname: doc.subname || '',
   image: doc.image && doc.image !== PLACEHOLDER_IMAGE ? doc.image : '',
@@ -27,7 +28,7 @@ export async function GET() {
     return NextResponse.json(colls);
   } catch (err: any) {
     console.error('API /api/collections error:', err);
-    return NextResponse.json([]);
+    return NextResponse.json({ error: err.message || 'Failed to load collections' }, { status: 500 });
   }
 }
 

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { uploadMediaToAppwrite, deleteMediaFromAppwrite } from '@/lib/appwrite';
+import { uploadMediaToAppwrite, deleteMediaFromAppwrite } from '@/lib/appwriteServer';
 import { auth } from '@clerk/nextjs/server';
 import { checkRole } from '@/lib/roles';
 

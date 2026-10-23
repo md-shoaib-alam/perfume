@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { adminGuard } from '@/lib/roles';
-import { databases, APPWRITE_DATABASE_ID } from '@/lib/appwrite';
-import { ID, Query } from 'appwrite';
+import { databases, APPWRITE_DATABASE_ID } from '@/lib/appwriteServer';
+import { ID, Query } from '@/lib/appwriteServer';
 
 const formatHeroDoc = (doc: any) => ({
   id: doc.$id || doc.id,
@@ -17,12 +17,12 @@ export async function GET() {
     const slides = (res.documents || []).map(formatHeroDoc);
     return NextResponse.json(slides, {
       headers: {
-        'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300'
+        'Cache-Control': 'no-store'
       }
     });
   } catch (err: any) {
     console.error('API /api/hero error:', err);
-    return NextResponse.json([]);
+    return NextResponse.json({ error: err.message || 'Failed to load slides' }, { status: 500 });
   }
 }
 
@@ -43,6 +43,26 @@ export async function POST(req: Request) {
         linkUrl: body.linkUrl || '/'
       }
     );
+    return NextResponse.json(formatHeroDoc(doc));
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 });
+  }
+}
+
+export async function PUT(req: Request) {
+  const guard = await adminGuard();
+  if (guard) return guard;
+
+  try {
+    const body = await req.json();
+    if (!body.id) return NextResponse.json({ error: 'Missing id' }, { status: 400 });
+
+    const doc = await databases.updateDocument(APPWRITE_DATABASE_ID, 'hero_slides', body.id, {
+      name: body.name,
+      desktopImage: body.desktopImage,
+      mobileImage: body.mobileImage,
+      linkUrl: body.linkUrl
+    });
     return NextResponse.json(formatHeroDoc(doc));
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });
