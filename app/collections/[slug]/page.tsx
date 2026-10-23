@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { AnnouncementBar } from '../../components/AnnouncementBar';
@@ -133,33 +134,6 @@ const COLLECTION_INFO_MAP: Record<string, CollectionMetadata> = {
   }
 };
 
-const CROSS_COLLECTIONS = [
-  {
-    id: 'haute',
-    title: 'Haute Collection',
-    badge: 'HAUTE COLLECTION',
-    description: 'The crowning achievement in artisan perfumery. Created in collaboration with legendary Master Perfumers, featuring rare aged natural agarwood, Taif rose, and bourbon vanilla.',
-    image: '',
-    href: '/collections/haute'
-  },
-  {
-    id: 'bureau',
-    title: 'Bureau Collection',
-    badge: 'BUREAU COLLECTION',
-    description: 'The Bureau Collection presents a range of therapeutic office perfumes suited for boardroom meetings, everyday focus, and versatile elegance with crisp aromatic accords.',
-    image: '',
-    href: '/collections/bureau'
-  },
-  {
-    id: 'miss_neesh',
-    title: 'Miss Neesh Collection',
-    badge: 'MISS NEESH COLLECTION',
-    description: 'Pure femininity meets modern luxury. Radiant floral bouquets, luscious nectar notes, and shimmering musks tailored for effortless daily poise.',
-    image: '',
-    href: '/collections/miss_neesh'
-  }
-];
-
 import { useProductsQuery, useCollectionsQuery } from '../../hooks/useQueries';
 
 export default function CollectionPage() {
@@ -168,6 +142,7 @@ export default function CollectionPage() {
   const router = useRouter();
   const rawSlug = (params?.slug as string) || 'all';
   const slug = rawSlug.toLowerCase();
+  const isAllCollection = slug === 'all' || slug === 'shop-all';
   const querySearch = searchParams?.get('q') || '';
 
   const {
@@ -294,33 +269,24 @@ export default function CollectionPage() {
   }, [productsList, slug, meta, searchQuery, sortBy]);
 
   const crossCollectionsList = useMemo(() => {
-    if (dbCollections.length > 0) {
-      const others = dbCollections.filter(
-        (c) => (c.slug || c.id) !== slug && c.name?.toLowerCase().replace(/[^a-z0-9]+/g, '-') !== slug
-      );
-      if (others.length > 0) {
-        return others.slice(0, 3).map((c) => {
-          const matchingProduct = productsList.find(
-            (p) => p.collection === c.id || p.collection === c.name || p.category === c.slug
-          );
-          return {
-            id: c.slug || c.id,
-            title: c.name,
-            badge: c.badge || `${c.name.toUpperCase()} COLLECTION`,
-            description: c.editorial || c.subtitle || '',
-            image: c.bannerImage || c.image || matchingProduct?.image || '',
-            href: `/collections/${c.slug || c.id}`
-          };
-        });
-      }
-    }
-    return CROSS_COLLECTIONS.filter((c) => c.id !== slug).map((c) => {
-      const matchingProduct = productsList.find((p) => p.collection === c.id || p.category === c.id);
-      return {
-        ...c,
-        image: c.image || matchingProduct?.image || ''
-      };
-    });
+    // Only collections that hold at least one live product; a seeded row with no
+    // products would otherwise render as a dead-end showcase.
+    return dbCollections
+      .filter((c) => {
+        const keys = [c.slug, c.id, c.name]
+          .filter(Boolean)
+          .map((value) => String(value).toLowerCase().trim());
+        const isCurrent = keys.includes(slug);
+        return !isCurrent && productsList.some((p) => keys.includes((p.collection || '').toLowerCase().trim()));
+      })
+      .slice(0, 3)
+      .map((c) => ({
+        id: c.slug || c.id,
+        title: c.name,
+        badge: c.badge || '',
+        image: (c.image || c.bannerImage || '').trim(),
+        href: `/collections/${c.slug || c.id}`
+      }));
   }, [dbCollections, slug, productsList]);
 
   return (
@@ -361,12 +327,14 @@ export default function CollectionPage() {
       {/* 3. Hero Visual Lifestyle Banner (Mobile 16:9 & Expanded Desktop Height) */}
       {Boolean(meta.bannerImage && meta.bannerImage.trim()) && (
         <section className="relative w-full aspect-[16/9] md:aspect-auto md:h-[520px] lg:h-[600px] xl:h-[680px] overflow-hidden bg-slate-100 select-none">
-          <img
+          <Image
             src={meta.bannerImage}
             alt={meta.title}
+            fill
+            sizes="100vw"
             loading="eager"
-            decoding="async"
-            className="w-full h-full object-cover object-center"
+            fetchPriority="high"
+            className="object-cover object-center"
           />
         </section>
       )}
@@ -386,7 +354,7 @@ export default function CollectionPage() {
             {meta.subtitle}
           </p>
         )}
-        {meta.editorial && (
+        {meta.editorial && !isAllCollection && (
           <p className="text-[11.5px] sm:text-sm font-sans text-slate-600 leading-relaxed max-w-3xl mx-auto font-normal pt-1">
             {meta.editorial}
           </p>
@@ -474,63 +442,51 @@ export default function CollectionPage() {
         )}
       </main>
 
-      {/* 7. Alternating Cross-Collection Showcase Banners (Zig-Zag Rows - Screenshot Match) */}
-      <section className="bg-[#fafafa] py-16 border-t border-slate-200">
-        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
-          {crossCollectionsList.map((col, index) => {
-            const isEven = index % 2 === 0;
-            return (
-              <div
-                key={col.id}
-                className="grid grid-cols-1 md:grid-cols-12 gap-8 items-center"
-              >
-                {/* Image Col (Left on Even, Right on Odd) - Clean Luxury Photography Without Text Overlay */}
-                <div className={`md:col-span-6 ${isEven ? 'md:order-1' : 'md:order-2'}`}>
-                  <Link href={col.href} className="group relative block aspect-[16/9] md:aspect-[4/3] rounded-md overflow-hidden bg-slate-100 shadow-md">
-                    {col.image ? (
-                      <img
+      {/* 7. Shop by Collection (only collections that hold live products) */}
+      {crossCollectionsList.length > 0 && (
+        <section className="bg-[#fafafa] py-12 sm:py-16 border-t border-slate-200">
+          <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
+            <h2 className="font-serif text-2xl sm:text-3xl font-normal text-slate-900 text-center mb-8 sm:mb-10">
+              Shop by Collection
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
+              {crossCollectionsList.map((col) => (
+                <Link
+                  key={col.id}
+                  href={col.href}
+                  className="group block bg-white border border-slate-200/80 rounded-md overflow-hidden transition-colors hover:border-[#d6a750]"
+                >
+                  {col.image && (
+                    <div className="relative aspect-[4/3] overflow-hidden bg-slate-100">
+                      <Image
                         src={col.image}
                         alt={col.title}
+                        fill
+                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                         loading="lazy"
-                        decoding="async"
-                        className="w-full h-full object-cover"
+                        className="object-cover"
                       />
-                    ) : (
-                      <div className="w-full h-full bg-gradient-to-br from-amber-50/80 via-slate-50 to-slate-100 flex flex-col items-center justify-center text-center p-6 border border-amber-200/50">
-                        <span className="font-serif text-2xl sm:text-3xl text-slate-800 font-bold mb-2">{col.title}</span>
-                        <span className="text-xs text-[#b88f3e] tracking-widest uppercase font-semibold">House of BakhoorBliss</span>
-                      </div>
-                    )}
-                  </Link>
-                </div>
-
-                {/* Text Content Col */}
-                <div className={`md:col-span-6 space-y-4 ${isEven ? 'md:order-2 md:pl-6' : 'md:order-1 md:pr-6'}`}>
-                  {col.badge && (
-                    <span className="text-[11px] font-sans font-bold text-[#b69254] tracking-[0.2em] uppercase block">
-                      {col.badge}
-                    </span>
+                    </div>
                   )}
-                  <h3 className="font-serif text-2xl sm:text-3xl font-normal text-slate-900">
-                    {col.title}
-                  </h3>
-                  <p className="text-xs sm:text-sm text-slate-600 font-sans leading-relaxed">
-                    {col.description}
-                  </p>
-                  <div>
-                    <Link
-                      href={col.href}
-                      className="inline-block px-7 py-2.5 bg-[#222222] hover:bg-black text-white font-sans font-bold text-xs uppercase tracking-wider rounded-sm transition-colors shadow-xs"
-                    >
-                      View All
-                    </Link>
+                  <div className={`px-5 text-center ${col.image ? 'py-5' : 'py-10 sm:py-12'}`}>
+                    {col.badge && (
+                      <span className="block text-[10px] font-sans font-bold text-[#b69254] tracking-[0.2em] uppercase mb-1.5">
+                        {col.badge}
+                      </span>
+                    )}
+                    <h3 className="font-serif text-xl sm:text-2xl font-normal text-slate-900">
+                      {col.title}
+                    </h3>
+                    <span className="mt-2 inline-block text-[11px] font-sans font-semibold uppercase tracking-[0.15em] text-slate-500 group-hover:text-[#b88f3e] transition-colors">
+                      Shop All
+                    </span>
                   </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </section>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* 8. Gold Trust Banner */}
       <GoldTrustBanner />
