@@ -2,15 +2,14 @@
 
 import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
-import { seedAppwriteDatabase } from '@/lib/seedAppwrite';
 import { useConfirm } from '../components/CustomConfirmModal';
 import { useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '../hooks/useQueries';
 
 const DEFAULT_SETTINGS = {
   freeGiftThreshold: 3500,
-  contactEmail: 'wecare@bakhoorbliss.com',
-  contactPhone: '+91 72062 77777'
+  contactEmail: 'bakhoorbliss.co@gmail.com',
+  contactPhone: '+91 93893 44618'
 };
 
 export const SettingsManager: React.FC = () => {
@@ -21,9 +20,6 @@ export const SettingsManager: React.FC = () => {
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
-
-  const [seeding, setSeeding] = useState(false);
-  const [seedResult, setSeedResult] = useState<{ ok: boolean; message: string } | null>(null);
 
   const [syncingUsers, setSyncingUsers] = useState(false);
   const [syncResult, setSyncResult] = useState<{ ok: boolean; message: string } | null>(null);
@@ -72,40 +68,6 @@ export const SettingsManager: React.FC = () => {
       });
     } finally {
       setSaving(false);
-    }
-  };
-
-  const handleSeedDatabase = async () => {
-    const confirmed = await showConfirm({
-      title: 'Initialize Store Database',
-      message: 'This will seed perfumes, collections, coupons, and slides into your Appwrite database. Continue?',
-      confirmText: 'Seed Database',
-      variant: 'warning'
-    });
-    if (!confirmed) return;
-
-    setSeeding(true);
-    setSeedResult(null);
-    try {
-      const res = await seedAppwriteDatabase();
-      if (res.errors.length > 0) {
-        setSeedResult({
-          ok: false,
-          message: `Seeded with warnings: ${res.errors.join(', ')}`
-        });
-      } else {
-        setSeedResult({
-          ok: true,
-          message: `Successfully populated Appwrite (${res.products} products, ${res.coupons} coupons, ${res.hero_slides} slides, ${res.collections} collections).`
-        });
-      }
-    } catch (err: any) {
-      setSeedResult({
-        ok: false,
-        message: `Initialization failed: ${err.message}`
-      });
-    } finally {
-      setSeeding(false);
     }
   };
 
@@ -195,7 +157,7 @@ export const SettingsManager: React.FC = () => {
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 font-bold focus:outline-none focus:border-[#d6a750] focus:bg-white transition-all"
               />
               <span className="text-[10.5px] text-slate-400 mt-1 block">
-                Orders above this amount unlock a complimentary luxury perfume sample.
+                Saved for a future free-gift rule. No storefront section currently reads this value.
               </span>
             </div>
 
@@ -208,7 +170,7 @@ export const SettingsManager: React.FC = () => {
                 type="email"
                 value={settings.contactEmail}
                 onChange={(e) => setSettings({ ...settings, contactEmail: e.target.value })}
-                placeholder="wecare@bakhoorbliss.com"
+                placeholder="bakhoorbliss.co@gmail.com"
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-[#d6a750] focus:bg-white transition-all"
               />
               <span className="text-[10.5px] text-slate-400 mt-1 block">
@@ -225,7 +187,7 @@ export const SettingsManager: React.FC = () => {
                 type="text"
                 value={settings.contactPhone}
                 onChange={(e) => setSettings({ ...settings, contactPhone: e.target.value })}
-                placeholder="+91 72062 77777"
+                placeholder="+91 93893 44618"
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 font-mono focus:outline-none focus:border-[#d6a750] focus:bg-white transition-all"
               />
               <span className="text-[10.5px] text-slate-400 mt-1 block">
@@ -275,29 +237,6 @@ export const SettingsManager: React.FC = () => {
               className="w-full py-2.5 bg-slate-900 hover:bg-black text-white text-xs font-bold rounded-xl transition-all cursor-pointer disabled:opacity-50"
             >
               {syncingUsers ? 'Syncing Users...' : 'Sync All Users from Clerk'}
-            </button>
-          </div>
-
-          {/* Database Initializer */}
-          <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 flex flex-col justify-between space-y-3">
-            <div>
-              <h4 className="font-bold text-slate-800 text-xs">Initialize Sample Products & Data</h4>
-              <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">
-                Seeds standard luxury perfumes, collections, and coupons if starting on a new empty database.
-              </p>
-            </div>
-            {seedResult && (
-              <div className={`p-2.5 rounded-lg text-xs font-medium ${seedResult.ok ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-rose-50 text-rose-700 border border-rose-200'}`}>
-                {seedResult.message}
-              </div>
-            )}
-            <button
-              type="button"
-              onClick={handleSeedDatabase}
-              disabled={seeding}
-              className="w-full py-2.5 bg-white hover:bg-slate-100 text-slate-800 border border-slate-300 text-xs font-bold rounded-xl transition-all cursor-pointer disabled:opacity-50"
-            >
-              {seeding ? 'Initializing...' : 'Seed Store Database'}
             </button>
           </div>
         </div>

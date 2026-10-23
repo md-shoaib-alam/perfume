@@ -10,9 +10,6 @@
  * 2. Hardcoded fallback product or review arrays in the storefront are strictly prohibited.
  * 3. All media must be uploaded to the Appwrite Cloud Storage bucket (`perfume_media`)
  *    via `uploadMediaToAppwrite()` and served via Appwrite Storage URLs.
- * 
- * If initial seed data is needed for administrative setup, use the server-only fixture:
- * `@/lib/fixtures/seedProducts`.
  * ============================================================================
  */
 
