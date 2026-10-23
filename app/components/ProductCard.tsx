@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo, ViewTransition } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { getProductSlug } from '../utils/slug';
 import { addRecentlyViewed } from '../utils/recentlyViewed';
@@ -48,15 +48,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   const isComingSoon = Boolean(product.isComingSoon);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [hoverImageLoaded, setHoverImageLoaded] = useState(false);
-  const [isMorphSource, setIsMorphSource] = useState(false);
   const hasHoverImage = Boolean(product.hoverImage && product.hoverImage !== product.image);
-
-  const morphLinkHandlers = {
-    onPointerDown: () => setIsMorphSource(true),
-    onPointerCancel: () => setIsMorphSource(false),
-    onFocus: () => setIsMorphSource(true),
-    onBlur: () => setIsMorphSource(false)
-  };
 
   const primaryImage = (
     <img
@@ -79,9 +71,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           {/* Product Image */}
           <Link 
             href={`/products/${productSlug}`}
-            transitionTypes={['nav-product']}
             onClick={() => addRecentlyViewed(product)}
-            {...morphLinkHandlers}
             className="relative w-full aspect-square overflow-hidden mb-2.5 sm:mb-4 cursor-pointer bg-slate-100 rounded-lg group block"
           >
             {/* Skeleton shimmer before load */}
@@ -90,13 +80,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             )}
 
             {/* Main product image */}
-            <ViewTransition
-              name={`product-photo-${product.id}`}
-              share={isMorphSource ? { 'nav-product': 'morph', default: 'none' } : 'none'}
-              default="none"
-            >
-              {primaryImage}
-            </ViewTransition>
+            {primaryImage}
 
             {/* Hover secondary image — fades in on hover, no zoom/scale */}
             {hasHoverImage && (
@@ -131,9 +115,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           {/* Product Name */}
           <Link 
             href={`/products/${productSlug}`}
-            transitionTypes={['nav-product']}
             onClick={() => addRecentlyViewed(product)}
-            {...morphLinkHandlers}
             className="font-serif text-base sm:text-xl lg:text-2xl font-normal text-slate-900 cursor-pointer hover:text-[#caa04c] transition-colors leading-tight mb-1 block"
           >
             {product.name}

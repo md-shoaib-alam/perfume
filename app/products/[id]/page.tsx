@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo, useRef, ViewTransition } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
@@ -638,21 +638,14 @@ export default function ProductDetailPage() {
                     className="h-full relative overflow-hidden bg-slate-50 flex-shrink-0"
                     style={{ width: `${100 / Math.max(1, imagesList.length)}%` }}
                   >
-                    <ViewTransition
-                      key={`${product.id}-${idx}`}
-                      name={idx === currentImageIndex ? `product-photo-${product.id}` : undefined}
-                      share={idx === currentImageIndex ? { 'nav-product': 'morph', default: 'none' } : 'none'}
-                      default="none"
-                    >
-                      <img
-                        src={img}
-                        alt={`${product.name} - slide ${idx + 1}`}
-                        loading={idx === 0 ? 'eager' : 'lazy'}
-                        decoding="async"
-                        draggable={false}
-                        className="w-full h-full object-cover pointer-events-none select-none"
-                      />
-                    </ViewTransition>
+                    <img
+                      src={img}
+                      alt={`${product.name} - slide ${idx + 1}`}
+                      loading={idx === 0 ? 'eager' : 'lazy'}
+                      decoding="async"
+                      draggable={false}
+                      className="w-full h-full object-cover pointer-events-none select-none"
+                    />
                   </div>
                 ))}
               </div>

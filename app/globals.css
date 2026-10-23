@@ -95,13 +95,7 @@
   animation: slideInRight 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* Product opening: card photo morphs into the detail gallery, details fade/rise in */
-@keyframes productMorphBlur {
-  35% {
-    filter: blur(3px);
-  }
-}
-
+/* Product opening: purchase details fade and rise into place */
 @keyframes productEnter {
   from {
     opacity: 0;
@@ -117,29 +111,7 @@
   animation: productEnter 420ms cubic-bezier(0.16, 1, 0.3, 1) 60ms backwards;
 }
 
-::view-transition-group(.morph) {
-  animation-duration: 420ms;
-  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-::view-transition-image-pair(.morph) {
-  animation-name: productMorphBlur;
-  animation-duration: 420ms;
-}
-
-::view-transition {
-  pointer-events: none;
-}
-
 @media (prefers-reduced-motion: reduce) {
-  ::view-transition-old(*),
-  ::view-transition-new(*),
-  ::view-transition-group(*),
-  ::view-transition-image-pair(*) {
-    animation-duration: 0s !important;
-    animation-delay: 0s !important;
-  }
-
   .animate-product-enter {
     animation: none !important;
   }
