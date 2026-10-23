@@ -8,6 +8,7 @@ import { addRecentlyViewed } from '../utils/recentlyViewed';
 import type { Product } from '../types';
 import { resolveProductSizeOptions, resolveProductUnitPrice, isProductSoldOut } from '@/lib/pricing';
 import { NotifyModal } from './NotifyModal';
+import StatusButton from './animata/button/status-button';
 
 interface ProductCardProps {
   product: Product;
@@ -197,19 +198,19 @@ export const ProductCard: React.FC<ProductCardProps> = ({
               </svg>
               <span>Notify Me</span>
             </button>
-          ) : (
+          ) : isCurrentlySoldOut ? (
             <button
               type="button"
-              onClick={() => onAddToCart(product, selectedSize, currentPrice)}
-              disabled={isCurrentlySoldOut}
-              className={`w-full py-2 sm:py-3 px-3 font-sans font-bold text-[10.5px] sm:text-xs uppercase tracking-wider transition-all duration-300 shadow-2xs rounded-md ${
-                isCurrentlySoldOut
-                  ? 'bg-slate-200 text-slate-400 cursor-not-allowed border border-slate-200'
-                  : 'bg-[#caa04c] text-white hover:bg-[#b88f3e] active:scale-98 cursor-pointer'
-              }`}
+              disabled
+              className="w-full py-2 sm:py-3 px-3 font-sans font-bold text-[10.5px] sm:text-xs uppercase tracking-wider transition-all duration-300 shadow-2xs rounded-md bg-slate-200 text-slate-400 cursor-not-allowed border border-slate-200"
             >
-              {isCurrentlySoldOut ? 'Sold Out' : (product.isPreOrder ? (product.buttonText || 'Pre-Order') : 'Add to Cart')}
+              Sold Out
             </button>
+          ) : (
+            <StatusButton
+              label={product.isPreOrder ? (product.buttonText || 'Pre-Order') : 'Add to Cart'}
+              onAdd={() => onAddToCart(product, selectedSize, currentPrice)}
+            />
           )}
         </div>
       </div>
