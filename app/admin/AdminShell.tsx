@@ -102,6 +102,17 @@ const NAV_ITEMS = [
     )
   },
   {
+    path: '/admin/instagram',
+    name: 'Instagram Showcase',
+    icon: (
+      <svg className="w-4.5 h-4.5 fill-none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+        <rect x="3" y="3" width="18" height="18" rx="5" strokeLinecap="round" strokeLinejoin="round" />
+        <circle cx="12" cy="12" r="4.2" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M17.2 6.8h.01" />
+      </svg>
+    )
+  },
+  {
     path: '/admin/perfumers',
     name: 'Master Perfumers',
     icon: (
