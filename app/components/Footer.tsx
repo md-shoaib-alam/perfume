@@ -1,7 +1,6 @@
 'use client';
 import React, { useState } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { useConfirm } from './CustomConfirmModal';
 
 export const Footer: React.FC = () => {
@@ -35,24 +34,11 @@ export const Footer: React.FC = () => {
     <footer className="bg-[#222222] text-white font-sans border-t border-slate-800">
       <div className="max-w-[1680px] mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
         
-        {/* Main 4-Column Section for Desktop / Collapsible for Mobile */}
+        {/* Main 3-Column Section for Desktop / Collapsible for Mobile */}
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-10 items-start">
           
-          {/* Column 1: Bakhoor Bliss Logo */}
-          <div className="md:col-span-3 flex justify-start items-center pb-2 md:pb-0">
-            <Link href="/" className="inline-block">
-              <Image
-                src="/assets/bakhoorblissnav.avif"
-                alt="Bakhoor Bliss"
-                width={160}
-                height={80}
-                className="h-16 sm:h-20 w-auto object-contain"
-              />
-            </Link>
-          </div>
-
-          {/* Column 2: Get in Touch */}
-          <div className="md:col-span-3 border-b border-slate-700/60 md:border-b-0 pb-4 md:pb-0">
+          {/* Column 1: Get in Touch */}
+          <div className="md:col-span-4 border-b border-slate-700/60 md:border-b-0 pb-4 md:pb-0">
             <button
               onClick={() => toggleSection('getInTouch')}
               className="w-full flex items-center justify-between font-sans text-sm font-semibold text-white md:pointer-events-none md:cursor-default py-1"
@@ -89,8 +75,8 @@ export const Footer: React.FC = () => {
             </div>
           </div>
 
-          {/* Column 3: Our Policies */}
-          <div className="md:col-span-3 border-b border-slate-700/60 md:border-b-0 pb-4 md:pb-0">
+          {/* Column 2: Our Policies */}
+          <div className="md:col-span-4 border-b border-slate-700/60 md:border-b-0 pb-4 md:pb-0">
             <button
               onClick={() => toggleSection('policies')}
               className="w-full flex items-center justify-between font-sans text-sm font-semibold text-white md:pointer-events-none md:cursor-default py-1"
@@ -130,8 +116,8 @@ export const Footer: React.FC = () => {
             </div>
           </div>
 
-          {/* Column 4: Subscribe to our newsletter (Always open & visible without collapse arrow) */}
-          <div className="md:col-span-3 pb-2 md:pb-0">
+          {/* Column 3: Subscribe to our newsletter (Always open & visible without collapse arrow) */}
+          <div className="md:col-span-4 pb-2 md:pb-0">
             <h4 className="font-sans text-sm font-semibold text-white py-1">
               Subscribe to our newsletter
             </h4>
