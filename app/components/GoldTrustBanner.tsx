@@ -17,7 +17,7 @@ export const GoldTrustBanner: React.FC = () => {
     deliveryTitle: settings?.deliveryTitle || 'Free & Fast Delivery',
     deliveryDescription: settings?.deliveryDescription || 'on your doorsteps in 3-5 days, with a surprise',
     guaranteeTitle: settings?.guaranteeTitle || 'The Lingering Effect You Want',
-    guaranteeDescription: settings?.guaranteeDescription || 'BakhoorBliss perfumes are blended with proven ingredients to last 10+ hours (Guaranteed)'
+    guaranteeDescription: settings?.guaranteeDescription || 'BakhoorBliss perfumes are blended with proven ingredients to last 12+ hours (Guaranteed)'
   };
 
   useEffect(() => {
@@ -72,7 +72,7 @@ export const GoldTrustBanner: React.FC = () => {
             </div>
           </div>
 
-          {/* Item 3: 10+ Hours Guarantee */}
+          {/* Item 3: 12+ Hours Guarantee */}
           <div className="flex items-center gap-4 w-full">
             <div className="w-14 h-14 sm:w-15 sm:h-15 rounded-full bg-white/15 backdrop-blur-xs border border-white/50 flex items-center justify-center shrink-0 shadow-inner">
               <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>

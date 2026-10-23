@@ -59,7 +59,7 @@ export const STANDARD_LANDING_PAGES: CollectionItem[] = [
     name: 'Extrait De Parfum',
     subname: '30%+ Concentration',
     badge: 'HAUTE EXTRAIT (30%+ CONCENTRATION)',
-    subtitle: 'Ultra-concentrated 30%+ pure oil perfume formulations guaranteeing 10+ hours of lingering sillage.',
+    subtitle: 'Ultra-concentrated 30%+ pure oil perfume formulations guaranteeing 12+ hours of lingering sillage.',
     editorial: 'Crafted with master perfumers from Grasse and Dubai, our Extrait De Parfum line is macerated for 90 days in dark oak casks, ensuring unparalleled projection, complexity, and longevity.',
     image: '',
     bannerImage: ''

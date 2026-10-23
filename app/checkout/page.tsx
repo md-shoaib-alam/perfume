@@ -1025,10 +1025,6 @@ export default function CheckoutPage() {
                 <span className="w-1.5 h-1.5 rounded-full bg-[#caa04c] shrink-0" />
                 <span>Saved address book for faster 1-click checkout</span>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#caa04c] shrink-0" />
-                <span>Complimentary luxury perfume samples on qualifying orders</span>
-              </div>
             </div>
 
             {/* Bag summary */}
@@ -1809,14 +1805,6 @@ export default function CheckoutPage() {
                       </div>
                     );
                   })}
-                </div>
-
-                {/* Complimentary 5ml sample notice */}
-                <div className="p-3 bg-amber-50/60 border border-amber-200/80 rounded-2xl flex items-center gap-2.5 text-xs text-[#916618]">
-                  <svg className="w-4 h-4 text-[#caa04c] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" />
-                  </svg>
-                  <span className="font-medium text-[11px]">Complimentary 5ml Extrait Sample Included</span>
                 </div>
 
                 {/* Coupon Code Section */}

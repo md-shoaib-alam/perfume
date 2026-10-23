@@ -9,7 +9,7 @@ import { queryKeys } from '../hooks/useQueries';
 const DEFAULT_ANNOUNCEMENTS = [
   'FLAT 15% OFF | USE CODE: LUXE15',
   'FREE SHIPPING ON ORDERS OVER RS. 1,500',
-  'LUXURY EXTRAIT DE PARFUM | 10+ HOURS LINGERING GUARANTEE',
+  'LUXURY EXTRAIT DE PARFUM | 12+ HOURS LINGERING GUARANTEE',
   '7 DAYS NO QUESTIONS ASKED RETURNS ON 100ML & 50ML'
 ];
 
@@ -52,7 +52,7 @@ export const AnnouncementBarManager: React.FC = () => {
             setAnnouncementList([
               data.announcementText,
               'FREE SHIPPING ON ORDERS OVER RS. 1,500',
-              'LUXURY EXTRAIT DE PARFUM | 10+ HOURS LINGERING GUARANTEE',
+              'LUXURY EXTRAIT DE PARFUM | 12+ HOURS LINGERING GUARANTEE',
               '7 DAYS NO QUESTIONS ASKED RETURNS ON 100ML & 50ML'
             ]);
           }

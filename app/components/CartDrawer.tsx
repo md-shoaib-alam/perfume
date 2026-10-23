@@ -17,8 +17,6 @@ interface CartDrawerProps {
   onOpenAuth?: (mode?: 'signin' | 'signup') => void;
 }
 
-const FREE_GIFT_THRESHOLD = 5000;
-
 export const CartDrawer: React.FC<CartDrawerProps> = ({
   isOpen,
   onClose,
@@ -61,9 +59,6 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
     0
   );
 
-  const giftProgress = Math.min(100, (subtotal / FREE_GIFT_THRESHOLD) * 100);
-  const remainingForGift = FREE_GIFT_THRESHOLD - subtotal;
-
   const topPositionClass = isScrolled ? 'top-[56px] sm:top-[64px]' : 'top-[88px] sm:top-[96px]';
 
   const hasSoldOutItems = cartItems.some((item) => isProductSoldOut(item.product, item.selectedSize));
@@ -104,25 +99,6 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
               <span className="bg-[#caa04c] text-white font-bold text-[10px] sm:text-[11px] px-2 py-0.5 rounded-full uppercase tracking-wider">
                 {totalItemsCount} {totalItemsCount === 1 ? 'item' : 'items'}
               </span>
-            </div>
-          </div>
-
-          {/* Complimentary Sample Gift Progress Tier */}
-          <div className="bg-[#faf7f2] border-b border-amber-200/60 px-4 sm:px-6 py-3 shrink-0">
-            <div className="flex items-center justify-between text-[11px] sm:text-xs text-[#9a7329] mb-1.5 font-medium tracking-wide gap-2">
-              <span className="flex items-center gap-1.5 truncate">
-                <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#caa04c] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" />
-                </svg>
-                <span className="truncate">Complimentary Sample</span>
-              </span>
-              <span className="font-bold shrink-0">{giftProgress >= 100 ? 'UNLOCKED' : `Add Rs.${remainingForGift.toLocaleString('en-IN')}`}</span>
-            </div>
-            <div className="w-full bg-slate-200/70 rounded-full h-1.5 overflow-hidden">
-              <div
-                className="bg-[#caa04c] h-full transition-all duration-500 rounded-full"
-                style={{ width: `${giftProgress}%` }}
-              />
             </div>
           </div>
 
