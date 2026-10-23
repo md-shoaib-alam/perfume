@@ -25,8 +25,8 @@ export const InstagramManager: React.FC = () => {
 
   const [data, setData] = useState<InstagramData>({
     title: 'Get Inspired',
-    handle: '@bakhoorbliss',
-    profileUrl: 'https://instagram.com',
+    handle: '',
+    profileUrl: '',
     items: []
   });
 
@@ -48,8 +48,8 @@ export const InstagramManager: React.FC = () => {
       if (res) {
         setData({
           title: res.title || 'Get Inspired',
-          handle: res.handle || '@bakhoorbliss',
-          profileUrl: res.profileUrl || 'https://instagram.com',
+          handle: res.handle || '',
+          profileUrl: res.profileUrl || '',
           items: Array.isArray(res.items) ? res.items : []
         });
       }
@@ -67,9 +67,9 @@ export const InstagramManager: React.FC = () => {
   const handleSaveAll = async (updatedData: InstagramData, toastMsg = 'Instagram showcase updated successfully.') => {
     setIsSaving(true);
     try {
-      const ok = await api.saveInstagramPosts(updatedData);
-      if (ok) {
-        setData(updatedData);
+      const saved = await api.saveInstagramPosts(updatedData);
+      if (saved) {
+        setData(saved);
         setSaveToast(toastMsg);
         setTimeout(() => setSaveToast(null), 3000);
         return true;
@@ -194,7 +194,7 @@ export const InstagramManager: React.FC = () => {
             <span>Instagram &quot;Get Inspired&quot; Showcase Manager</span>
           </h2>
           <p className="text-xs text-slate-500 mt-1">
-            Manage your homepage Instagram gallery, custom section title, profile handle, and embed post links.
+            Manage the homepage &quot;Get Inspired&quot; gallery: its own Instagram handle, profile link, and post links. This account is separate from the footer&apos;s brand Instagram.
           </p>
         </div>
 
@@ -245,7 +245,7 @@ export const InstagramManager: React.FC = () => {
               value={data.handle}
               onChange={(e) => setData({ ...data, handle: e.target.value })}
               className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-semibold text-slate-900 focus:outline-none focus:border-[#d6a750] transition-all"
-              placeholder="e.g. @bakhoorbliss"
+              placeholder="e.g. @your.second.account"
             />
           </div>
 
@@ -258,10 +258,14 @@ export const InstagramManager: React.FC = () => {
               value={data.profileUrl}
               onChange={(e) => setData({ ...data, profileUrl: e.target.value })}
               className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2 text-xs text-slate-800 focus:outline-none focus:border-[#d6a750] transition-all"
-              placeholder="https://instagram.com/bakhoorbliss"
+              placeholder="https://www.instagram.com/your.second.account"
             />
           </div>
         </div>
+
+        <p className="text-[10px] text-slate-400">
+          This handle and link appear only in the Get Inspired section. The footer keeps the main brand Instagram, so the two never share a setting.
+        </p>
 
         <div className="flex justify-end pt-2">
           <button
