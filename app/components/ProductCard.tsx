@@ -49,6 +49,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   const isComingSoon = Boolean(product.isComingSoon);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [hoverImageLoaded, setHoverImageLoaded] = useState(false);
+  const [isHoverActive, setIsHoverActive] = useState(false);
   const hasHoverImage = Boolean(product.hoverImage && product.hoverImage !== product.image);
 
   const primaryImage = (
@@ -74,6 +75,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           <Link 
             href={`/products/${productSlug}`}
             onClick={() => addRecentlyViewed(product)}
+            onMouseEnter={() => setIsHoverActive(true)}
             className="relative w-full aspect-square overflow-hidden mb-2.5 sm:mb-4 cursor-pointer bg-slate-100 rounded-lg group block"
           >
             {/* Skeleton shimmer before load */}
@@ -84,8 +86,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             {/* Main product image */}
             {primaryImage}
 
-            {/* Hover secondary image — fades in on hover, no zoom/scale */}
-            {hasHoverImage && (
+            {/* Hover secondary image — requested on first hover only, fades in when loaded */}
+            {hasHoverImage && isHoverActive && (
               <Image
                 src={product.hoverImage as string}
                 alt={`${product.name} hover`}
@@ -93,7 +95,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                 sizes="(max-width: 767px) 50vw, 25vw"
                 loading="lazy"
                 onLoad={() => setHoverImageLoaded(true)}
-                className="object-cover transition-opacity duration-500 opacity-0 group-hover:opacity-100"
+                className={`object-cover transition-opacity duration-500 opacity-0 ${
+                  hoverImageLoaded ? 'group-hover:opacity-100' : ''
+                }`}
               />
             )}
 
