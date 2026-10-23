@@ -126,10 +126,10 @@ const COLLECTION_INFO_MAP: Record<string, CollectionMetadata> = {
     bannerImage: ''
   },
   'all': {
-    badge: 'HOUSE OF BAKHOORBLISS',
-    title: 'All Haute Fragrances',
-    subtitle: 'Explore the complete universe of BakhoorBliss Extrait de Parfums, Imperial Attars, and Discovery Sets.',
-    editorial: 'Discover the entire compendium of luxury perfumes, discovery sets, and pure oils formulated with Royal Indian traditions and Parisian fine perfumery finesse.',
+    badge: '',
+    title: 'Shop All',
+    subtitle: '',
+    editorial: '',
     bannerImage: ''
   }
 };
@@ -200,6 +200,17 @@ export default function CollectionPage() {
     // Only use the real banner image saved in database or explicitly configured in metadata (no mock product image fallbacks)
     const resolvedBanner = (dbMatch?.bannerImage || defaultMeta.bannerImage || '').trim();
 
+    if (isAllCollection) {
+      return {
+        ...defaultMeta,
+        badge: '',
+        title: 'Shop All',
+        subtitle: '',
+        editorial: '',
+        bannerImage: resolvedBanner
+      };
+    }
+
     return {
       ...defaultMeta,
       title: dbMatch?.name || defaultMeta.title,
@@ -208,7 +219,7 @@ export default function CollectionPage() {
       bannerImage: resolvedBanner,
       badge: dbMatch?.badge || defaultMeta.badge
     };
-  }, [dbCollections, slug, defaultMeta]);
+  }, [dbCollections, slug, defaultMeta, isAllCollection]);
 
   useEffect(() => {
     if (meta?.title) {
