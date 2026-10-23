@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, ViewTransition } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
@@ -638,14 +638,21 @@ export default function ProductDetailPage() {
                     className="h-full relative overflow-hidden bg-slate-50 flex-shrink-0"
                     style={{ width: `${100 / Math.max(1, imagesList.length)}%` }}
                   >
-                    <img
-                      src={img}
-                      alt={`${product.name} - slide ${idx + 1}`}
-                      loading={idx === 0 ? 'eager' : 'lazy'}
-                      decoding="async"
-                      draggable={false}
-                      className="w-full h-full object-cover pointer-events-none select-none"
-                    />
+                    <ViewTransition
+                      key={`${product.id}-${idx}`}
+                      name={idx === currentImageIndex ? `product-photo-${product.id}` : undefined}
+                      share={idx === currentImageIndex ? { 'nav-product': 'morph', default: 'none' } : 'none'}
+                      default="none"
+                    >
+                      <img
+                        src={img}
+                        alt={`${product.name} - slide ${idx + 1}`}
+                        loading={idx === 0 ? 'eager' : 'lazy'}
+                        decoding="async"
+                        draggable={false}
+                        className="w-full h-full object-cover pointer-events-none select-none"
+                      />
+                    </ViewTransition>
                   </div>
                 ))}
               </div>
@@ -689,7 +696,7 @@ export default function ProductDetailPage() {
           </div>
 
           {/* Right: Product Details & Purchase Controls (6-7 cols) */}
-          <div className="lg:col-span-6 space-y-6">
+          <div key={product.id} className="lg:col-span-6 space-y-6 animate-product-enter">
             <div>
               <div className="flex items-center gap-3 mb-2">
                 <span className="text-xs font-bold uppercase tracking-widest text-[#caa04c]">
@@ -903,12 +910,12 @@ export default function ProductDetailPage() {
             </div>
 
             {/* Trust Highlights */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-4 border-t border-slate-200 text-xs">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-4 border-t border-slate-200 text-xs">
               <div className="p-3 bg-amber-50/50 border border-amber-200/60 rounded-xl flex items-center gap-2.5">
                 <svg className="w-5 h-5 text-[#caa04c] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                <span className="font-semibold text-slate-800 leading-tight">10+ Hours Lingering</span>
+                <span className="font-semibold text-slate-800 leading-tight">12+ Hours Lingering</span>
               </div>
 
               <div className="p-3 bg-amber-50/50 border border-amber-200/60 rounded-xl flex items-center gap-2.5">
@@ -916,13 +923,6 @@ export default function ProductDetailPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 <span className="font-semibold text-slate-800 leading-tight">7 Days Returns</span>
-              </div>
-
-              <div className="p-3 bg-amber-50/50 border border-amber-200/60 rounded-xl flex items-center gap-2.5">
-                <svg className="w-5 h-5 text-[#caa04c] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1m-4 0a1 1 0 01-1-1m-1 0a1 1 0 00-1 1" />
-                </svg>
-                <span className="font-semibold text-slate-800 leading-tight">Complimentary Sample</span>
               </div>
             </div>
 
@@ -968,7 +968,7 @@ export default function ProductDetailPage() {
                   {product.notes.base && product.notes.base.length > 0 && (
                     <div>
                       <span className="text-[10px] uppercase tracking-wider text-slate-500 font-bold block mb-1.5">
-                        Base Notes (10+ Hours Longevity)
+                        Base Notes (12+ Hours Longevity)
                       </span>
                       <div className="flex flex-wrap gap-1.5">
                         {product.notes.base.map((n, i) => (
