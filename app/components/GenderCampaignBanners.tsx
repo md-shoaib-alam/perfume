@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useMemo } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useCollectionsQuery } from '../hooks/useQueries';
 
@@ -68,12 +69,13 @@ export const GenderCampaignBanners: React.FC<GenderCampaignBannersProps> = () =>
             >
               {/* Background Image (Exact 2:3 Ratio Fit) */}
               {item.image ? (
-                <img
+                <Image
                   src={item.image}
                   alt={item.title}
+                  fill
+                  sizes="(max-width: 768px) 100vw, 50vw"
                   loading="lazy"
-                  decoding="async"
-                  className="w-full h-full object-cover object-top"
+                  className="object-cover object-top"
                 />
               ) : (
                 <div className="w-full h-full bg-slate-100" />

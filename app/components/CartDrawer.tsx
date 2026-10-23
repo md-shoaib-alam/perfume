@@ -1,6 +1,7 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
 import type { CartItem } from '../types';
@@ -141,12 +142,13 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                       onClick={onClose}
                       className="w-20 h-24 object-cover rounded-lg border border-slate-100 bg-slate-50 shrink-0 overflow-hidden block relative"
                     >
-                      <img
+                      <Image
                         src={item.product.image}
                         alt={item.product.name}
+                        fill
+                        sizes="80px"
                         loading="lazy"
-                        decoding="async"
-                        className={`w-full h-full object-cover ${isItemSoldOut ? 'opacity-60 grayscale-50' : ''}`}
+                        className={`object-cover ${isItemSoldOut ? 'opacity-60 grayscale-50' : ''}`}
                       />
                       {isItemSoldOut && (
                         <div className="absolute inset-0 bg-black/40 flex items-center justify-center p-1 text-center">

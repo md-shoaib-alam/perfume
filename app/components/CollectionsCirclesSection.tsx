@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useMemo } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useCollectionsQuery } from '../hooks/useQueries';
 
@@ -46,12 +47,13 @@ export const CollectionsCirclesSection: React.FC = () => {
                 {/* Circular Frame with Thick Luxury Gold/Yellow Theme Border */}
                 <div className="relative w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full p-[2.5px] sm:p-[3px] bg-white border-2 sm:border-[2.5px] border-[#caa04c] hover:border-[#b88f3e] transition-colors duration-300 shadow-xs">
                   <div className="w-full h-full rounded-full overflow-hidden bg-slate-50 relative">
-                    <img
+                    <Image
                       src={col.image || '/assets/collection-placeholder.jpg'}
                       alt={col.name}
+                      fill
+                      sizes="(max-width: 640px) 64px, (max-width: 768px) 80px, 96px"
                       loading="lazy"
-                      decoding="async"
-                      className="w-full h-full object-cover"
+                      className="object-cover"
                     />
                   </div>
                 </div>

@@ -1,5 +1,6 @@
 'use client';
 import React, { useEffect, useState } from 'react';
+import Image from 'next/image';
 import { api } from '../services/api';
 import type { Product } from '../types';
 
@@ -84,13 +85,14 @@ export const TravelSetSection: React.FC<TravelSetSectionProps> = ({
             </div>
 
             <div className="lg:col-span-5 relative">
-              <div className="rounded-2xl overflow-hidden border border-amber-200/60 shadow-xl bg-white aspect-square max-h-[420px]">
-                <img
+              <div className="relative rounded-2xl overflow-hidden border border-amber-200/60 shadow-xl bg-white aspect-square max-h-[420px]">
+                <Image
                   src={imageUrl}
                   alt={product?.name || 'Travel Set'}
+                  fill
+                  sizes="(max-width: 1024px) 100vw, 40vw"
                   loading="lazy"
-                  decoding="async"
-                  className="w-full h-full object-cover"
+                  className="object-cover"
                 />
               </div>
             </div>

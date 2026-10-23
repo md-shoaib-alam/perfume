@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Image from 'next/image';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../services/api';
 
@@ -79,12 +80,13 @@ export const InstagramShowcaseSection: React.FC = () => {
             const card = (
               <>
                 {/* Image */}
-                <img
+                <Image
                   src={item.image}
                   alt={item.caption || `Instagram showcase ${idx + 1}`}
+                  fill
+                  sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 16vw"
                   loading="lazy"
-                  decoding="async"
-                  className="w-full h-full object-cover object-center"
+                  className="object-cover object-center"
                 />
 
                 {/* Refined Luxury Hover Overlay */}

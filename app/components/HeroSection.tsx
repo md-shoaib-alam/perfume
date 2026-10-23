@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import Image from 'next/image';
 import { api } from '../services/api';
 
 export interface HeroSlide {
@@ -122,27 +123,27 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onShopNow }) => {
               className="block w-full cursor-pointer group/banner focus:outline-none relative"
             >
               {/* Desktop Image Banner (Full intrinsic ratio - Never crops the bottle cap or text) */}
-              <img
+              <Image
                 src={slide.desktopImage}
                 alt={slide.name || 'Hero Banner'}
-                loading={index === 0 ? 'eager' : 'lazy'}
-                fetchPriority={index === 0 ? 'high' : 'auto'}
-                decoding={index === 0 ? 'sync' : 'async'}
                 width={1280}
                 height={563}
+                sizes="100vw"
+                loading={index === 0 ? 'eager' : 'lazy'}
+                fetchPriority={index === 0 ? 'high' : 'auto'}
                 style={{ aspectRatio: '1280 / 563' }}
                 className="hidden md:block w-full h-auto select-none mx-auto object-cover"
               />
 
               {/* Mobile Image Banner (Full intrinsic ratio - Never crops top or text) */}
-              <img
+              <Image
                 src={slide.mobileImage || slide.desktopImage}
                 alt={slide.name || 'Hero Banner Mobile'}
-                loading={index === 0 ? 'eager' : 'lazy'}
-                fetchPriority={index === 0 ? 'high' : 'auto'}
-                decoding={index === 0 ? 'sync' : 'async'}
                 width={822}
                 height={1280}
+                sizes="100vw"
+                loading={index === 0 ? 'eager' : 'lazy'}
+                fetchPriority={index === 0 ? 'high' : 'auto'}
                 style={{ aspectRatio: '822 / 1280' }}
                 className="block md:hidden w-full h-auto select-none mx-auto object-cover"
               />

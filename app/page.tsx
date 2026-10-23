@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { AnnouncementBar } from './components/AnnouncementBar';
@@ -327,11 +328,13 @@ export default function Page() {
             </button>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 items-center">
-              <img
+              <Image
                 src={selectedProductModal.image}
                 alt={selectedProductModal.name}
+                width={800}
+                height={640}
+                sizes="(max-width: 640px) 100vw, 50vw"
                 loading="lazy"
-                decoding="async"
                 className="w-full h-64 object-cover rounded-xl"
               />
 

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
@@ -882,8 +883,8 @@ export default function CheckoutPage() {
                   <div key={idx} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
                     <div className="flex items-center gap-3">
                       {item.product?.image && (
-                        <div className="w-12 h-12 rounded-lg bg-white border border-slate-200 overflow-hidden shrink-0">
-                          <img src={item.product.image} alt={item.product.name} className="w-full h-full object-cover" />
+                        <div className="relative w-12 h-12 rounded-lg bg-white border border-slate-200 overflow-hidden shrink-0">
+                          <Image src={item.product.image} alt={item.product.name} fill sizes="48px" className="object-cover" />
                         </div>
                       )}
                       <div>
@@ -1772,7 +1773,7 @@ export default function CheckoutPage() {
                         <div className="flex items-center gap-3 min-w-0">
                           {item.product.image && (
                             <div className="w-12 h-12 rounded-lg bg-white border border-slate-200 overflow-hidden shrink-0 relative">
-                              <img src={item.product.image} alt={item.product.name} className={`w-full h-full object-cover ${isSoldOut ? 'opacity-50 grayscale-50' : ''}`} />
+                              <Image src={item.product.image} alt={item.product.name} fill sizes="48px" className={`object-cover ${isSoldOut ? 'opacity-50 grayscale-50' : ''}`} />
                               {isSoldOut && (
                                 <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
                                   <span className="text-[8px] font-bold text-white bg-rose-600 px-1 py-0.5 rounded">Out</span>

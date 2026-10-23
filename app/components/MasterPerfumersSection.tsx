@@ -1,5 +1,6 @@
 'use client';
 import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { api } from '../services/api';
 
 import { usePerfumersQuery } from '../hooks/useQueries';
@@ -47,11 +48,12 @@ export const MasterPerfumersSection: React.FC = () => {
                     : 'border border-slate-200 opacity-60 hover:opacity-100'
                 }`}
               >
-                <img
+                <Image
                   src={p.image}
                   alt={p.name}
+                  width={56}
+                  height={56}
                   loading="lazy"
-                  decoding="async"
                   className={`w-full h-full object-cover rounded-full ${
                     activeIndex === idx ? '' : 'grayscale'
                   }`}
@@ -80,12 +82,13 @@ export const MasterPerfumersSection: React.FC = () => {
             {/* Gold Outer Border Frame */}
             <div className="relative p-2 border border-[#d6a750] bg-white w-full max-w-md shadow-md">
               <div className="relative w-full aspect-[4/5] overflow-hidden bg-slate-100">
-                <img
+                <Image
                   src={current.image}
                   alt={current.name}
+                  fill
+                  sizes="(max-width: 768px) 100vw, 50vw"
                   loading="lazy"
-                  decoding="async"
-                  className="w-full h-full object-cover"
+                  className="object-cover"
                 />
 
                 {/* Bottom Gradient Overlay with Perfumer Name */}
@@ -126,11 +129,12 @@ export const MasterPerfumersSection: React.FC = () => {
                       : 'border border-slate-200 opacity-60 hover:opacity-100'
                   }`}
                 >
-                  <img
+                  <Image
                     src={p.image}
                     alt={p.name}
+                    width={70}
+                    height={70}
                     loading="lazy"
-                    decoding="async"
                     className={`w-full h-full object-cover rounded-full ${
                       activeIndex === idx ? '' : 'grayscale'
                     }`}

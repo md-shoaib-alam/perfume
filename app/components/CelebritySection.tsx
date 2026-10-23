@@ -2,6 +2,7 @@
 
 import React, { useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useCelebritiesQuery, queryKeys } from '../hooks/useQueries';
 import { useQueryClient } from '@tanstack/react-query';
 import { slugify } from '../utils/slug';
@@ -62,12 +63,13 @@ export const CelebritySection: React.FC = () => {
                   {...wrapperProps}
                   className="relative aspect-[3/4] rounded-lg overflow-hidden group shadow-md bg-slate-100 cursor-pointer block"
                 >
-                  <img
+                  <Image
                     src={celeb.image}
                     alt={celeb.name}
+                    fill
+                    sizes="(max-width: 640px) 76vw, (max-width: 768px) 50vw, 25vw"
                     loading="lazy"
-                    decoding="async"
-                    className="w-full h-full object-cover"
+                    className="object-cover"
                   />
                   
                   {/* Bottom Overlay Gradient with White Thumbnail Badge */}
@@ -75,11 +77,12 @@ export const CelebritySection: React.FC = () => {
                     {/* Fixed Square Thumbnail Box for Fragrance Bottle */}
                     {(celeb.bottleThumb || celeb.productImage) && (
                       <div className="bg-white rounded-xl shadow-md w-[60px] h-[60px] md:w-[65px] md:h-[65px] xl:w-[70px] xl:h-[70px] aspect-square flex items-center justify-center shrink-0 border border-white/60 overflow-hidden">
-                        <img
+                        <Image
                           src={celeb.bottleThumb || celeb.productImage}
                           alt={celeb.perfume || 'Fragrance bottle'}
+                          width={70}
+                          height={70}
                           loading="lazy"
-                          decoding="async"
                           className="w-full h-full object-cover"
                         />
                       </div>

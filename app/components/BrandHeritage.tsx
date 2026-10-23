@@ -1,5 +1,6 @@
 'use client';
 import React, { useState, useEffect, useMemo } from 'react';
+import Image from 'next/image';
 import { api } from '../services/api';
 
 export interface HeritageContent {
@@ -72,11 +73,13 @@ export const BrandHeritage: React.FC = () => {
           {/* Visual Presentation */}
           <div className="relative">
             <div className="relative z-10 rounded-3xl overflow-hidden border border-amber-900/40 shadow-2xl">
-              <img
+              <Image
                 src={content.image}
                 alt="Imperial Perfumery Artisans"
+                width={1200}
+                height={900}
+                sizes="(max-width: 1024px) 100vw, 50vw"
                 loading="lazy"
-                decoding="async"
                 className="w-full h-[450px] object-cover"
               />
             </div>

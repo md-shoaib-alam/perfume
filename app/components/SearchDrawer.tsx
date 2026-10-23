@@ -409,11 +409,12 @@ export const SearchDrawer: React.FC<SearchDrawerProps> = ({
                         {/* Crisp Bottle Image */}
                         <div className="w-16 h-16 rounded-lg bg-[#faf9f6] border border-slate-100 p-1 shrink-0 flex items-center justify-center overflow-hidden">
                           {product.image ? (
-                            <img
+                            <Image
                               src={product.image}
                               alt={product.name}
+                              width={64}
+                              height={64}
                               loading="lazy"
-                              decoding="async"
                               className="w-full h-full object-contain"
                             />
                           ) : (
@@ -559,11 +560,12 @@ export const SearchDrawer: React.FC<SearchDrawerProps> = ({
                       >
                         <div className="w-16 h-16 rounded-xl bg-[#faf9f6] border border-slate-100 p-1 overflow-hidden shrink-0 flex items-center justify-center">
                           {product.image ? (
-                            <img
+                            <Image
                               src={product.image}
                               alt={product.name}
+                              width={64}
+                              height={64}
                               loading="lazy"
-                              decoding="async"
                               className="w-full h-full object-contain"
                             />
                           ) : (

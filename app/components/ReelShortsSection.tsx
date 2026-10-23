@@ -1,6 +1,7 @@
 'use client';
 import React, { useRef, useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { api } from '../services/api';
 import { slugify } from '../utils/slug';
 
@@ -154,13 +155,14 @@ export const ReelShortsSection: React.FC = () => {
                 >
                   {/* 9:16 Vertical Reel Video/Photo */}
                   <div className="relative aspect-[9/16] overflow-hidden bg-slate-900">
-                    <img
+                    <Image
                       src={reel.image}
                       alt={reel.title}
-                      draggable={false}
+                      fill
+                      sizes="(max-width: 640px) 176px, 224px"
                       loading="lazy"
-                      decoding="async"
-                      className="w-full h-full object-cover"
+                      draggable={false}
+                      className="object-cover"
                     />
                   </div>
 
@@ -169,9 +171,11 @@ export const ReelShortsSection: React.FC = () => {
                     {/* Product Thumbnail (Overlaps the bottom edge of the 9:16 media) */}
                     {reel.productImage && (
                       <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl bg-white border border-slate-200/90 shadow-md -mt-7 sm:-mt-8 mb-2 overflow-hidden flex items-center justify-center shrink-0 z-10 p-0.5">
-                        <img
+                        <Image
                           src={reel.productImage}
                           alt={reel.title}
+                          width={64}
+                          height={64}
                           className="w-full h-full object-cover rounded-lg"
                           loading="lazy"
                         />

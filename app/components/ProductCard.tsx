@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { getProductSlug } from '../utils/slug';
 import { addRecentlyViewed } from '../utils/recentlyViewed';
@@ -51,13 +52,14 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   const hasHoverImage = Boolean(product.hoverImage && product.hoverImage !== product.image);
 
   const primaryImage = (
-    <img
+    <Image
       src={product.image}
       alt={product.name}
+      fill
+      sizes="(max-width: 767px) 50vw, 25vw"
       loading="lazy"
-      decoding="async"
       onLoad={() => setImageLoaded(true)}
-      className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ${
+      className={`object-cover transition-opacity duration-500 ${
         imageLoaded ? 'opacity-100' : 'opacity-0'
       }`}
     />
@@ -84,13 +86,14 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
             {/* Hover secondary image — fades in on hover, no zoom/scale */}
             {hasHoverImage && (
-              <img
-                src={product.hoverImage}
+              <Image
+                src={product.hoverImage as string}
                 alt={`${product.name} hover`}
+                fill
+                sizes="(max-width: 767px) 50vw, 25vw"
                 loading="lazy"
-                decoding="async"
                 onLoad={() => setHoverImageLoaded(true)}
-                className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 opacity-0 group-hover:opacity-100`}
+                className="object-cover transition-opacity duration-500 opacity-0 group-hover:opacity-100"
               />
             )}
 

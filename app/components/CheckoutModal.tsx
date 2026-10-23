@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { useUser } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 import type { CartItem } from '../types';
@@ -786,11 +787,12 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                         key={item.product.id + (item.selectedSize || '')}
                         className="flex items-center justify-between text-xs gap-3 bg-white p-2.5 rounded-xl border border-slate-200/80 shadow-2xs font-sans"
                       >
-                        <img
+                        <Image
                           src={item.product.image}
                           alt={item.product.name}
+                          width={48}
+                          height={48}
                           loading="lazy"
-                          decoding="async"
                           className="w-11 h-12 object-cover rounded-lg bg-slate-100 border border-slate-100 shrink-0"
                         />
                         <div className="flex-1 min-w-0 font-sans">

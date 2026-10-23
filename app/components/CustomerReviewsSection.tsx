@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
+import Image from 'next/image';
 import { LuxurySelect } from './ui/LuxurySelect';
 import { toast } from '@/components/lightswind/use-toast';
 import type { Product, Review } from '../types';
@@ -408,14 +409,15 @@ export const CustomerReviewsSection: React.FC<CustomerReviewsSectionProps> = ({
                 key={idx}
                 type="button"
                 onClick={() => setActivePhotoModal(item.url)}
-                className="w-16 h-16 sm:w-20 sm:h-20 shrink-0 rounded-none overflow-hidden border border-slate-200 bg-slate-50 cursor-pointer block group focus:outline-none"
+                className="relative w-16 h-16 sm:w-20 sm:h-20 shrink-0 rounded-none overflow-hidden border border-slate-200 bg-slate-50 cursor-pointer block group focus:outline-none"
               >
-                <img
+                <Image
                   src={item.url}
                   alt={item.caption}
+                  fill
+                  sizes="(max-width: 640px) 64px, 80px"
                   loading="lazy"
-                  decoding="async"
-                  className="w-full h-full object-cover"
+                  className="object-cover"
                 />
               </button>
             ))}

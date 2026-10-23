@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
+import Image from 'next/image';
 import { api } from '../services/api';
 import type { FragrancePyramidData, PyramidTier } from '../types';
 
@@ -197,13 +198,14 @@ export const FragranceNotesSection: React.FC = () => {
               >
                 <div>
                   {note.image ? (
-                    <div className="aspect-[4/3] rounded-xl overflow-hidden mb-4 bg-slate-100 border border-slate-100">
-                      <img
+                    <div className="relative aspect-[4/3] rounded-xl overflow-hidden mb-4 bg-slate-100 border border-slate-100">
+                      <Image
                         src={note.image}
                         alt={note.name}
+                        fill
+                        sizes="(max-width: 768px) 100vw, 33vw"
                         loading="lazy"
-                        decoding="async"
-                        className="w-full h-full object-cover"
+                        className="object-cover"
                       />
                     </div>
                   ) : (
