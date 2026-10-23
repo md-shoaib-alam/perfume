@@ -283,9 +283,9 @@ export default function ContactPage() {
                 <h3 className="font-serif text-sm font-bold text-slate-900 tracking-tight">
                   Address
                 </h3>
-                <p className="font-medium text-slate-700">BakhoorBliss Perfumes Private Limited</p>
+                <p className="font-medium text-slate-700">BakhoorBliss</p>
                 <p className="leading-relaxed text-slate-500">
-                  Plot No. 31, HSIIDC Industrial Estate, Jagadhari Road, Ambala, Haryana, 133006
+                  Khashra No. 459/475, Mitra Puram, Kahrai Mod, Shamsabad Road, Agra, Uttar Pradesh 282001, India
                 </p>
               </div>
 
@@ -295,13 +295,13 @@ export default function ContactPage() {
                   Information
                 </h3>
                 <p>
-                  <a href="mailto:wecare@bakhoorbliss.in" className="text-slate-700 hover:text-[#caa04c] transition-colors">
-                    wecare@bakhoorbliss.in
+                  <a href="mailto:bakhoorbliss.co@gmail.com" className="text-slate-700 hover:text-[#caa04c] transition-colors">
+                    bakhoorbliss.co@gmail.com
                   </a>
                 </p>
                 <p>
-                  <a href="tel:+917206277777" className="text-slate-700 hover:text-[#caa04c] font-medium transition-colors">
-                    +91 72062 77777
+                  <a href="tel:+919389344618" className="text-slate-700 hover:text-[#caa04c] font-medium transition-colors">
+                    +91 93893 44618
                   </a>
                 </p>
               </div>
@@ -359,7 +359,7 @@ export default function ContactPage() {
                   We&apos;re Open
                 </h3>
                 <p className="leading-relaxed text-slate-500">
-                  Our customer advisors are available by phone at <span className="font-semibold text-slate-800">+91 72062 77777</span> Monday to Saturday from 11:00 AM to 5:00 PM (IST).
+                  Our customer advisors are available by phone at <span className="font-semibold text-slate-800">+91 93893 44618</span> Monday to Saturday from 11:00 AM to 5:00 PM (IST).
                 </p>
               </div>
 

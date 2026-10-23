@@ -111,7 +111,7 @@ export default function TermsOfServicePage() {
                 Welcome to BakhoorBliss Luxury Perfumery.
               </p>
               <p>
-                This website is owned and operated by BakhoorBliss Perfumes Private Limited. Throughout the site, the terms &ldquo;we&rdquo;, &ldquo;us&rdquo;, and &ldquo;our&rdquo; refer to BakhoorBliss. By accessing our website or purchasing from us, you agree to be bound by the following Terms of Service, including all policies referenced herein.
+                This website is owned and operated by BakhoorBliss. Throughout the site, the terms &ldquo;we&rdquo;, &ldquo;us&rdquo;, and &ldquo;our&rdquo; refer to BakhoorBliss. By accessing our website or purchasing from us, you agree to be bound by the following Terms of Service, including all policies referenced herein.
               </p>
               <p className="text-xs text-slate-500">
                 If you do not agree to these Terms, you may not access the website or use our services.
@@ -200,7 +200,7 @@ export default function TermsOfServicePage() {
                 8. Intellectual Property Rights
               </h2>
               <p>
-                All content published on this website, including but not limited to brand names, logos, formulations, product packaging graphics, photographic compositions, text, and software code, is the exclusive intellectual property of BakhoorBliss Perfumes Private Limited and is protected under applicable Indian and international copyright and trademark laws.
+                All content published on this website, including but not limited to brand names, logos, formulations, product packaging graphics, photographic compositions, text, and software code, is the exclusive intellectual property of BakhoorBliss and is protected under applicable Indian and international copyright and trademark laws.
               </p>
               <p>
                 You may not copy, reproduce, modify, distribute, or exploit any material from this site without our express written consent.
@@ -303,7 +303,7 @@ export default function TermsOfServicePage() {
                 17. Governing Law and Dispute Resolution
               </h2>
               <p>
-                These Terms of Service and any separate agreements whereby we provide you services or products shall be governed by and construed in accordance with the laws of the Republic of India. Any disputes or claims arising out of or in connection with these Terms shall be subject to the exclusive jurisdiction of the competent courts in Ambala, Haryana, India.
+                These Terms of Service and any separate agreements whereby we provide you services or products shall be governed by and construed in accordance with the laws of the Republic of India. Any disputes or claims arising out of or in connection with these Terms shall be subject to the exclusive jurisdiction of the competent courts in Agra, Uttar Pradesh, India.
               </p>
               <p className="text-xs text-slate-500">
                 For financial fraud reporting or unauthorized cyber incident reporting, patrons may also refer to the national cybercrime portal or call the cybercrime helpline at <strong>1930</strong>.
@@ -320,10 +320,10 @@ export default function TermsOfServicePage() {
               </p>
               
               <div className="bg-[#faf9f6] border border-slate-200 rounded-2xl p-6 space-y-2 text-xs sm:text-sm text-slate-700">
-                <p><strong className="text-slate-900">Entity:</strong> BakhoorBliss Perfumes Private Limited</p>
-                <p><strong className="text-slate-900">Registered Office:</strong> Plot No. 31, HSIIDC Industrial Estate, Jagadhari Road, Ambala, Haryana, 133006, India</p>
-                <p><strong className="text-slate-900">Email:</strong> <a href="mailto:support@bakhoorbliss.in" className="text-[#caa04c] underline hover:text-[#b58434]">support@bakhoorbliss.in</a></p>
-                <p><strong className="text-slate-900">Concierge Helpline:</strong> <a href="tel:+917206277777" className="text-slate-900 hover:text-[#caa04c] font-medium">+91 72062 77777</a></p>
+                <p><strong className="text-slate-900">Entity:</strong> BakhoorBliss</p>
+                <p><strong className="text-slate-900">Registered Office:</strong> Khashra No. 459/475, Mitra Puram, Kahrai Mod, Shamsabad Road, Agra, Uttar Pradesh 282001, India</p>
+                <p><strong className="text-slate-900">Email:</strong> <a href="mailto:bakhoorbliss.co@gmail.com" className="text-[#caa04c] underline hover:text-[#b58434]">bakhoorbliss.co@gmail.com</a></p>
+                <p><strong className="text-slate-900">Concierge Helpline:</strong> <a href="tel:+919389344618" className="text-slate-900 hover:text-[#caa04c] font-medium">+91 93893 44618</a></p>
                 <p><strong className="text-slate-900">Hours:</strong> Monday &ndash; Saturday, 11:00 AM &ndash; 5:00 PM IST</p>
               </div>
             </section>
