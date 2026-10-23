@@ -13,22 +13,21 @@ export const ProductCardSkeleton: React.FC = () => {
         </div>
 
         {/* Product Name Skeleton */}
-        <div className="h-5 sm:h-6 w-3/4 bg-slate-200/80 rounded-md mb-2" />
+        <div className="h-5 sm:h-6 lg:h-[30px] w-1/2 bg-slate-200/80 rounded-md mb-1" />
 
         {/* Category Subtitle Skeleton */}
-        <div className="h-3 w-1/3 bg-slate-100 rounded-md mb-2" />
+        <div className="h-[15px] sm:h-4 w-1/3 bg-slate-100 rounded-md mb-1 sm:mb-1.5" />
 
         {/* Subtitle / Accords Skeleton */}
-        <div className="h-3 w-2/3 bg-slate-100 rounded-md mb-3 hidden sm:block" />
+        <div className="h-3 sm:h-[15px] w-5/6 bg-slate-100 rounded-md mb-1.5 sm:mb-2.5" />
 
         {/* Price Skeleton */}
-        <div className="h-4 w-1/4 bg-slate-200/90 rounded-md mb-3" />
+        <div className="h-4 sm:h-5 w-1/5 bg-slate-200/90 rounded-md mb-2 sm:mb-3" />
 
         {/* Size Pills Skeleton */}
-        <div className="flex items-center justify-center gap-1.5 mb-3">
-          <div className="h-5 w-10 sm:h-6 sm:w-12 bg-slate-100 rounded-full" />
-          <div className="h-5 w-10 sm:h-6 sm:w-12 bg-slate-100 rounded-full" />
-          <div className="h-5 w-10 sm:h-6 sm:w-12 bg-slate-100 rounded-full" />
+        <div className="flex items-center justify-center gap-1 sm:gap-2 mb-2 sm:mb-3">
+          <div className="h-5 sm:h-[26px] w-10 sm:w-14 bg-slate-100 rounded-full" />
+          <div className="h-5 sm:h-[26px] w-10 sm:w-14 bg-slate-100 rounded-full" />
         </div>
       </div>
 
@@ -42,7 +41,7 @@ export const ProductCardSkeleton: React.FC = () => {
 
 export const ProductGridSkeleton: React.FC<{ count?: number }> = ({ count = 6 }) => {
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-6 lg:gap-8">
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 md:gap-5 lg:gap-6">
       {Array.from({ length: count }).map((_, i) => (
         <ProductCardSkeleton key={i} />
       ))}
@@ -52,44 +51,54 @@ export const ProductGridSkeleton: React.FC<{ count?: number }> = ({ count = 6 })
 
 export const ProductDetailSkeleton: React.FC = () => {
   return (
-    <main className="max-w-[1680px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10 animate-pulse select-none">
+    <main className="w-full max-w-[1680px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10 animate-pulse select-none">
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-14 items-start">
         {/* Gallery Skeleton */}
         <div className="lg:col-span-6 flex flex-col-reverse md:flex-row gap-4 items-start">
-          <div className="flex md:flex-col gap-2.5 w-full md:w-20">
-            <div className="w-16 h-16 sm:w-20 sm:h-20 bg-slate-100 rounded-none" />
-            <div className="w-16 h-16 sm:w-20 sm:h-20 bg-slate-100 rounded-none" />
-            <div className="w-16 h-16 sm:w-20 sm:h-20 bg-slate-100 rounded-none" />
+          <div className="flex md:flex-col gap-2.5 overflow-x-auto md:overflow-y-auto w-full md:w-20 md:shrink-0 md:max-h-[580px] pb-2 md:pb-0">
+            <div className="w-16 h-16 sm:w-18 sm:h-18 md:w-20 md:h-20 border-2 border-slate-200 bg-slate-100 shrink-0" />
+            <div className="w-16 h-16 sm:w-18 sm:h-18 md:w-20 md:h-20 border-2 border-slate-200 bg-slate-100 shrink-0" />
+            <div className="w-16 h-16 sm:w-18 sm:h-18 md:w-20 md:h-20 border-2 border-slate-200 bg-slate-100 shrink-0" />
+            <div className="w-16 h-16 sm:w-18 sm:h-18 md:w-20 md:h-20 border-2 border-slate-200 bg-slate-100 shrink-0" />
           </div>
-          <div className="aspect-square w-full flex-1 bg-slate-100 rounded-none" />
+          <div className="aspect-square w-full flex-1 bg-slate-100 border border-slate-200/80" />
         </div>
 
         {/* Details Skeleton */}
         <div className="lg:col-span-6 space-y-6">
-          <div className="space-y-3">
-            <div className="h-3 w-24 bg-slate-200 rounded-full" />
-            <div className="h-8 sm:h-10 w-3/4 bg-slate-200 rounded-lg" />
-            <div className="h-4 w-full bg-slate-100 rounded-md" />
-            <div className="h-4 w-1/3 bg-slate-100 rounded-md" />
+          <div>
+            <div className="flex items-center gap-3 mb-2">
+              <div className="h-4 w-28 bg-slate-200 rounded-full" />
+              <div className="h-5 w-14 bg-slate-100 rounded-full" />
+            </div>
+            <div className="h-8 sm:h-9 lg:h-10 w-1/2 bg-slate-200 rounded-lg" />
+            <div className="h-5 w-full bg-slate-100 rounded-md mt-2" />
+            <div className="h-4 w-2/5 bg-slate-100 rounded-md mt-3" />
           </div>
 
-          <div className="p-5 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-2">
-            <div className="h-8 w-36 bg-slate-200 rounded-lg" />
-            <div className="h-3 w-28 bg-slate-100 rounded-md" />
+          <div className="p-4 sm:p-5 bg-slate-50 rounded-2xl border border-slate-200/80">
+            <div className="h-8 sm:h-9 w-32 bg-slate-200 rounded-lg" />
+            <div className="h-3 w-28 bg-slate-100 rounded-md mt-1" />
           </div>
 
           <div className="space-y-2">
             <div className="h-3 w-32 bg-slate-200 rounded-md" />
-            <div className="flex gap-2.5">
-              <div className="h-10 w-20 bg-slate-100 rounded-xl" />
-              <div className="h-10 w-20 bg-slate-100 rounded-xl" />
-              <div className="h-10 w-20 bg-slate-100 rounded-xl" />
+            <div className="flex flex-wrap gap-2.5">
+              <div className="h-[38px] w-16 sm:w-20 bg-slate-100 rounded-xl" />
+              <div className="h-[38px] w-16 sm:w-20 bg-slate-100 rounded-xl" />
             </div>
           </div>
 
-          <div className="flex gap-3 pt-2">
-            <div className="h-12 w-28 bg-slate-100 rounded-xl" />
-            <div className="h-12 flex-1 bg-slate-200 rounded-xl" />
+          <div className="pt-2">
+            <div className="flex items-center gap-3">
+              <div className="h-11 w-28 bg-slate-100 rounded-xl" />
+              <div className="h-11 flex-1 bg-slate-200 rounded-xl" />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-4 border-t border-slate-200">
+            <div className="h-11 bg-amber-50/50 border border-amber-200/60 rounded-xl" />
+            <div className="h-11 bg-amber-50/50 border border-amber-200/60 rounded-xl" />
           </div>
         </div>
       </div>
