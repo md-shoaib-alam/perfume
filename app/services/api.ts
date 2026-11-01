@@ -178,10 +178,6 @@ export const api = {
     return [];
   },
 
-  async createOrder(orderData: any): Promise<any> {
-    return apiRequest('/api/orders', jsonInit('POST', orderData), 'Failed to place order');
-  },
-
   async createRazorpayOrder(payload: { items: any[]; customer: any; couponCode?: string }): Promise<any> {
     const res = await fetch('/api/razorpay/order', {
       method: 'POST',

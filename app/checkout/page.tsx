@@ -89,7 +89,6 @@ export default function CheckoutPage() {
   const [pincodeSuccessMsg, setPincodeSuccessMsg] = useState<string | null>(null);
 
   // Payment & Coupon State
-  const [paymentMethod, setPaymentMethod] = useState<'razorpay' | 'cod'>('razorpay');
   const [couponInput, setCouponInput] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState<string | null>(null);
   const [discountAmount, setDiscountAmount] = useState(0);
@@ -644,119 +643,125 @@ export default function CheckoutPage() {
     setErrorMsg(null);
 
     try {
-      if (paymentMethod === 'razorpay') {
-        const isScriptLoaded = await loadRazorpayScript();
-        if (!isScriptLoaded) {
-          throw new Error('Razorpay SDK failed to load. Please check your internet connection.');
-        }
+      const isScriptLoaded = await loadRazorpayScript();
+      if (!isScriptLoaded) {
+        throw new Error('Razorpay SDK failed to load. Please check your internet connection.');
+      }
 
-        const orderRes = await api.createRazorpayOrder({
-          items: cartItems.map((item) => ({
-            productId: item.product.id,
-            quantity: item.quantity,
-            selectedSize: item.selectedSize || item.product.volume || '100ml',
-            unitPrice: item.unitPrice ?? item.product.price
-          })),
-          customer: formData,
-          couponCode: appliedCoupon || undefined
-        });
+      const orderRes = await api.createRazorpayOrder({
+        items: cartItems.map((item) => ({
+          productId: item.product.id,
+          quantity: item.quantity,
+          selectedSize: item.selectedSize || item.product.volume || '100ml',
+          unitPrice: item.unitPrice ?? item.product.price
+        })),
+        customer: formData,
+        couponCode: appliedCoupon || undefined
+      });
 
-        if (!orderRes || !orderRes.orderId) {
-          throw new Error(orderRes?.error || 'Unable to generate checkout order');
-        }
+      if (!orderRes || !orderRes.orderId) {
+        throw new Error(orderRes?.error || 'Unable to generate checkout order');
+      }
 
-        const rzpKey = orderRes.keyId;
-        if (!rzpKey) {
-          throw new Error('Razorpay is not configured. Please contact support.');
-        }
+      const rzpKey = orderRes.keyId;
+      if (!rzpKey) {
+        throw new Error('Razorpay is not configured. Please contact support.');
+      }
 
-        const options = {
-          key: rzpKey,
-          amount: orderRes.amount,
-          currency: orderRes.currency || 'INR',
-          name: 'Bakhoor Bliss',
-          description: `Order ${orderRes.orderNumber}`,
-          image: '/assets/bakhoorblissnav.avif',
-          order_id: orderRes.razorpayOrderId.startsWith('order_sim_') || orderRes.razorpayOrderId.startsWith('order_test_')
-            ? undefined
-            : orderRes.razorpayOrderId,
-          prefill: {
-            name: formData.name,
-            email: formData.email,
-            contact: formData.phone
-          },
-          theme: {
-            color: '#caa04c'
-          },
-          modal: {
-            ondismiss: () => {
-              isSubmittingRef.current = false;
-              setIsSubmitting(false);
-              if (orderRes?.orderId) {
-                api.cancelRazorpayOrder(orderRes.orderId).catch((err) => {
-                  console.warn('Non-blocking order cancellation notice on dismiss:', err);
-                });
-              }
-              toast({
-                title: 'Payment Exited',
-                description: 'Payment was cancelled. Your bag items have been retained.'
-              });
-              router.push('/');
-            }
-          },
-          handler: async (response: any) => {
-            try {
-              const verifyRes = await api.verifyRazorpayPayment({
-                razorpay_order_id: response.razorpay_order_id || orderRes.razorpayOrderId,
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_signature: response.razorpay_signature,
-                orderId: orderRes.orderId
-              });
-
-              clearCart();
-              setConfirmedOrder({
-                orderNumber: verifyRes.orderNumber || orderRes.orderNumber,
-                orderId: orderRes.orderId,
-                paymentId: response.razorpay_payment_id || 'Instant Razorpay Verified',
-                paymentMethod: 'Razorpay Instant Online Payment',
-                total: finalTotal,
-                customer: formData,
-                items: cartItems
-              });
-            } catch (verErr: any) {
-              console.error('Payment verification failed:', verErr);
-              setErrorMsg(verErr.message || 'Payment verification failed. Please contact support.');
-            } finally {
-              isSubmittingRef.current = false;
-              setIsSubmitting(false);
-            }
-          }
-        };
-
-        if (typeof window !== 'undefined' && (window as any).Razorpay) {
-          const rzpInstance = new (window as any).Razorpay(options);
-          rzpInstance.on('payment.failed', (failResp: any) => {
-            setErrorMsg(failResp?.error?.description || 'Payment transaction failed');
+      const options = {
+        key: rzpKey,
+        amount: orderRes.amount,
+        currency: orderRes.currency || 'INR',
+        name: 'Bakhoor Bliss',
+        description: `Order ${orderRes.orderNumber}`,
+        image: '/assets/bakhoorblissnav.avif',
+        order_id: orderRes.razorpayOrderId.startsWith('order_sim_') || orderRes.razorpayOrderId.startsWith('order_test_')
+          ? undefined
+          : orderRes.razorpayOrderId,
+        prefill: {
+          name: formData.name,
+          email: formData.email,
+          contact: formData.phone
+        },
+        theme: {
+          color: '#caa04c'
+        },
+        modal: {
+          ondismiss: () => {
             isSubmittingRef.current = false;
             setIsSubmitting(false);
             if (orderRes?.orderId) {
               api.cancelRazorpayOrder(orderRes.orderId).catch((err) => {
-                console.warn('Non-blocking order cancellation notice on payment failure:', err);
+                console.warn('Non-blocking order cancellation notice on dismiss:', err);
               });
             }
-          });
-          rzpInstance.open();
-        } else {
-          // Sandbox Fallback
-          setTimeout(async () => {
-            await api.verifyRazorpayPayment({
+            toast({
+              title: 'Payment Exited',
+              description: 'Payment was cancelled. Your bag items have been retained.'
+            });
+            router.push('/');
+          }
+        },
+        handler: async (response: any) => {
+          try {
+            const verifyRes = await api.verifyRazorpayPayment({
+              razorpay_order_id: response.razorpay_order_id || orderRes.razorpayOrderId,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+              orderId: orderRes.orderId
+            });
+            if (!verifyRes?.success) {
+              throw new Error('Payment verification was not accepted');
+            }
+
+            clearCart();
+            setConfirmedOrder({
+              orderNumber: verifyRes.orderNumber || orderRes.orderNumber,
+              orderId: orderRes.orderId,
+              paymentId: response.razorpay_payment_id || 'Instant Razorpay Verified',
+              paymentMethod: 'Razorpay Instant Online Payment',
+              total: finalTotal,
+              customer: formData,
+              items: cartItems
+            });
+          } catch (verErr: any) {
+            console.error('Payment verification failed:', verErr);
+            setErrorMsg(verErr.message || 'Payment verification failed. Please contact support.');
+          } finally {
+            isSubmittingRef.current = false;
+            setIsSubmitting(false);
+          }
+        }
+      };
+
+      if (typeof window !== 'undefined' && (window as any).Razorpay) {
+        const rzpInstance = new (window as any).Razorpay(options);
+        rzpInstance.on('payment.failed', (failResp: any) => {
+          setErrorMsg(failResp?.error?.description || 'Payment transaction failed');
+          isSubmittingRef.current = false;
+          setIsSubmitting(false);
+          if (orderRes?.orderId) {
+            api.cancelRazorpayOrder(orderRes.orderId).catch((err) => {
+              console.warn('Non-blocking order cancellation notice on payment failure:', err);
+            });
+          }
+        });
+        rzpInstance.open();
+      } else if (process.env.NODE_ENV !== 'production') {
+        // Dev-only sandbox fallback when the Razorpay widget is unavailable
+        setTimeout(async () => {
+          try {
+            const verifyRes = await api.verifyRazorpayPayment({
               razorpay_order_id: orderRes.razorpayOrderId,
               razorpay_payment_id: `pay_sim_${Date.now()}`,
               orderId: orderRes.orderId
             });
+            if (!verifyRes?.success) {
+              throw new Error('Payment verification was not accepted');
+            }
             clearCart();
             setConfirmedOrder({
-              orderNumber: orderRes.orderNumber,
+              orderNumber: verifyRes.orderNumber || orderRes.orderNumber,
               orderId: orderRes.orderId,
               paymentId: 'pay_sim_sandbox_success',
               paymentMethod: 'Razorpay Instant Online Payment',
@@ -764,44 +769,16 @@ export default function CheckoutPage() {
               customer: formData,
               items: cartItems
             });
+          } catch (simErr) {
+            console.error('Sandbox payment verification failed:', simErr);
+            setErrorMsg(simErr instanceof Error ? simErr.message : 'Payment verification failed. Please try again.');
+          } finally {
             isSubmittingRef.current = false;
             setIsSubmitting(false);
-          }, 1000);
-        }
+          }
+        }, 1000);
       } else {
-        // Cash on Delivery Flow
-        const codOrder = await api.createOrder({
-          customerName: formData.name,
-          customerEmail: formData.email,
-          customerPhone: formData.phone,
-          shippingAddress: formData,
-          total: finalTotal,
-          totalAmount: finalTotal,
-          paymentMethod: 'cod',
-          paymentStatus: 'pending',
-          status: 'pending',
-          items: cartItems.map((item) => ({
-            productId: item.product.id,
-            name: item.product.name,
-            size: item.selectedSize || item.product.volume || '100ml',
-            price: item.unitPrice ?? item.product.price,
-            quantity: item.quantity,
-            image: item.product.image
-          }))
-        });
-
-        clearCart();
-        setConfirmedOrder({
-          orderNumber: codOrder.orderNumber || `NSH-${(codOrder._id || codOrder.id || '').slice(-5).toUpperCase()}`,
-          orderId: codOrder._id || codOrder.id,
-          paymentId: 'Payable on Delivery (Cash / UPI QR at Doorstep)',
-          paymentMethod: 'Cash on Delivery (COD)',
-          total: finalTotal,
-          customer: formData,
-          items: cartItems
-        });
-        isSubmittingRef.current = false;
-        setIsSubmitting(false);
+        throw new Error('Payment gateway is unavailable. Please try again or contact support.');
       }
     } catch (err: any) {
       console.error('Checkout error:', err);
@@ -1670,80 +1647,34 @@ export default function CheckoutPage() {
                 </div>
               )}
 
-              {/* Payment Mode Selector */}
+              {/* Payment Method */}
               <form id="payment-step-form" onSubmit={handleSubmitCheckout}>
                 <div className="bg-white rounded-3xl border border-slate-200 shadow-xs p-5 sm:p-6 space-y-4">
                   <div className="border-b border-slate-100 pb-3 flex items-center justify-between">
                     <h2 className="font-semibold text-slate-900 text-sm flex items-center gap-2">
                       <span className="w-2 h-2 rounded-full bg-[#caa04c]"></span>
-                      <span>Select Payment Mode</span>
+                      <span>Payment Method</span>
                     </h2>
                   </div>
 
-                  <div className="space-y-3">
-                    {/* Razorpay Option */}
-                    <label
-                      className={`flex items-start gap-3.5 p-4 rounded-2xl border transition-all cursor-pointer select-none ${
-                        paymentMethod === 'razorpay'
-                          ? 'border-[#d6a750] bg-amber-50/40 shadow-xs ring-1 ring-[#d6a750]/30'
-                          : 'border-slate-200 bg-white hover:border-slate-300'
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        name="paymentMethod"
-                        value="razorpay"
-                        checked={paymentMethod === 'razorpay'}
-                        onChange={() => setPaymentMethod('razorpay')}
-                        className="mt-1 text-[#d6a750] focus:ring-[#d6a750]"
-                      />
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs font-semibold text-slate-900">Razorpay Instant Online Payment</span>
-                          <span className="px-2 py-0.5 bg-[#caa04c]/15 text-[#916618] text-[9.5px] font-semibold font-mono rounded">
-                            RECOMMENDED
-                          </span>
-                        </div>
-                        <p className="text-[11px] text-slate-500 mt-1">
-                          Instant checkout via UPI (Google Pay, PhonePe, Paytm), Cards & NetBanking.
-                        </p>
-                        <div className="flex items-center gap-1.5 text-[10.5px] text-emerald-700 font-medium mt-2">
-                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                          </svg>
-                          <span>100% Encrypted & RBI Authorized Gateway</span>
-                        </div>
+                  <div className="flex items-start gap-3.5 p-4 rounded-2xl border border-[#d6a750] bg-amber-50/40 shadow-xs ring-1 ring-[#d6a750]/30 select-none">
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-semibold text-slate-900">Razorpay Instant Online Payment</span>
+                        <span className="px-2 py-0.5 bg-[#caa04c]/15 text-[#916618] text-[9.5px] font-semibold font-mono rounded">
+                          SECURE
+                        </span>
                       </div>
-                    </label>
-
-                    {/* Cash on Delivery Option */}
-                    <label
-                      className={`flex items-start gap-3.5 p-4 rounded-2xl border transition-all cursor-pointer select-none ${
-                        paymentMethod === 'cod'
-                          ? 'border-[#d6a750] bg-amber-50/40 shadow-xs ring-1 ring-[#d6a750]/30'
-                          : 'border-slate-200 bg-white hover:border-slate-300'
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        name="paymentMethod"
-                        value="cod"
-                        checked={paymentMethod === 'cod'}
-                        onChange={() => setPaymentMethod('cod')}
-                        className="mt-1 text-[#d6a750] focus:ring-[#d6a750]"
-                      />
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs font-semibold text-slate-900">Cash on Delivery (COD)</span>
-                          <span className="px-2 py-0.5 bg-slate-100 text-slate-700 text-[9.5px] font-semibold font-mono rounded">
-                            DOORSTEP
-                          </span>
-                        </div>
-                        <p className="text-[11px] text-slate-500 mt-1">
-                          Pay securely in cash or scan UPI QR directly upon doorstep delivery.
-                        </p>
+                      <p className="text-[11px] text-slate-500 mt-1">
+                        Instant checkout via UPI (Google Pay, PhonePe, Paytm), Cards & NetBanking.
+                      </p>
+                      <div className="flex items-center gap-1.5 text-[10.5px] text-emerald-700 font-medium mt-2">
+                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span>100% Encrypted & RBI Authorized Gateway</span>
                       </div>
-                    </label>
+                    </div>
                   </div>
                 </div>
               </form>
@@ -1900,19 +1831,12 @@ export default function CheckoutPage() {
                     </>
                   ) : hasSoldOutItems ? (
                     <span>REMOVE SOLD OUT ITEMS TO PROCEED</span>
-                  ) : paymentMethod === 'razorpay' ? (
+                  ) : (
                     <>
                       <svg className="w-4 h-4 text-[#d6a750]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                       </svg>
                       <span>PAY ₹{finalTotal.toLocaleString('en-IN')} VIA RAZORPAY →</span>
-                    </>
-                  ) : (
-                    <>
-                      <svg className="w-4 h-4 text-[#d6a750]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                      </svg>
-                      <span>PLACE CASH ON DELIVERY ORDER →</span>
                     </>
                   )}
                 </button>
@@ -2004,10 +1928,8 @@ export default function CheckoutPage() {
               <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
             ) : hasSoldOutItems ? (
               <span>REMOVE SOLD OUT</span>
-            ) : paymentMethod === 'razorpay' ? (
-              <span>PAY NOW →</span>
             ) : (
-              <span>PLACE ORDER →</span>
+              <span>PAY NOW →</span>
             )}
           </button>
         )}

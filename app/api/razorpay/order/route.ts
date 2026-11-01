@@ -166,6 +166,7 @@ export async function POST(req: Request) {
     // 6. Initialize Razorpay Client & Generate Gateway Order
     const keyId = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || '';
     const keySecret = process.env.RAZORPAY_KEY_SECRET || '';
+    const isProduction = process.env.NODE_ENV === 'production';
 
     let razorpayOrderId = '';
 
@@ -189,9 +190,30 @@ export async function POST(req: Request) {
 
         razorpayOrderId = rzpOrder.id;
       } catch (rzpErr: any) {
+        if (isProduction) {
+          console.error('[razorpay/order] Gateway order creation failed:', rzpErr);
+          await databases.updateDocument(APPWRITE_DATABASE_ID, 'orders', orderDoc.$id, {
+            status: 'cancelled',
+            paymentStatus: 'cancelled'
+          }).catch(() => {});
+          return NextResponse.json(
+            { error: 'Payment gateway is temporarily unavailable. Please try again.' },
+            { status: 503 }
+          );
+        }
         console.warn('Razorpay API order creation warning (fallback to simulated order for sandbox):', rzpErr?.message || rzpErr);
         razorpayOrderId = `order_sim_${orderDoc.$id.slice(0, 16)}`;
       }
+    } else if (isProduction) {
+      console.error('[razorpay/order] Razorpay credentials are not configured.');
+      await databases.updateDocument(APPWRITE_DATABASE_ID, 'orders', orderDoc.$id, {
+        status: 'cancelled',
+        paymentStatus: 'cancelled'
+      }).catch(() => {});
+      return NextResponse.json(
+        { error: 'Payment gateway is not configured. Please contact support.' },
+        { status: 503 }
+      );
     } else {
       razorpayOrderId = `order_test_${orderDoc.$id.slice(0, 16)}`;
     }
