@@ -31,6 +31,7 @@ import { getProductSlug } from './utils/slug';
 import type { Product } from './types';
 import { resolveProductSizeOptions, resolveProductUnitPrice, isProductSoldOut } from '@/lib/pricing';
 import { useProductsQuery } from './hooks/useQueries';
+import { useProductImagePrefetch } from './hooks/useProductImagePrefetch';
 
 export default function Page() {
   const router = useRouter();
@@ -45,8 +46,51 @@ export default function Page() {
 
   const productsList = queryProducts;
   const loading = isQueryLoading && productsList.length === 0;
-  // Only show loading screen if cold cache and data is actively fetching for the very first time
-  const showLoadingScreen = isQueryLoading && queryProducts.length === 0;
+  // Captured once: only a cold visit shows the splash, cached revisits must not flash it.
+  const [coldLoad] = useState(isQueryLoading && queryProducts.length === 0);
+  const [firstScreenReady, setFirstScreenReady] = useState(false);
+  const showLoadingScreen = coldLoad && !firstScreenReady;
+
+  // Hero first, everything else after: the splash waits for the first hero
+  // image and the product data, but never outlives 2s from the page's own
+  // start. Cards and lower sections then load on their own in the background.
+  useEffect(() => {
+    if (!coldLoad || firstScreenReady) return;
+
+    const remaining = Math.max(0, 2000 - performance.now());
+    const deadline = Date.now() + remaining;
+
+    const heroReady = () => {
+      const heroImages = Array.from(
+        document.querySelectorAll<HTMLImageElement>('[data-hero-slide="0"] img')
+      ).filter((img) => img.getClientRects().length > 0);
+      return (
+        heroImages.length > 0 &&
+        heroImages.every((img) => img.complete && img.naturalWidth > 0)
+      );
+    };
+
+    let done = false;
+    const finish = () => {
+      if (done) return;
+      done = true;
+      setFirstScreenReady(true);
+    };
+
+    const timer = setInterval(() => {
+      if ((heroReady() && !loading) || Date.now() >= deadline) finish();
+    }, 50);
+    const backstop = setTimeout(finish, remaining);
+
+    return () => {
+      clearInterval(timer);
+      clearTimeout(backstop);
+    };
+  }, [coldLoad, loading, firstScreenReady]);
+
+  // Once the splash is gone, warm the first two gallery images of every
+  // product so opening any product shows its photo instead of the blur.
+  useProductImagePrefetch(queryProducts, !showLoadingScreen);
 
   const {
     cartItems,

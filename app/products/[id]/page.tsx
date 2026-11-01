@@ -26,11 +26,19 @@ import { useCart } from '../../hooks/useCart';
 import { useConfirm } from '../../components/CustomConfirmModal';
 import { getProductSlug, slugify } from '../../utils/slug';
 import { addRecentlyViewed } from '../../utils/recentlyViewed';
+import { getProductImageList } from '../../utils/productImages';
 import type { Product, Review } from '../../types';
 import { resolveProductSizeOptions, resolveProductUnitPrice, isProductSoldOut } from '@/lib/pricing';
 
 import { useProductsQuery, useProductQuery, useReviewsQuery, queryKeys } from '../../hooks/useQueries';
 import { useQueryClient } from '@tanstack/react-query';
+
+// 128px variant paints first and is already cached by the thumbnail rail,
+// so the main frame shows the photo instead of an empty box while q90 generates.
+const galleryPreviewUrl = (url: string) =>
+  url.startsWith('http') || url.startsWith('/')
+    ? `/_next/image?url=${encodeURIComponent(url)}&w=128&q=75`
+    : null;
 
 export default function ProductDetailPage() {
   const queryClient = useQueryClient();
@@ -316,20 +324,7 @@ export default function ProductDetailPage() {
       .slice(0, 4);
   }, [product, allProducts]);
 
-  const imagesList = useMemo(() => {
-    if (!product) return [];
-    const set = new Set<string>();
-    if (product.image) set.add(product.image);
-    // hoverImage is a single URL for product card hover — also show in detail carousel
-    if (product.hoverImage && product.hoverImage !== product.image) set.add(product.hoverImage);
-    // showcaseImages is the dedicated gallery for the product detail page carousel
-    if (Array.isArray(product.showcaseImages)) {
-      product.showcaseImages.forEach((url) => {
-        if (url) set.add(url);
-      });
-    }
-    return Array.from(set);
-  }, [product]);
+  const imagesList = useMemo(() => getProductImageList(product), [product]);
 
   // Touch & Swipe Controller (Strictly 1 Slide per Swipe)
   const touchStartX = useRef<number | null>(null);
@@ -641,12 +636,20 @@ export default function ProductDetailPage() {
                     className="h-full relative overflow-hidden bg-slate-50 flex-shrink-0"
                     style={{ width: `${100 / Math.max(1, imagesList.length)}%` }}
                   >
+                    {galleryPreviewUrl(img) && (
+                      <div
+                        aria-hidden
+                        className="absolute inset-0 scale-105 bg-cover bg-center blur-xl"
+                        style={{ backgroundImage: `url(${galleryPreviewUrl(img)})` }}
+                      />
+                    )}
                     <Image
                       src={img}
                       alt={`${product.name} - slide ${idx + 1}`}
                       fill
                       sizes="(max-width: 1024px) 100vw, 50vw"
-                      loading={idx === 0 ? 'eager' : 'lazy'}
+                      quality={90}
+                      loading={idx < 2 ? 'eager' : 'lazy'}
                       fetchPriority={idx === 0 ? 'high' : 'auto'}
                       draggable={false}
                       className="object-cover pointer-events-none select-none"

@@ -115,6 +115,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onShopNow }) => {
         {slides.map((slide, index) => (
           <div
             key={slide.id}
+            data-hero-slide={index}
             className="w-full shrink-0 min-w-full relative bg-black overflow-hidden flex items-center justify-center"
           >
             <a
@@ -126,12 +127,13 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onShopNow }) => {
               <Image
                 src={slide.desktopImage}
                 alt={slide.name || 'Hero Banner'}
-                width={1280}
-                height={563}
+                width={2560}
+                height={1126}
+                quality={90}
                 sizes="100vw"
                 loading={index === 0 ? 'eager' : 'lazy'}
                 fetchPriority={index === 0 ? 'high' : 'auto'}
-                style={{ aspectRatio: '1280 / 563' }}
+                style={{ aspectRatio: '2560 / 1126' }}
                 className="hidden md:block w-full h-auto select-none mx-auto object-cover"
               />
 
@@ -141,6 +143,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onShopNow }) => {
                 alt={slide.name || 'Hero Banner Mobile'}
                 width={822}
                 height={1280}
+                quality={90}
                 sizes="100vw"
                 loading={index === 0 ? 'eager' : 'lazy'}
                 fetchPriority={index === 0 ? 'high' : 'auto'}

@@ -10,6 +10,8 @@ const nextConfig: NextConfig = {
   images: {
     // Ultra-fast next-gen image compression
     formats: ['image/avif', 'image/webp'],
+    // 90 is used by the hero banner; anything not listed here is rejected.
+    qualities: [75, 90],
     // 1 Year Image Cache for instant repeated visits
     minimumCacheTTL: 31536000,
     remotePatterns: [
