@@ -660,7 +660,7 @@ export const PerfumersCelebritiesManager: React.FC = () => {
                 label="1. Celebrity Portrait Photo *"
                 value={celebFormImage}
                 onChange={(url) => setCelebFormImage(url)}
-                helperText="Upload 3:4 portrait of the celebrity (Auto-compressed to AVIF/WebP)."
+                helperText="Upload 3:4 portrait of the celebrity (Stored as AVIF)."
               />
 
               {/* 2. Fragrance Bottle Thumbnail */}

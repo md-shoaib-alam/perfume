@@ -2,6 +2,7 @@
 import React, { useState, useRef } from 'react';
 import { uploadMediaToAppwrite, deleteMediaFromAppwrite } from '@/lib/appwrite';
 import { compressImageToWebP } from '@/lib/imageCompressor';
+import { UPLOAD_PROFILES, type UploadProfile } from '@/lib/uploadProfiles';
 
 interface MediaUploaderProps {
   label: string;
@@ -11,6 +12,7 @@ interface MediaUploaderProps {
   helperText?: string;
   previewType?: 'image' | 'video';
   autoDeleteOldOnReplace?: boolean;
+  profile?: UploadProfile;
 }
 
 export const MediaUploader: React.FC<MediaUploaderProps> = ({
@@ -18,9 +20,10 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
   value,
   onChange,
   accept = 'image/*',
-  helperText = 'Upload image (Auto-compressed to AVIF/WebP) or video (MP4, WebM)',
+  helperText = 'Upload image (Stored as AVIF) or video (MP4, WebM)',
   previewType = 'image',
-  autoDeleteOldOnReplace = true
+  autoDeleteOldOnReplace = true,
+  profile = 'default'
 }) => {
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -39,16 +42,26 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
     setError(null);
 
     try {
-      // 1. Auto-compress heavy images (e.g. 10MB JPG/PNG) to AVIF/WebP (~25KB - 80KB)
-      setStatusText('Optimizing (AVIF/WebP)...');
+      // 1. Downscale heavy images (e.g. 10MB JPG/PNG) client-side; the server stores AVIF
+      const { maxDimension, intermediateQuality } = UPLOAD_PROFILES[profile];
+      setStatusText('Optimizing...');
       setUploadProgress(15);
-      const processedFile = await compressImageToWebP(file);
-      
+      const processedFile = await compressImageToWebP(
+        file,
+        maxDimension,
+        maxDimension,
+        intermediateQuality
+      );
+
       // 2. Upload to Appwrite with live progress percentage callback
       setStatusText('Uploading...');
-      const directUrl = await uploadMediaToAppwrite(processedFile, (pct) => {
-        setUploadProgress(Math.max(20, pct));
-      });
+      const directUrl = await uploadMediaToAppwrite(
+        processedFile,
+        (pct) => {
+          setUploadProgress(Math.max(20, pct));
+        },
+        profile
+      );
 
       // 3. Auto-delete the old media from Appwrite Cloud Storage to free up space
       if (autoDeleteOldOnReplace && oldMediaUrl && oldMediaUrl !== directUrl && oldMediaUrl.includes('appwrite')) {

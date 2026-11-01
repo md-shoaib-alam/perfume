@@ -441,7 +441,7 @@ export const ReelsPressManager: React.FC = () => {
                 label="Brand Logo Image (Optional)"
                 value={newLogoImage}
                 onChange={(url) => setNewLogoImage(url)}
-                helperText="Upload transparent PNG/SVG/WebP/AVIF. Auto-compressed & stored in Appwrite."
+                helperText="Upload transparent PNG/SVG/WebP/AVIF. Stored as AVIF in Appwrite."
               />
             </div>
           </div>

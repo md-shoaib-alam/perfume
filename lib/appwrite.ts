@@ -1,4 +1,5 @@
 import { Client } from "appwrite";
+import type { UploadProfile } from "./uploadProfiles";
 
 const APPWRITE_ENDPOINT = process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT || '';
 const APPWRITE_PROJECT_ID = process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID || '';
@@ -58,12 +59,14 @@ export async function deleteMediaFromAppwrite(urlOrFileId: string): Promise<bool
  */
 export async function uploadMediaToAppwrite(
   file: File,
-  onProgress?: (percent: number) => void
+  onProgress?: (percent: number) => void,
+  profile: UploadProfile = 'default'
 ): Promise<string> {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     const formData = new FormData();
     formData.append('file', file);
+    formData.append('profile', profile);
 
     xhr.upload.addEventListener('progress', (event) => {
       if (event.lengthComputable && onProgress) {

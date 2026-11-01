@@ -393,7 +393,7 @@ export const InstagramManager: React.FC = () => {
                   label="Showcase Photo (1:1 Square)"
                   value={modalImage}
                   onChange={setModalImage}
-                  helperText="Upload high-res square photo (Auto-compressed to AVIF/WebP)."
+                  helperText="Upload high-res square photo (Stored as AVIF)."
                 />
               </div>
 

@@ -341,10 +341,11 @@ export const HeroManager: React.FC = () => {
             {/* Media Uploaders */}
             <div className="space-y-4">
               <MediaUploader
-                label="Desktop Banner Image (16:9 Landscape - Min 1920x1080) *"
+                label="Desktop Banner Image (Wide Landscape - Min 2560x1126) *"
                 value={currentSlide.desktopImage || ''}
                 onChange={(url) => handleUpdateCurrent('desktopImage', url)}
-                helperText="High-resolution landscape banner (1920x1080) for laptops and desktops."
+                helperText="High-resolution landscape banner (2560x1126) for laptops and desktops."
+                profile="hero"
               />
 
               <MediaUploader
@@ -352,6 +353,7 @@ export const HeroManager: React.FC = () => {
                 value={currentSlide.mobileImage || ''}
                 onChange={(url) => handleUpdateCurrent('mobileImage', url)}
                 helperText="Crisp portrait banner tailored for smartphone screens. (Falls back to desktop if omitted)."
+                profile="hero"
               />
             </div>
 
