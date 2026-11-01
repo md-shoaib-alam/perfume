@@ -93,6 +93,16 @@ export default function Page() {
     });
   }, [searchQuery, productsList, activeTab]);
 
+  // Keep the homepage section to a curated preview; the full tab catalogue lives on its collection page
+  const HOME_PREVIEW_LIMIT = 8;
+  const displayedProducts = filteredProducts.slice(0, HOME_PREVIEW_LIMIT);
+  const isSearchActive = searchQuery.trim().length >= 3;
+  const TAB_VIEW_ALL: Record<typeof activeTab, string> = {
+    'For Him': '/collections/for-him',
+    'For Her': '/collections/for-her',
+    'Gift Sets': '/collections/gift-set'
+  };
+
   return (
     <>
       <title>BakhoorBliss | Luxury Parfum & Attars</title>
@@ -217,7 +227,7 @@ export default function Page() {
         ) : (
           <div className="overflow-x-auto no-scrollbar snap-x snap-mandatory pb-4 sm:overflow-x-visible sm:pb-0">
             <div className="flex w-max min-w-full flex-nowrap justify-center gap-3 sm:grid sm:w-auto sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-4 sm:gap-4 md:gap-4 lg:gap-6">
-              {filteredProducts.map((product) => (
+              {displayedProducts.map((product) => (
                 <div key={product.id} className="w-[72vw] max-w-[260px] shrink-0 snap-center sm:w-auto sm:max-w-none">
                   <ProductCard
                     product={product}
@@ -226,6 +236,20 @@ export default function Page() {
                 </div>
               ))}
             </div>
+          </div>
+        )}
+
+        {!loading && !isSearchActive && filteredProducts.length > displayedProducts.length && (
+          <div className="mt-8 sm:mt-10 flex justify-center">
+            <Link
+              href={TAB_VIEW_ALL[activeTab]}
+              className="inline-flex items-center gap-2 px-8 py-3 bg-white border border-slate-900 text-slate-900 hover:bg-slate-900 hover:text-white font-sans font-bold text-xs uppercase tracking-widest transition-colors cursor-pointer"
+            >
+              <span>View All {activeTab}</span>
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+              </svg>
+            </Link>
           </div>
         )}
       </section>
