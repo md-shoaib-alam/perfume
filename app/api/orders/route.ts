@@ -34,9 +34,9 @@ async function reconcilePendingRazorpayOrder(doc: any) {
     const keyId = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || '';
     const keySecret = process.env.RAZORPAY_KEY_SECRET || '';
 
-    // Only cancel when Razorpay explicitly confirms no payment. A missing
-    // configuration or failed status query stays "unknown" and must not cancel.
-    let paymentState: 'received' | 'not_received' | 'unknown' = 'unknown';
+    // Reconciliation only ever confirms payment. It never cancels a pending order:
+    // an empty payment list means no successful payment yet, not an abandoned checkout.
+    let paymentReceived = false;
 
     if (
       keyId &&
@@ -54,31 +54,25 @@ async function reconcilePendingRazorpayOrder(doc: any) {
           (p: any) => p.status === 'captured' || p.status === 'authorized'
         );
         if (successfulPayment) {
-          paymentState = 'received';
+          paymentReceived = true;
         } else {
           const rzpOrder: any = await rzp.orders.fetch(storedRazorpayOrderId);
-          paymentState = rzpOrder?.status === 'paid' ? 'received' : 'not_received';
+          if (rzpOrder?.status === 'paid') {
+            paymentReceived = true;
+          }
         }
       } catch (rzpErr: any) {
         console.warn('[orders/reconcile] Razorpay status query note:', rzpErr?.message || rzpErr);
       }
     }
 
-    if (paymentState === 'received') {
+    if (paymentReceived) {
       await databases.updateDocument(APPWRITE_DATABASE_ID, 'orders', doc.$id, {
         paymentStatus: 'paid',
         status: 'processing'
       });
       doc.paymentStatus = 'paid';
       doc.status = 'processing';
-    } else if (paymentState === 'not_received') {
-      // Razorpay confirmed no payment; cancel the abandoned pending order
-      await databases.updateDocument(APPWRITE_DATABASE_ID, 'orders', doc.$id, {
-        paymentStatus: 'cancelled',
-        status: 'cancelled'
-      });
-      doc.paymentStatus = 'cancelled';
-      doc.status = 'cancelled';
     }
   } catch (err: any) {
     console.warn('[orders/reconcile] Reconcile order note:', doc.$id, err?.message);
