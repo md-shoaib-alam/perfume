@@ -34,7 +34,9 @@ async function reconcilePendingRazorpayOrder(doc: any) {
     const keyId = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || '';
     const keySecret = process.env.RAZORPAY_KEY_SECRET || '';
 
-    let paymentReceived = false;
+    // Only cancel when Razorpay explicitly confirms no payment. A missing
+    // configuration or failed status query stays "unknown" and must not cancel.
+    let paymentState: 'received' | 'not_received' | 'unknown' = 'unknown';
 
     if (
       keyId &&
@@ -52,27 +54,25 @@ async function reconcilePendingRazorpayOrder(doc: any) {
           (p: any) => p.status === 'captured' || p.status === 'authorized'
         );
         if (successfulPayment) {
-          paymentReceived = true;
+          paymentState = 'received';
         } else {
           const rzpOrder: any = await rzp.orders.fetch(storedRazorpayOrderId);
-          if (rzpOrder?.status === 'paid') {
-            paymentReceived = true;
-          }
+          paymentState = rzpOrder?.status === 'paid' ? 'received' : 'not_received';
         }
       } catch (rzpErr: any) {
         console.warn('[orders/reconcile] Razorpay status query note:', rzpErr?.message || rzpErr);
       }
     }
 
-    if (paymentReceived) {
+    if (paymentState === 'received') {
       await databases.updateDocument(APPWRITE_DATABASE_ID, 'orders', doc.$id, {
         paymentStatus: 'paid',
         status: 'processing'
       });
       doc.paymentStatus = 'paid';
       doc.status = 'processing';
-    } else {
-      // Payment was not received; cancel the abandoned pending order
+    } else if (paymentState === 'not_received') {
+      // Razorpay confirmed no payment; cancel the abandoned pending order
       await databases.updateDocument(APPWRITE_DATABASE_ID, 'orders', doc.$id, {
         paymentStatus: 'cancelled',
         status: 'cancelled'
