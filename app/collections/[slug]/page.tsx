@@ -227,6 +227,12 @@ export default function CollectionPage() {
     }
   }, [meta?.title]);
 
+  const bannerSrc = (meta.bannerImage || '').trim();
+
+  // Hide the hero banner if the stored image URL no longer resolves (e.g. deleted from storage)
+  const [failedBannerSrc, setFailedBannerSrc] = useState<string | null>(null);
+  const bannerLoadFailed = failedBannerSrc === bannerSrc;
+
   const filteredProducts = useMemo(() => {
     let list = [...productsList];
 
@@ -234,7 +240,12 @@ export default function CollectionPage() {
     if (meta.genderFilter) {
       list = list.filter((p) => p.gender === meta.genderFilter || p.gender === 'Unisex');
     } else if (meta.categoryFilter) {
-      list = list.filter((p) => p.category === meta.categoryFilter);
+      if (slug === 'gift-set') {
+        // Mirror the homepage "Gift Sets" tab: gifting coffrets plus discovery sets
+        list = list.filter((p) => p.category === 'gift-set' || p.category === 'discovery-set');
+      } else {
+        list = list.filter((p) => p.category === meta.categoryFilter);
+      }
     } else if (slug === 'travel-set') {
       list = list.filter(
         (p) =>
@@ -336,15 +347,16 @@ export default function CollectionPage() {
       />
 
       {/* 3. Hero Visual Lifestyle Banner (Mobile 16:9 & Expanded Desktop Height) */}
-      {Boolean(meta.bannerImage && meta.bannerImage.trim()) && (
+      {Boolean(bannerSrc && !bannerLoadFailed) && (
         <section className="relative w-full aspect-[16/9] md:aspect-auto md:h-[520px] lg:h-[600px] xl:h-[680px] overflow-hidden bg-slate-100 select-none">
           <Image
-            src={meta.bannerImage}
+            src={bannerSrc}
             alt={meta.title}
             fill
             sizes="100vw"
             loading="eager"
             fetchPriority="high"
+            onError={() => setFailedBannerSrc(bannerSrc)}
             className="object-cover object-center"
           />
         </section>

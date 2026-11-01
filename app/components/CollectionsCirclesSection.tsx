@@ -6,10 +6,13 @@ import Link from 'next/link';
 import { useCollectionsQuery } from '../hooks/useQueries';
 
 interface CollectionCircle {
-  id: string;
+  id?: string;
+  _id?: string;
+  slug?: string;
   name: string;
-  subname: string;
-  image: string;
+  subname?: string;
+  image?: string;
+  showInStoryCircle?: boolean;
 }
 
 const GENDER_LANDING_SLUGS = ['for-him', 'for-her', 'unisex', 'gift-set', 'discovery-set'];
@@ -17,10 +20,10 @@ const GENDER_LANDING_SLUGS = ['for-him', 'for-her', 'unisex', 'gift-set', 'disco
 export const CollectionsCirclesSection: React.FC = () => {
   const { data: rawCollections = [] } = useCollectionsQuery();
 
-  const collections = useMemo(() => {
+  const collections = useMemo<CollectionCircle[]>(() => {
     if (!Array.isArray(rawCollections) || rawCollections.length === 0) return [];
-    return rawCollections.filter((item: any) => {
-      const isGenderPage = GENDER_LANDING_SLUGS.includes(item.slug || item.id);
+    return (rawCollections as CollectionCircle[]).filter((item) => {
+      const isGenderPage = GENDER_LANDING_SLUGS.includes(item.slug || item.id || '');
       if (isGenderPage) {
         return Boolean(item.showInStoryCircle);
       }
@@ -28,7 +31,10 @@ export const CollectionsCirclesSection: React.FC = () => {
     });
   }, [rawCollections]);
 
-  if (collections.length === 0) return null;
+  // No thumbnail uploaded in admin → the circle stays hidden until real artwork is provided
+  const visibleCollections = collections.filter((col) => (col.image || '').trim() !== '');
+
+  if (visibleCollections.length === 0) return null;
 
   return (
     <section className="py-6 sm:py-10 md:py-12 bg-white border-t border-slate-100">
@@ -36,7 +42,7 @@ export const CollectionsCirclesSection: React.FC = () => {
         {/* Horizontal Scroll / Centered Row */}
         <div className="overflow-x-auto no-scrollbar pb-3 pt-1 touch-pan-x">
           <div className="flex w-max min-w-full items-start justify-center gap-3.5 sm:gap-6 md:gap-10 px-3 sm:px-0">
-            {collections.map((col: any) => {
+            {visibleCollections.map((col) => {
               const targetHref = `/collections/${col.slug || col.id}`;
 
               return (
@@ -49,7 +55,7 @@ export const CollectionsCirclesSection: React.FC = () => {
                   <div className="relative w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full p-[2.5px] sm:p-[3px] bg-white border-2 sm:border-[2.5px] border-[#caa04c] hover:border-[#b88f3e] transition-colors duration-300 shadow-xs">
                     <div className="w-full h-full rounded-full overflow-hidden bg-slate-50 relative">
                       <Image
-                        src={col.image || '/assets/collection-placeholder.jpg'}
+                        src={col.image || ''}
                         alt={col.name}
                         fill
                         sizes="(max-width: 640px) 64px, (max-width: 768px) 80px, 96px"
