@@ -7,6 +7,7 @@ import { api } from '../services/api';
 import { deleteMediaFromAppwrite } from '@/lib/appwrite';
 import { MediaUploader } from '../components/MediaUploader';
 import { useConfirm } from '../components/CustomConfirmModal';
+import { slugify } from '../utils/slug';
 
 interface ProductEditorProps {
   editingProduct: Product | null;
@@ -16,6 +17,7 @@ interface ProductEditorProps {
   onClose: () => void;
   onSaveSuccess: () => Promise<void>;
   onOpenCategoryManager: () => void;
+  onCollectionCreated: (collection: { id: string; slug: string; name: string }) => void;
 }
 
 export function ProductEditor({
@@ -26,20 +28,81 @@ export function ProductEditor({
   onClose,
   onSaveSuccess,
   onOpenCategoryManager,
+  onCollectionCreated,
 }: ProductEditorProps) {
   const { showAlert, showConfirm } = useConfirm();
   const [formData, setFormData] = useState<Partial<Product>>(initialData);
   const [isCustomCategory, setIsCustomCategory] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isNewCollection, setIsNewCollection] = useState(false);
+  const [newCollectionName, setNewCollectionName] = useState('');
+  const [isCreatingCollection, setIsCreatingCollection] = useState(false);
 
   useEffect(() => {
     setFormData(initialData);
+    setIsNewCollection(false);
+    setNewCollectionName('');
     if (initialData.category && !availableCategories.some((c) => c.slug === initialData.category)) {
       setIsCustomCategory(true);
     } else {
       setIsCustomCategory(false);
     }
   }, [initialData, availableCategories]);
+
+  const handleCreateCollection = async () => {
+    const name = newCollectionName.trim();
+    if (!name) {
+      await showAlert({
+        title: 'Collection Name Required',
+        message: 'Please enter a name for the new collection.',
+        variant: 'warning',
+      });
+      return;
+    }
+    const baseSlug = slugify(name);
+    if (!baseSlug) {
+      await showAlert({
+        title: 'Invalid Collection Name',
+        message: 'Please use letters or numbers in the collection name.',
+        variant: 'warning',
+      });
+      return;
+    }
+    const existingSlugs = new Set(collectionOptions.map((c) => c.slug));
+    let slug = baseSlug;
+    let counter = 2;
+    while (existingSlugs.has(slug)) {
+      slug = `${baseSlug}-${counter}`;
+      counter += 1;
+    }
+
+    setIsCreatingCollection(true);
+    try {
+      const res = await fetch('/api/collections', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, subname: 'Collection', slug }),
+      });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || 'Failed to create collection');
+      }
+      const created = await res.json();
+      const createdSlug = created.slug || slug;
+      onCollectionCreated({ id: created.id || '', slug: createdSlug, name });
+      setFormData((prev) => ({ ...prev, collection: createdSlug }));
+      setIsNewCollection(false);
+      setNewCollectionName('');
+    } catch (err: any) {
+      await showAlert({
+        title: 'Error Creating Collection',
+        message: err.message || 'Failed to create the collection. Please try again.',
+        variant: 'danger',
+      });
+    } finally {
+      setIsCreatingCollection(false);
+    }
+  };
 
   // Showcase gallery — dedicated field, separate from hoverImage and storyBlocks
   const extraMediaList: string[] = React.useMemo(() => {
@@ -362,11 +425,53 @@ export function ProductEditor({
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1.5">Collection / Story Line</label>
-                {collectionOptions.length > 0 ? (
+                <div className="flex items-center justify-between mb-1.5 min-w-0">
+                  <label className="block text-xs font-semibold text-slate-700 whitespace-nowrap">Collection / Story Line</label>
+                  {isNewCollection && (
+                    <button
+                      type="button"
+                      onClick={() => setIsNewCollection(false)}
+                      className="text-[10.5px] text-[#916618] hover:underline font-bold cursor-pointer whitespace-nowrap"
+                    >
+                      ← Choose Collection
+                    </button>
+                  )}
+                </div>
+                {isNewCollection ? (
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={newCollectionName}
+                      onChange={(e) => setNewCollectionName(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleCreateCollection();
+                        }
+                      }}
+                      placeholder="e.g. Oud Royal"
+                      className="flex-1 min-w-0 bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-[#d6a750] focus:bg-white transition-all"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleCreateCollection}
+                      disabled={isCreatingCollection}
+                      className="shrink-0 px-4 py-2.5 bg-slate-900 hover:bg-slate-800 disabled:opacity-60 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-colors cursor-pointer"
+                    >
+                      {isCreatingCollection ? 'Creating...' : 'Create'}
+                    </button>
+                  </div>
+                ) : (
                   <select
                     value={formData.collection || ''}
-                    onChange={(e) => setFormData({ ...formData, collection: e.target.value })}
+                    onChange={(e) => {
+                      if (e.target.value === '__new__') {
+                        setIsNewCollection(true);
+                        setNewCollectionName('');
+                      } else {
+                        setFormData({ ...formData, collection: e.target.value });
+                      }
+                    }}
                     className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-900 focus:outline-none focus:border-[#d6a750] focus:bg-white transition-all cursor-pointer"
                   >
                     <option value="">None / Standalone</option>
@@ -375,18 +480,13 @@ export function ProductEditor({
                         {col.name}
                       </option>
                     ))}
+                    {formData.collection && !collectionOptions.some((c) => c.slug === formData.collection) && (
+                      <option value={formData.collection}>
+                        {formData.collection.replace(/[-_]/g, ' ')}
+                      </option>
+                    )}
+                    <option value="__new__">+ Create New Collection...</option>
                   </select>
-                ) : (
-                  <div>
-                    <input
-                      type="text"
-                      value={formData.collection || ''}
-                      onChange={(e) => setFormData({ ...formData, collection: e.target.value })}
-                      placeholder="e.g. signature-line, attar-collection"
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-[#d6a750] focus:bg-white transition-all"
-                    />
-                    <p className="text-[10px] text-slate-400 mt-1">No collection</p>
-                  </div>
                 )}
               </div>
 

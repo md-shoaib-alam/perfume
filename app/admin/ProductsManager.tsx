@@ -132,6 +132,15 @@ export const ProductsManager: React.FC = () => {
     return [];
   }, [activeCollections]);
 
+  const handleCollectionCreated = (created: { id: string; slug: string; name: string }) => {
+    setCollections((prev) =>
+      prev.some((c) => c.slug === created.slug || (created.id && c.id === created.id))
+        ? prev
+        : [created, ...prev]
+    );
+    queryClient.invalidateQueries({ queryKey: queryKeys.collections });
+  };
+
   // Derive categories dynamically ONLY from database catalog products (no mock categories)
   const availableCategories = useMemo(() => {
     const map = new Map<string, string>();
@@ -685,6 +694,7 @@ export const ProductsManager: React.FC = () => {
           }}
           onSaveSuccess={loadData}
           onOpenCategoryManager={() => setIsCategoryModalOpen(true)}
+          onCollectionCreated={handleCollectionCreated}
         />
       )}
       {/* Category Manager Modal */}
