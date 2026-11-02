@@ -5,14 +5,18 @@ import { databases, APPWRITE_DATABASE_ID } from '@/lib/appwriteServer';
 import { ID, Query } from '@/lib/appwriteServer';
 import { slugify } from '@/app/utils/slug';
 
-const PLACEHOLDER_IMAGE = 'https://bakhoorbliss.in/placeholder-circle.png';
+// Appwrite collections schema has `image` as required, so provide valid fallback if empty.
+// Older rows may still hold the retired placeholder-circle.png URL — treat that as empty too.
+const PLACEHOLDER_IMAGE = 'https://bakhoorbliss.in/assets/empty-fragrance.avif';
+const isPlaceholderImage = (val: string) =>
+  val === PLACEHOLDER_IMAGE || val.includes('placeholder-circle.png');
 
 const formatCollectionDoc = (doc: any) => ({
   id: doc.$id || doc.id,
   slug: doc.slug || slugify(doc.name || ''),
   name: doc.name || '',
   subname: doc.subname || '',
-  image: doc.image && doc.image !== PLACEHOLDER_IMAGE ? doc.image : '',
+  image: doc.image && !isPlaceholderImage(doc.image) ? doc.image : '',
   bannerImage: doc.bannerImage || '',
   campaignImage: doc.campaignImage || '',
   subtitle: doc.subtitle || '',

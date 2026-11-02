@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { CollectionItem } from './types';
+import { CollectionItem, isBuiltInLandingPage } from './types';
 import { MediaUploader } from '../../components/MediaUploader';
 
 interface StoryCollectionsTabProps {
@@ -58,6 +58,7 @@ export const StoryCollectionsTab: React.FC<StoryCollectionsTabProps> = ({
         const isExpanded = activeEditIndex === idx;
         const isSavingThis = savingIndex === idx;
         const isSavedSuccess = savedSuccessIndex === idx;
+        const isBuiltIn = isBuiltInLandingPage(item.slug);
 
         return (
           <div
@@ -112,19 +113,21 @@ export const StoryCollectionsTab: React.FC<StoryCollectionsTabProps> = ({
                   </span>
                 )}
 
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDelete(idx);
-                  }}
-                  className="p-1.5 text-slate-400 hover:text-red-500 rounded-lg hover:bg-red-50 transition-colors cursor-pointer"
-                  title="Delete Collection"
-                >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                  </svg>
-                </button>
+                {!isBuiltIn && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDelete(idx);
+                    }}
+                    className="p-1.5 text-slate-400 hover:text-red-500 rounded-lg hover:bg-red-50 transition-colors cursor-pointer"
+                    title="Delete Collection"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  </button>
+                )}
 
                 <svg
                   className={`w-5 h-5 text-slate-400 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`}
@@ -170,23 +173,40 @@ export const StoryCollectionsTab: React.FC<StoryCollectionsTabProps> = ({
                     <input
                       type="text"
                       required
+                      disabled={isBuiltIn}
                       value={item.slug || ''}
                       onChange={(e) => onUpdate(idx, 'slug', e.target.value.toLowerCase().trim().replace(/\s+/g, '-'))}
                       placeholder="e.g. for-her, haute, bureau"
-                      className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 font-mono text-xs focus:outline-none focus:border-[#d6a750]"
+                      className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 font-mono text-xs focus:outline-none focus:border-[#d6a750] disabled:bg-slate-100 disabled:text-slate-500"
                     />
+                    {isBuiltIn && (
+                      <p className="text-[10px] text-slate-400 mt-1">Built-in page — the URL slug is fixed.</p>
+                    )}
                   </div>
                 </div>
 
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Tagline / Short Subtitle</label>
-                  <input
-                    type="text"
-                    value={item.subtitle || ''}
-                    onChange={(e) => onUpdate(idx, 'subtitle', e.target.value)}
-                    placeholder="e.g. Sensual floral extraits, golden ambers, and velvety nectar compositions."
-                    className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-[#d6a750]"
-                  />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block font-semibold text-slate-700 mb-1">Gold Badge Header</label>
+                    <input
+                      type="text"
+                      value={item.badge || ''}
+                      onChange={(e) => onUpdate(idx, 'badge', e.target.value)}
+                      placeholder="e.g. EXCLUSIVE ARTISAN BLENDS"
+                      className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-[#d6a750]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-semibold text-slate-700 mb-1">Tagline / Short Subtitle</label>
+                    <input
+                      type="text"
+                      value={item.subtitle || ''}
+                      onChange={(e) => onUpdate(idx, 'subtitle', e.target.value)}
+                      placeholder="e.g. Sensual floral extraits, golden ambers, and velvety nectar compositions."
+                      className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-[#d6a750]"
+                    />
+                  </div>
                 </div>
 
                 <div>
@@ -203,11 +223,11 @@ export const StoryCollectionsTab: React.FC<StoryCollectionsTabProps> = ({
                 </div>
 
                 {/* Media Uploaders */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5 pt-2">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-5 pt-2">
                   <div className="bg-white p-4 rounded-xl border border-slate-200 space-y-3">
-                    <span className="font-bold text-slate-800 block">1. Hero Lifestyle Banner (16:9 / Landscape)</span>
+                    <span className="font-bold text-slate-800 block">1. Collection Top Hero Banner (16:9)</span>
                     <MediaUploader
-                      label="Upload High-Res Banner"
+                      label="Top Hero Banner (16:9)"
                       value={item.bannerImage || ''}
                       onChange={(url) => onUpdate(idx, 'bannerImage', url)}
                       helperText="Recommended: 1920x1080 (16:9) lifestyle photography shown at the top of the collection page."
@@ -215,14 +235,63 @@ export const StoryCollectionsTab: React.FC<StoryCollectionsTabProps> = ({
                   </div>
 
                   <div className="bg-white p-4 rounded-xl border border-slate-200 space-y-3">
-                    <span className="font-bold text-slate-800 block">2. Homepage Story Circle Thumbnail (1:1 Square)</span>
+                    <span className="font-bold text-slate-800 block">2. Homepage Campaign Card (2:3)</span>
                     <MediaUploader
-                      label="Upload Story Circle Thumbnail"
-                      value={item.image || ''}
-                      onChange={(url) => onUpdate(idx, 'image', url)}
-                      helperText="Recommended: 400x400 (1:1) square icon thumbnail for the homepage circular stories."
+                      label="Campaign Card (2:3)"
+                      value={item.campaignImage || ''}
+                      onChange={(url) => onUpdate(idx, 'campaignImage', url)}
+                      helperText="Recommended: 1000x1500 (2:3) vertical portrait photo for the homepage campaign card."
                     />
                   </div>
+
+                  <div className="bg-white p-4 rounded-xl border border-slate-200 space-y-3">
+                    <span className="font-bold text-slate-800 block">3. Story Circle Thumbnail (1:1)</span>
+                    <MediaUploader
+                      label="Circle Thumbnail (1:1)"
+                      value={item.image || ''}
+                      onChange={(url) => onUpdate(idx, 'image', url)}
+                      helperText="Recommended: 600x600 (1:1) square thumbnail for the homepage circular stories."
+                    />
+                  </div>
+                </div>
+
+                {/* Toggles */}
+                <div className="flex items-center justify-between p-3.5 bg-white rounded-xl border border-slate-200">
+                  <div>
+                    <span className="font-semibold text-slate-800 text-xs block">Show in Homepage Story Circles</span>
+                    <span className="text-[11px] text-slate-500 block">
+                      Display as a circular story on the storefront homepage.
+                    </span>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer shrink-0 ml-4">
+                    <input
+                      type="checkbox"
+                      checked={Boolean(item.showInStoryCircle)}
+                      onChange={(e) => onUpdate(idx, 'showInStoryCircle', e.target.checked)}
+                      className="sr-only peer"
+                    />
+                    <div className="w-10 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#caa04c]"></div>
+                  </label>
+                </div>
+
+                <div className="flex items-center justify-between p-3.5 bg-white rounded-xl border border-slate-200">
+                  <div>
+                    <span className="font-semibold text-slate-800 text-xs block">
+                      Show &quot;{item.subname || item.name}&quot; Text on Campaign Image
+                    </span>
+                    <span className="text-[11px] text-slate-500 block">
+                      Display the title text overlay on the homepage campaign card. Turn off if your image already has typography baked in.
+                    </span>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer shrink-0 ml-4">
+                    <input
+                      type="checkbox"
+                      checked={item.showCampaignTitle !== false}
+                      onChange={(e) => onUpdate(idx, 'showCampaignTitle', e.target.checked)}
+                      className="sr-only peer"
+                    />
+                    <div className="w-10 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#caa04c]"></div>
+                  </label>
                 </div>
 
                 {/* Individual Save Button */}
