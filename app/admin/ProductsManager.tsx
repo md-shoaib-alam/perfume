@@ -102,34 +102,45 @@ export const ProductsManager: React.FC = () => {
     }
   };
 
-  // Derive collection options dynamically from Appwrite collections
+  // Built-in collection pages merged with the Appwrite collections table
   const activeCollections = (collections && collections.length > 0) ? collections : reactiveCollections;
 
   const collectionOptions = useMemo(() => {
-    if (activeCollections && activeCollections.length > 0) {
-      return activeCollections
-        .map((c: any) => {
-          const name = (c.name || '').trim();
-          const subname = (c.subname || '').trim();
-          const label =
-            name.toLowerCase().includes('collection') || subname.toLowerCase().includes('collection')
-              ? (subname ? `${name} ${subname}` : name)
-              : `${name} ${subname || 'Collection'}`.trim();
-          const slug = (
-            c.slug ||
-            name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') ||
-            c.id ||
-            ''
-          ).trim();
-          return {
-            slug: slug,
-            name: label || slug || 'Unnamed Collection'
-          };
-        })
-        .filter((c: any) => Boolean(c.slug && c.name))
-        .filter((c: any) => !STANDARD_LANDING_PAGES.some((p) => p.slug === c.slug));
+    // Every built-in collection page except Shop All, using the admin-edited name when one exists
+    const builtInOptions: { slug: string; name: string }[] = [];
+    for (const page of STANDARD_LANDING_PAGES) {
+      if (!page.slug || page.slug === 'all' || page.slug === 'shop-all') continue;
+      const dbMatch = activeCollections.find((c: any) => c.slug === page.slug);
+      const dbName = (dbMatch?.name || '').replace(/\s+/g, ' ').trim();
+      builtInOptions.push({ slug: page.slug, name: dbName || page.name });
     }
-    return [];
+
+    const builtInSlugs = new Set(builtInOptions.map((page) => page.slug));
+
+    const customOptions = (activeCollections || [])
+      .map((c: any) => {
+        const name = (c.name || '').replace(/\s+/g, ' ').trim();
+        const subname = (c.subname || '').replace(/\s+/g, ' ').trim();
+        const label =
+          name.toLowerCase().includes('collection') || subname.toLowerCase().includes('collection')
+            ? (subname ? `${name} ${subname}` : name)
+            : `${name} ${subname || 'Collection'}`.trim();
+        const slug = (
+          c.slug ||
+          name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') ||
+          c.id ||
+          ''
+        ).trim();
+        return {
+          slug: slug,
+          name: label || slug || 'Unnamed Collection'
+        };
+      })
+      .filter((c: any) => Boolean(c.slug && c.name))
+      .filter((c: any) => c.slug !== 'all' && c.slug !== 'shop-all')
+      .filter((c: any) => !builtInSlugs.has(c.slug));
+
+    return [...builtInOptions, ...customOptions];
   }, [activeCollections]);
 
   const handleCollectionCreated = (created: { id: string; slug: string; name: string }) => {
