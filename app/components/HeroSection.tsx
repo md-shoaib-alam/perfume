@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
-import { api } from '../services/api';
+import { HERO_BYPASS_KEY } from '../services/api';
 
 export interface HeroSlide {
   id: string;
@@ -27,14 +27,19 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onShopNow }) => {
   const [isHovered, setIsHovered] = useState(false);
   const touchStartX = useRef<number>(0);
 
-  // Invalidate on admin updates
+  // Invalidate on admin updates (same tab via custom event, other tabs via storage event)
   useEffect(() => {
     const handleUpdate = () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.heroSlides });
     };
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === HERO_BYPASS_KEY && e.newValue) handleUpdate();
+    };
     window.addEventListener('neesh_hero_updated', handleUpdate);
+    window.addEventListener('storage', handleStorage);
     return () => {
       window.removeEventListener('neesh_hero_updated', handleUpdate);
+      window.removeEventListener('storage', handleStorage);
     };
   }, [queryClient]);
 
@@ -51,7 +56,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onShopNow }) => {
 
   if (slides.length === 0) {
     return (
-      <div className="w-full bg-[#0a0a0a] aspect-[822/1280] md:aspect-[1280/563] flex items-center justify-center border-b border-[#b69254]/30 relative overflow-hidden">
+      <div className="w-full bg-[#0a0a0a] aspect-[822/1280] md:aspect-[16/9] flex items-center justify-center border-b border-[#b69254]/30 relative overflow-hidden">
         <div className="w-full h-full bg-gradient-to-r from-zinc-950 via-zinc-900 to-zinc-950" />
       </div>
     );
@@ -123,33 +128,37 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onShopNow }) => {
               onClick={(e) => handleBannerClick(e, slide.linkUrl)}
               className="block w-full cursor-pointer group/banner focus:outline-none relative"
             >
-              {/* Desktop Image Banner (Full intrinsic ratio - Never crops the bottle cap or text) */}
-              <Image
-                src={slide.desktopImage}
-                alt={slide.name || 'Hero Banner'}
-                width={2560}
-                height={1126}
-                quality={90}
-                sizes="100vw"
-                loading={index === 0 ? 'eager' : 'lazy'}
-                fetchPriority={index === 0 ? 'high' : 'auto'}
-                style={{ aspectRatio: '2560 / 1126' }}
-                className="hidden md:block w-full h-auto select-none mx-auto object-cover"
-              />
+              {/* Desktop Banner: fixed 16:9 frame, contain so a 16:9 upload is never cropped */}
+              <div className="hidden md:block relative w-full aspect-[16/9] bg-black">
+                <Image
+                  src={slide.desktopImage}
+                  alt={slide.name || 'Hero Banner'}
+                  fill
+                  quality={90}
+                  sizes="100vw"
+                  loading={index === 0 ? 'eager' : 'lazy'}
+                  fetchPriority={index === 0 ? 'high' : 'auto'}
+                  className="object-contain select-none"
+                />
+              </div>
 
-              {/* Mobile Image Banner (Full intrinsic ratio - Never crops top or text) */}
-              <Image
-                src={slide.mobileImage || slide.desktopImage}
-                alt={slide.name || 'Hero Banner Mobile'}
-                width={822}
-                height={1280}
-                quality={90}
-                sizes="100vw"
-                loading={index === 0 ? 'eager' : 'lazy'}
-                fetchPriority={index === 0 ? 'high' : 'auto'}
-                style={{ aspectRatio: '822 / 1280' }}
-                className="block md:hidden w-full h-auto select-none mx-auto object-cover"
-              />
+              {/* Mobile Banner: portrait image when supplied, otherwise the desktop 16:9 banner (uncropped) */}
+              <div
+                className={`md:hidden relative w-full bg-black ${
+                  slide.mobileImage ? 'aspect-[822/1280]' : 'aspect-[16/9]'
+                }`}
+              >
+                <Image
+                  src={slide.mobileImage || slide.desktopImage}
+                  alt={slide.name || 'Hero Banner Mobile'}
+                  fill
+                  quality={90}
+                  sizes="100vw"
+                  loading={index === 0 ? 'eager' : 'lazy'}
+                  fetchPriority={index === 0 ? 'high' : 'auto'}
+                  className={`select-none ${slide.mobileImage ? 'object-cover' : 'object-contain'}`}
+                />
+              </div>
             </a>
           </div>
         ))}
