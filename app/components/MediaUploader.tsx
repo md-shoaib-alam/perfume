@@ -26,7 +26,15 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
   const [uploadProgress, setUploadProgress] = useState(0);
   const [statusText, setStatusText] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
+  const [mediaError, setMediaError] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  // Reset the broken-media flag whenever the URL changes
+  const prevValueRef = useRef(value);
+  if (prevValueRef.current !== value) {
+    prevValueRef.current = value;
+    if (mediaError) setMediaError(false);
+  }
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -99,12 +107,19 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
 
       <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs hover:border-slate-300 transition-colors w-full min-w-0">
         {/* Thumbnail Preview */}
-        {value ? (
+        {value && !mediaError ? (
           <div className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-lg overflow-hidden border border-slate-200 bg-slate-100 shrink-0 group">
             {previewType === 'video' || value.endsWith('.mp4') || value.endsWith('.webm') ? (
               <video src={value} className="w-full h-full object-cover" muted />
             ) : (
-              <img src={value} alt="Preview" loading="lazy" decoding="async" className="w-full h-full object-cover" />
+              <img
+                src={value}
+                alt="Preview"
+                loading="lazy"
+                decoding="async"
+                onError={() => setMediaError(true)}
+                className="w-full h-full object-cover"
+              />
             )}
             <button
               type="button"
@@ -116,6 +131,13 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
               </svg>
               <span>Remove</span>
             </button>
+          </div>
+        ) : mediaError ? (
+          <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-lg border border-dashed border-amber-300 bg-amber-50 flex flex-col items-center justify-center text-amber-600 shrink-0" title="This URL no longer resolves — clear it or upload a replacement">
+            <svg className="w-5 h-5 opacity-70" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+            </svg>
+            <span className="text-[9px] mt-0.5 font-bold">Broken</span>
           </div>
         ) : (
           <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-lg border border-dashed border-slate-300 bg-slate-50 flex flex-col items-center justify-center text-slate-400 shrink-0">

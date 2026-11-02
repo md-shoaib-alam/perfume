@@ -12,27 +12,22 @@ import { slugify } from '../utils/slug';
 interface ProductEditorProps {
   editingProduct: Product | null;
   initialData: Partial<Product>;
-  availableCategories: { slug: string; name: string }[];
   collectionOptions: { slug: string; name: string }[];
   onClose: () => void;
   onSaveSuccess: () => Promise<void>;
-  onOpenCategoryManager: () => void;
   onCollectionCreated: (collection: { id: string; slug: string; name: string }) => void;
 }
 
 export function ProductEditor({
   editingProduct,
   initialData,
-  availableCategories,
   collectionOptions,
   onClose,
   onSaveSuccess,
-  onOpenCategoryManager,
   onCollectionCreated,
 }: ProductEditorProps) {
   const { showAlert, showConfirm } = useConfirm();
   const [formData, setFormData] = useState<Partial<Product>>(initialData);
-  const [isCustomCategory, setIsCustomCategory] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isNewCollection, setIsNewCollection] = useState(false);
   const [newCollectionName, setNewCollectionName] = useState('');
@@ -42,12 +37,7 @@ export function ProductEditor({
     setFormData(initialData);
     setIsNewCollection(false);
     setNewCollectionName('');
-    if (initialData.category && !availableCategories.some((c) => c.slug === initialData.category)) {
-      setIsCustomCategory(true);
-    } else {
-      setIsCustomCategory(false);
-    }
-  }, [initialData, availableCategories]);
+  }, [initialData]);
 
   const handleCreateCollection = async () => {
     const name = newCollectionName.trim();
@@ -93,6 +83,11 @@ export function ProductEditor({
       setFormData((prev) => ({ ...prev, collection: createdSlug }));
       setIsNewCollection(false);
       setNewCollectionName('');
+      await showAlert({
+        title: 'Collection Created',
+        message: `"${name}" is now available as a story line for this and future fragrances.`,
+        variant: 'success',
+      });
     } catch (err: any) {
       await showAlert({
         title: 'Error Creating Collection',
@@ -486,74 +481,6 @@ export function ProductEditor({
                       </option>
                     )}
                     <option value="__new__">+ Create New Collection...</option>
-                  </select>
-                )}
-              </div>
-
-              <div>
-                <div className="flex items-center justify-between mb-1.5 min-w-0">
-                  <label className="block text-xs font-semibold text-slate-700 whitespace-nowrap">
-                    Product Category <span className="text-rose-500">*</span>
-                  </label>
-                  <div className="flex items-center gap-2 shrink-0">
-                    {availableCategories.length > 0 && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setIsCustomCategory(!isCustomCategory);
-                          if (!isCustomCategory) {
-                            setFormData({ ...formData, category: '' });
-                          } else {
-                            setFormData({ ...formData, category: availableCategories[0]?.slug || '' });
-                          }
-                        }}
-                        className="text-[10.5px] text-[#916618] hover:underline font-bold cursor-pointer whitespace-nowrap"
-                      >
-                        {isCustomCategory ? '← Choose Category' : '+ Custom Category'}
-                      </button>
-                    )}
-                    <button
-                      type="button"
-                      onClick={onOpenCategoryManager}
-                      className="text-[10.5px] text-slate-500 hover:text-slate-900 font-semibold cursor-pointer underline whitespace-nowrap"
-                    >
-                      Manage All
-                    </button>
-                  </div>
-                </div>
-                {availableCategories.length === 0 || isCustomCategory ? (
-                  <div>
-                    <input
-                      type="text"
-                      value={formData.category || ''}
-                      onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                      placeholder="e.g. Extrait De Parfum, Attar, Gift Set"
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 font-bold focus:outline-none focus:border-[#d6a750] focus:bg-white transition-all"
-                      required
-                    />
-                    {availableCategories.length === 0 && (
-                      <p className="text-[10px] text-slate-400 mt-1">No category</p>
-                    )}
-                  </div>
-                ) : (
-                  <select
-                    value={formData.category || availableCategories[0]?.slug || ''}
-                    onChange={(e) => {
-                      if (e.target.value === '__custom__') {
-                        setIsCustomCategory(true);
-                        setFormData({ ...formData, category: '' });
-                      } else {
-                        setFormData({ ...formData, category: e.target.value as any });
-                      }
-                    }}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-900 focus:outline-none focus:border-[#d6a750] focus:bg-white transition-all cursor-pointer"
-                  >
-                    {availableCategories.map((cat) => (
-                      <option key={cat.slug} value={cat.slug}>
-                        {cat.name}
-                      </option>
-                    ))}
-                    <option value="__custom__">+ Add New Custom Category...</option>
                   </select>
                 )}
               </div>

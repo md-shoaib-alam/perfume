@@ -6,9 +6,36 @@ import { deleteMediaFromAppwrite } from '@/lib/appwrite';
 import { useConfirm } from '../components/CustomConfirmModal';
 import { useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '../hooks/useQueries';
-import { CollectionItem, STANDARD_LANDING_PAGES, generateUniqueSlug } from './collections/types';
+import {
+  CollectionItem,
+  STANDARD_LANDING_PAGES,
+  GENDER_LANDING_PAGES,
+  COLLECTION_LANDING_PAGES,
+  generateUniqueSlug
+} from './collections/types';
 import { StoryCollectionsTab } from './collections/StoryCollectionsTab';
 import { GenderLandingPagesTab } from './collections/GenderLandingPagesTab';
+
+const mergeWithPresets = (presets: CollectionItem[], data: CollectionItem[]): CollectionItem[] =>
+  presets.map((preset) => {
+    const match = data.find((c) => c.slug === preset.slug);
+    if (!match) return preset;
+    return {
+      ...preset,
+      ...match,
+      id: match.id,
+      name: match.name || preset.name,
+      subname: match.subname || preset.subname,
+      badge: match.badge || preset.badge,
+      subtitle: match.subtitle || preset.subtitle,
+      editorial: match.editorial || preset.editorial,
+      image: match.image || '',
+      bannerImage: match.bannerImage || '',
+      campaignImage: match.campaignImage || '',
+      showInStoryCircle: Boolean(match.showInStoryCircle),
+      showCampaignTitle: match.showCampaignTitle !== undefined ? Boolean(match.showCampaignTitle) : true
+    };
+  });
 
 export const CollectionsManager: React.FC = () => {
   const queryClient = useQueryClient();
@@ -35,49 +62,32 @@ export const CollectionsManager: React.FC = () => {
     try {
       const data = await api.getCollections();
       if (data && Array.isArray(data)) {
-        // Story collections (custom lines like Bureau, Luxe, Haute, etc.)
-        const storyCols = data.filter(
+        // Custom collections not backed by a built-in landing page
+        const customCols = data.filter(
           (c) => !STANDARD_LANDING_PAGES.some((p) => p.slug === c.slug)
         );
-        setCollections(storyCols);
-        setInitialCollections(JSON.parse(JSON.stringify(storyCols)));
 
-        // Gender & Category landing pages merged with live DB items
-        const mergedGenderPages = STANDARD_LANDING_PAGES.map((preset) => {
-          const match = data.find((c) => c.slug === preset.slug);
-          if (match) {
-            return {
-              ...preset,
-              ...match,
-              id: match.id,
-              name: match.name || preset.name,
-              subname: match.subname || preset.subname,
-              badge: match.badge || preset.badge,
-              subtitle: match.subtitle || preset.subtitle,
-              editorial: match.editorial || preset.editorial,
-              image: match.image || '',
-              bannerImage: match.bannerImage || '',
-              campaignImage: match.campaignImage || '',
-              showInStoryCircle: Boolean(match.showInStoryCircle),
-              showCampaignTitle: match.showCampaignTitle !== undefined ? Boolean(match.showCampaignTitle) : true
-            };
-          }
-          return preset;
-        });
+        // Collections tab: type/story landing pages + custom collections
+        const mergedCollections = [...mergeWithPresets(COLLECTION_LANDING_PAGES, data), ...customCols];
+        setCollections(mergedCollections);
+        setInitialCollections(JSON.parse(JSON.stringify(mergedCollections)));
+
+        // Gender tab: gender and category-type landing pages
+        const mergedGenderPages = mergeWithPresets(GENDER_LANDING_PAGES, data);
         setGenderPages(mergedGenderPages);
         setInitialGenderPages(JSON.parse(JSON.stringify(mergedGenderPages)));
       } else {
-        setCollections([]);
-        setInitialCollections([]);
-        setGenderPages(STANDARD_LANDING_PAGES);
-        setInitialGenderPages(JSON.parse(JSON.stringify(STANDARD_LANDING_PAGES)));
+        setCollections([...COLLECTION_LANDING_PAGES]);
+        setInitialCollections(JSON.parse(JSON.stringify(COLLECTION_LANDING_PAGES)));
+        setGenderPages([...GENDER_LANDING_PAGES]);
+        setInitialGenderPages(JSON.parse(JSON.stringify(GENDER_LANDING_PAGES)));
       }
     } catch (err: any) {
       setError(err.message || 'Failed to load collections from database.');
-      setCollections([]);
-      setInitialCollections([]);
-      setGenderPages(STANDARD_LANDING_PAGES);
-      setInitialGenderPages(JSON.parse(JSON.stringify(STANDARD_LANDING_PAGES)));
+      setCollections([...COLLECTION_LANDING_PAGES]);
+      setInitialCollections(JSON.parse(JSON.stringify(COLLECTION_LANDING_PAGES)));
+      setGenderPages([...GENDER_LANDING_PAGES]);
+      setInitialGenderPages(JSON.parse(JSON.stringify(GENDER_LANDING_PAGES)));
     } finally {
       setIsLoading(false);
     }
@@ -240,6 +250,14 @@ export const CollectionsManager: React.FC = () => {
 
   const handleDeleteCollection = async (idx: number) => {
     const item = collections[idx];
+    if (STANDARD_LANDING_PAGES.some((p) => p.slug === item?.slug)) {
+      await showAlert({
+        title: 'Built-in Landing Page',
+        message: 'This page is part of the storefront structure and cannot be deleted. Clear its fields instead.',
+        variant: 'info'
+      });
+      return;
+    }
     const confirmed = await showConfirm({
       title: 'Delete Collection',
       message: `Are you sure you want to remove "${item.name}"? This action cannot be undone.`,
@@ -256,6 +274,7 @@ export const CollectionsManager: React.FC = () => {
       // Clean up orphaned storage media only AFTER database deletion succeeds
       if (item.image) deleteMediaFromAppwrite(item.image).catch(() => {});
       if (item.bannerImage) deleteMediaFromAppwrite(item.bannerImage).catch(() => {});
+      if (item.campaignImage) deleteMediaFromAppwrite(item.campaignImage).catch(() => {});
 
       const updated = collections.filter((_, i) => i !== idx);
       setCollections(updated);
@@ -304,10 +323,11 @@ export const CollectionsManager: React.FC = () => {
 
     const validImg = col.image && col.image.trim().startsWith('http') ? col.image.trim() : null;
     const validBanner = col.bannerImage && col.bannerImage.trim().startsWith('http') ? col.bannerImage.trim() : null;
+    const validCampaign = col.campaignImage && col.campaignImage.trim().startsWith('http') ? col.campaignImage.trim() : null;
 
     const payload: any = {
       ...col,
-      image: validImg || validBanner || '',
+      image: validImg || validBanner || validCampaign || '',
       bannerImage: validBanner || validImg || ''
     };
 
@@ -336,6 +356,9 @@ export const CollectionsManager: React.FC = () => {
         }
         if (originalCol.bannerImage && originalCol.bannerImage !== col.bannerImage) {
           deleteMediaFromAppwrite(originalCol.bannerImage).catch(() => {});
+        }
+        if (originalCol.campaignImage && originalCol.campaignImage !== col.campaignImage) {
+          deleteMediaFromAppwrite(originalCol.campaignImage).catch(() => {});
         }
       }
 
@@ -378,7 +401,7 @@ export const CollectionsManager: React.FC = () => {
         <div>
           <h2 className="text-xl font-bold text-slate-900 tracking-tight">Collections & Landing Banners</h2>
           <p className="text-xs text-slate-500 mt-0.5">
-            Manage top hero lifestyle banners, story circles, and editorial copy for Gender (For Him / For Her) and Story collections.
+            Manage hero banners, campaign cards, story circles, and editorial copy for every collection and gender landing page.
           </p>
         </div>
 
@@ -407,7 +430,7 @@ export const CollectionsManager: React.FC = () => {
               : 'text-slate-500 hover:text-slate-900'
           }`}
         >
-          Story Collections ({collections.length})
+          Collections ({collections.length})
         </button>
 
         <button
@@ -420,7 +443,7 @@ export const CollectionsManager: React.FC = () => {
           }`}
         >
           <span className="w-2 h-2 rounded-full bg-[#caa04c]" />
-          <span>Gender & Categories ({genderPages.length})</span>
+          <span>Gender ({genderPages.length})</span>
         </button>
       </div>
 

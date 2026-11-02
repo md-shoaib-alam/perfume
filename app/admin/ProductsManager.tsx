@@ -9,6 +9,7 @@ import { useConfirm } from '../components/CustomConfirmModal';
 import { getProductSlug } from '../utils/slug';
 import { useQueryClient } from '@tanstack/react-query';
 import { queryKeys, useCollectionsQuery } from '../hooks/useQueries';
+import { STANDARD_LANDING_PAGES } from './collections/types';
 
 export const ProductsManager: React.FC = () => {
   const queryClient = useQueryClient();
@@ -18,7 +19,6 @@ export const ProductsManager: React.FC = () => {
   const [collections, setCollections] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('all');
   const [genderFilter, setGenderFilter] = useState('all');
   const [collectionFilter, setCollectionFilter] = useState('all');
   const [actionMenu, setActionMenu] = useState<{
@@ -59,7 +59,6 @@ export const ProductsManager: React.FC = () => {
   const [formData, setFormData] = useState<Partial<Product>>({
     name: '',
     subtitle: 'Extrait De Parfum',
-    category: 'extrait-de-parfum',
     gender: 'For Him',
     collection: 'haute',
     price: 3600,
@@ -89,7 +88,7 @@ export const ProductsManager: React.FC = () => {
     }
     try {
       const [prodsData, colsData] = await Promise.all([
-        api.getProducts(),
+        api.getProducts(undefined, undefined, { fresh: true }),
         api.getCollections().catch(() => [])
       ]);
       setProducts(prodsData || []);
@@ -127,7 +126,8 @@ export const ProductsManager: React.FC = () => {
             name: label || slug || 'Unnamed Collection'
           };
         })
-        .filter((c: any) => Boolean(c.slug && c.name));
+        .filter((c: any) => Boolean(c.slug && c.name))
+        .filter((c: any) => !STANDARD_LANDING_PAGES.some((p) => p.slug === c.slug));
     }
     return [];
   }, [activeCollections]);
@@ -139,96 +139,6 @@ export const ProductsManager: React.FC = () => {
         : [created, ...prev]
     );
     queryClient.invalidateQueries({ queryKey: queryKeys.collections });
-  };
-
-  // Derive categories dynamically ONLY from database catalog products (no mock categories)
-  const availableCategories = useMemo(() => {
-    const map = new Map<string, string>();
-
-    (products || []).forEach((p) => {
-      if (p.category && p.category.trim() && !map.has(p.category.trim())) {
-        const catKey = p.category.trim();
-        const formattedName = catKey
-          .split(/[-_]/)
-          .map((w: string) => w.charAt(0).toUpperCase() + w.slice(1))
-          .join(' ');
-        map.set(catKey, formattedName);
-      }
-    });
-
-    return Array.from(map.entries()).map(([slug, name]) => ({ slug, name }));
-  }, [products]);
-
-  const [isCustomCategory, setIsCustomCategory] = useState(false);
-  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
-  const [newCatName, setNewCatName] = useState('');
-  const [renamingCategory, setRenamingCategory] = useState<{ oldSlug: string; newName: string } | null>(null);
-  const [isBulkUpdatingCat, setIsBulkUpdatingCat] = useState(false);
-
-  // Category statistics with linked products
-  const categoryStats = useMemo(() => {
-    const map = new Map<string, { name: string; slug: string; count: number; products: Product[] }>();
-
-    availableCategories.forEach((cat) => {
-      map.set(cat.slug, { name: cat.name, slug: cat.slug, count: 0, products: [] });
-    });
-
-    products.forEach((p) => {
-      const slug = (p.category || 'uncategorized').trim();
-      if (!map.has(slug)) {
-        const formatted = slug
-          .split(/[-_]/)
-          .map((w: string) => w.charAt(0).toUpperCase() + w.slice(1))
-          .join(' ');
-        map.set(slug, { name: formatted, slug, count: 0, products: [] });
-      }
-      const entry = map.get(slug)!;
-      entry.count += 1;
-      entry.products.push(p);
-    });
-
-    return Array.from(map.values());
-  }, [availableCategories, products]);
-
-  const handleBulkRenameCategory = async (oldSlug: string, newName: string) => {
-    if (!newName.trim() || newName.trim() === oldSlug) {
-      setRenamingCategory(null);
-      return;
-    }
-    const newSlug = newName.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-    const prodsToUpdate = products.filter((p) => (p.category || '').trim() === oldSlug);
-
-    setIsBulkUpdatingCat(true);
-    try {
-      await Promise.all(
-        prodsToUpdate.map((p) => api.updateProduct(p.id, { category: newSlug }))
-      );
-      await loadData();
-      await showAlert({
-        title: 'Category Renamed',
-        message: `Successfully renamed category to "${newName}" across ${prodsToUpdate.length} fragrance(s).`,
-        variant: 'success'
-      });
-      setRenamingCategory(null);
-    } catch (err: any) {
-      await showAlert({
-        title: 'Error Renaming Category',
-        message: err.message || 'Failed to update fragrances.',
-        variant: 'danger'
-      });
-    } finally {
-      setIsBulkUpdatingCat(false);
-    }
-  };
-
-  const formatCategoryName = (cat?: string) => {
-    if (!cat) return 'Uncategorized';
-    const match = availableCategories.find((c) => c.slug === cat);
-    if (match) return match.name;
-    return cat
-      .split(/[-_]/)
-      .map((w: string) => w.charAt(0).toUpperCase() + w.slice(1))
-      .join(' ');
   };
 
   const getCollectionName = (colSlug?: string) => {
@@ -245,11 +155,9 @@ export const ProductsManager: React.FC = () => {
 
   const handleOpenAdd = () => {
     setEditingProduct(null);
-    setIsCustomCategory(availableCategories.length === 0);
     setFormData({
       name: '',
       subtitle: '',
-      category: availableCategories[0]?.slug || '',
       gender: 'For Him',
       collection: '',
       price: 3600,
@@ -277,13 +185,10 @@ export const ProductsManager: React.FC = () => {
 
   const handleOpenEdit = (product: Product) => {
     setEditingProduct(product);
-    const inDbCategories = availableCategories.some((c) => c.slug === product.category);
-    setIsCustomCategory(!inDbCategories || !product.category);
     setFormData({
       ...product,
       gender: product.gender || 'For Him',
       collection: product.collection || '',
-      category: product.category || '',
       sizeOptions: product.sizeOptions && product.sizeOptions.length > 0 
         ? product.sizeOptions 
         : [
@@ -346,13 +251,12 @@ export const ProductsManager: React.FC = () => {
 
 
   const filteredProducts = products.filter((p) => {
-    const matchesCat = categoryFilter === 'all' || p.category === categoryFilter;
     const matchesGender = genderFilter === 'all' || p.gender === genderFilter;
     const matchesCollection = collectionFilter === 'all' || p.collection === collectionFilter;
     const matchesSearch = p.name.toLowerCase().includes(search.toLowerCase()) || 
                           p.subtitle?.toLowerCase().includes(search.toLowerCase()) ||
                           (p.collection && p.collection.toLowerCase().includes(search.toLowerCase()));
-    return matchesCat && matchesGender && matchesCollection && matchesSearch;
+    return matchesGender && matchesCollection && matchesSearch;
   });
 
   return (
@@ -361,21 +265,10 @@ export const ProductsManager: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
         <div>
           <h2 className="text-xl font-bold text-slate-900 tracking-tight">Fragrance Catalog Manager</h2>
-          <p className="text-xs text-slate-500 mt-0.5">Configure fragrance collections, categories, multi-volume pricing, and inventory.</p>
+          <p className="text-xs text-slate-500 mt-0.5">Configure fragrance collections, multi-volume pricing, and inventory.</p>
         </div>
 
         <div className="flex items-center gap-2.5 flex-wrap">
-          <button
-            type="button"
-            onClick={() => setIsCategoryModalOpen(true)}
-            className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs uppercase tracking-wider rounded-xl transition-all shadow-xs shrink-0 cursor-pointer flex items-center gap-1.5 border border-slate-200"
-          >
-            <svg className="w-3.5 h-3.5 text-[#caa04c]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-            </svg>
-            <span>Manage Categories ({availableCategories.length})</span>
-          </button>
-
           <button
             type="button"
             onClick={handleOpenAdd}
@@ -390,7 +283,7 @@ export const ProductsManager: React.FC = () => {
       </div>
 
       {/* Filter Bar */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         <input
           type="text"
           value={search}
@@ -426,18 +319,6 @@ export const ProductsManager: React.FC = () => {
           <option value="Gift Sets">Gift Sets</option>
         </select>
 
-        <select
-          value={categoryFilter}
-          onChange={(e) => setCategoryFilter(e.target.value)}
-          className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-[#d6a750]"
-        >
-          <option value="all">All Categories</option>
-          {availableCategories.map((cat) => (
-            <option key={cat.slug} value={cat.slug}>
-              {cat.name}
-            </option>
-          ))}
-        </select>
       </div>
 
       {/* Mobile Products Cards List (< md) */}
@@ -567,7 +448,6 @@ export const ProductsManager: React.FC = () => {
               <tr>
                 <th className="px-5 py-3.5">Product</th>
                 <th className="px-4 py-3.5">Collection</th>
-                <th className="px-4 py-3.5">Category</th>
                 <th className="px-4 py-3.5">Gender / Target</th>
                 <th className="px-4 py-3.5">Volume Options & Prices</th>
                 <th className="px-4 py-3.5">Status</th>
@@ -577,11 +457,11 @@ export const ProductsManager: React.FC = () => {
             <tbody className="divide-y divide-slate-100">
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="text-center py-8 text-slate-400">Loading catalog...</td>
+                  <td colSpan={6} className="text-center py-8 text-slate-400">Loading catalog...</td>
                 </tr>
               ) : filteredProducts.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="text-center py-8 text-slate-400">No products found for this filter.</td>
+                  <td colSpan={6} className="text-center py-8 text-slate-400">No products found for this filter.</td>
                 </tr>
               ) : (
                 filteredProducts.map((prod) => (
@@ -604,11 +484,6 @@ export const ProductsManager: React.FC = () => {
                     <td className="px-4 py-3.5 align-middle whitespace-nowrap">
                       <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-50 text-[#916618] border border-amber-200/80 capitalize">
                         {getCollectionName(prod.collection)}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3.5 align-middle whitespace-nowrap">
-                      <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200 capitalize">
-                        {formatCategoryName(prod.category)}
                       </span>
                     </td>
                     <td className="px-4 py-3.5 align-middle whitespace-nowrap">
@@ -686,176 +561,14 @@ export const ProductsManager: React.FC = () => {
         <ProductEditor
           editingProduct={editingProduct}
           initialData={formData}
-          availableCategories={availableCategories}
           collectionOptions={collectionOptions}
           onClose={() => {
             setIsModalOpen(false);
             setEditingProduct(null);
           }}
           onSaveSuccess={loadData}
-          onOpenCategoryManager={() => setIsCategoryModalOpen(true)}
           onCollectionCreated={handleCollectionCreated}
         />
-      )}
-      {/* Category Manager Modal */}
-      {isCategoryModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-xl rounded-2xl shadow-2xl border border-slate-200 overflow-hidden animate-fade-in-up flex flex-col max-h-[90vh]">
-            <div className="p-5 sm:p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-              <div>
-                <h3 className="font-bold text-base sm:text-lg text-slate-900 flex items-center gap-2">
-                  <svg className="w-5 h-5 text-[#caa04c]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-                  </svg>
-                  <span>Product Categories Manager</span>
-                </h3>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Manage categories, inspect assigned products, and rename categories in bulk.
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  setIsCategoryModalOpen(false);
-                  setRenamingCategory(null);
-                }}
-                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-colors cursor-pointer"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="p-5 sm:p-6 overflow-y-auto space-y-5 flex-1">
-              {/* Add New Category Quick Bar */}
-              <div className="p-3.5 bg-amber-50/50 border border-amber-200/80 rounded-xl space-y-2">
-                <label className="block text-xs font-bold text-slate-800">Create New Category</label>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={newCatName}
-                    onChange={(e) => setNewCatName(e.target.value)}
-                    placeholder="e.g. Hair Mist, Body Spray, Bakhoor"
-                    className="flex-1 bg-white border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-bold text-slate-900 focus:outline-none focus:border-[#d6a750]"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (!newCatName.trim()) return;
-                      const slug = newCatName.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-                      setFormData({ ...formData, category: slug });
-                      setIsCustomCategory(false);
-                      setIsCategoryModalOpen(false);
-                      setNewCatName('');
-                      handleOpenAdd();
-                    }}
-                    className="px-4 py-2 bg-slate-900 hover:bg-black text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all shadow-xs shrink-0 cursor-pointer"
-                  >
-                    + Add Category
-                  </button>
-                </div>
-              </div>
-
-              {/* Active Categories List */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between text-xs text-slate-500 font-bold uppercase tracking-wider px-1">
-                  <span>Existing Categories ({categoryStats.length})</span>
-                  <span>Products Count</span>
-                </div>
-
-                {categoryStats.length === 0 ? (
-                  <div className="p-8 text-center bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-400">
-                    No categories created yet. Create a fragrance with a custom category above.
-                  </div>
-                ) : (
-                  categoryStats.map((cat) => (
-                    <div
-                      key={cat.slug}
-                      className="p-4 bg-white border border-slate-200 rounded-xl hover:border-slate-300 transition-all shadow-2xs space-y-2.5"
-                    >
-                      {renamingCategory?.oldSlug === cat.slug ? (
-                        <div className="space-y-2 pt-1">
-                          <label className="block text-[11px] font-bold text-slate-700">
-                            Rename Category for all {cat.count} product(s):
-                          </label>
-                          <div className="flex gap-2">
-                            <input
-                              type="text"
-                              value={renamingCategory.newName}
-                              onChange={(e) => setRenamingCategory({ ...renamingCategory, newName: e.target.value })}
-                              className="flex-1 bg-slate-50 border border-slate-300 rounded-lg px-3 py-1.5 text-xs font-bold text-slate-900 focus:outline-none focus:border-[#d6a750]"
-                            />
-                            <button
-                              type="button"
-                              disabled={isBulkUpdatingCat}
-                              onClick={() => handleBulkRenameCategory(cat.slug, renamingCategory.newName)}
-                              className="px-3.5 py-1.5 bg-slate-900 hover:bg-black text-white text-xs font-bold rounded-lg transition-all cursor-pointer disabled:opacity-50"
-                            >
-                              {isBulkUpdatingCat ? 'Saving...' : 'Save'}
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setRenamingCategory(null)}
-                              className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-semibold rounded-lg transition-all cursor-pointer"
-                            >
-                              Cancel
-                            </button>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="flex items-center justify-between gap-3">
-                          <div className="min-w-0">
-                            <h4 className="font-bold text-sm text-slate-900 truncate flex items-center gap-2">
-                              <span>{cat.name}</span>
-                              <span className="text-[10px] font-mono text-slate-400 bg-slate-100 px-2 py-0.5 rounded font-normal">
-                                slug: {cat.slug}
-                              </span>
-                            </h4>
-                            <p className="text-[11px] text-slate-500 mt-0.5">
-                              {cat.count} fragrance{cat.count === 1 ? '' : 's'} assigned to this category
-                            </p>
-                          </div>
-
-                          <div className="flex items-center gap-2 shrink-0">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setCategoryFilter(cat.slug);
-                                setIsCategoryModalOpen(false);
-                              }}
-                              className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-[11px] rounded-lg transition-colors cursor-pointer"
-                            >
-                              Filter ({cat.count})
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setRenamingCategory({ oldSlug: cat.slug, newName: cat.name })}
-                              className="px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-[#916618] border border-amber-200 font-bold text-[11px] rounded-lg transition-colors cursor-pointer"
-                            >
-                              Rename
-                            </button>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-
-            <div className="p-4 border-t border-slate-100 bg-slate-50 flex justify-end">
-              <button
-                type="button"
-                onClick={() => {
-                  setIsCategoryModalOpen(false);
-                  setRenamingCategory(null);
-                }}
-                className="px-5 py-2 bg-slate-900 hover:bg-black text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all shadow-xs cursor-pointer"
-              >
-                Done
-              </button>
-            </div>
-          </div>
-        </div>
       )}
 
       {/* Floating Action Menu with fixed coordinates (prevent clipping by overflow-x-auto) */}

@@ -96,6 +96,22 @@ export const STANDARD_LANDING_PAGES: CollectionItem[] = [
   }
 ];
 
+export const GENDER_LANDING_SLUGS = ['for-him', 'for-her', 'unisex', 'gift-set', 'discovery-set'];
+
+export const COLLECTION_LANDING_SLUGS = ['all', 'extrait-de-parfum', 'attar'];
+
+const presetsBySlug = (slugs: string[]): CollectionItem[] =>
+  slugs
+    .map((slug) => STANDARD_LANDING_PAGES.find((p) => p.slug === slug))
+    .filter((p): p is CollectionItem => Boolean(p));
+
+export const GENDER_LANDING_PAGES: CollectionItem[] = presetsBySlug(GENDER_LANDING_SLUGS);
+
+export const COLLECTION_LANDING_PAGES: CollectionItem[] = presetsBySlug(COLLECTION_LANDING_SLUGS);
+
+export const isBuiltInLandingPage = (slug?: string): boolean =>
+  Boolean(slug) && STANDARD_LANDING_PAGES.some((p) => p.slug === slug);
+
 export const generateUniqueSlug = (existingCollections: CollectionItem[]): string => {
   const existingSlugs = new Set(
     existingCollections.map((c) => c.slug?.toLowerCase().trim()).filter(Boolean)
