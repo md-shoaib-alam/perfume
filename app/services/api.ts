@@ -4,8 +4,35 @@ import type { Product, Review } from '../types';
 const productsMemoryCache = new Map<string, { data: Product[]; timestamp: number }>();
 let heroSlidesMemoryCache: { data: any[]; timestamp: number } | null = null;
 export const PRODUCTS_CACHE_TTL_MS = 2 * 60 * 1000;
-export const HERO_CACHE_TTL_MS = 2 * 60 * 1000;
+export const HERO_CACHE_TTL_MS = 30 * 1000;
 export const COLLECTIONS_CACHE_TTL_MS = 2 * 60 * 1000;
+export const HERO_BYPASS_KEY = 'bb_hero_bypass_until';
+const HERO_BYPASS_WINDOW_MS = 5 * 60 * 1000;
+
+// After a hero mutation, the next storefront read in this browser skips both the
+// localStorage copy and Vercel's edge copy so the saved banner appears immediately.
+function markHeroCacheBypass() {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(HERO_BYPASS_KEY, String(Date.now() + HERO_BYPASS_WINDOW_MS));
+  } catch {}
+}
+
+function hasHeroCacheBypass(): boolean {
+  if (typeof window === 'undefined') return false;
+  try {
+    return Date.now() < Number(localStorage.getItem(HERO_BYPASS_KEY) || 0);
+  } catch {
+    return false;
+  }
+}
+
+function clearHeroCacheBypass() {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.removeItem(HERO_BYPASS_KEY);
+  } catch {}
+}
 
 // Every mutation goes through a guarded /api route; the browser never writes to Appwrite directly.
 async function apiRequest<T>(url: string, init: RequestInit, failMessage: string): Promise<T> {
@@ -55,18 +82,18 @@ export const api = {
   // =========================================================================
   // 1. PRODUCTS (short-lived localStorage & memory cache)
   // =========================================================================
-  async getProducts(category?: string, gender?: string): Promise<Product[]> {
+  async getProducts(category?: string, gender?: string, opts?: { fresh?: boolean }): Promise<Product[]> {
     const cacheKey = `${category || ''}_${gender || ''}`;
     const cached = productsMemoryCache.get(cacheKey);
     const now = Date.now();
 
-    // 1. Check in-memory cache
-    if (cached && now - cached.timestamp < PRODUCTS_CACHE_TTL_MS && cached.data.length > 0) {
+    // 1. Check in-memory cache (skipped when the caller needs post-mutation freshness)
+    if (!opts?.fresh && cached && now - cached.timestamp < PRODUCTS_CACHE_TTL_MS && cached.data.length > 0) {
       return cached.data;
     }
 
     // 2. Check localStorage cache (zero network hit while the TTL is fresh)
-    if (typeof window !== 'undefined') {
+    if (!opts?.fresh && typeof window !== 'undefined') {
       try {
         const raw = localStorage.getItem('bb_products_cache');
         if (raw) {
@@ -93,8 +120,10 @@ export const api = {
       const params = new URLSearchParams();
       if (category) params.set('category', category);
       if (gender && gender !== 'All') params.set('gender', gender);
-      
-      const res = await fetch(`/api/products?${params.toString()}`);
+      // Fresh reads get a unique URL so the edge/browser cache cannot serve a pre-mutation snapshot
+      if (opts?.fresh) params.set('_cb', String(now));
+
+      const res = await fetch(`/api/products?${params.toString()}`, opts?.fresh ? { cache: 'no-store' } : undefined);
       if (res.ok) {
         const data = await res.json();
         if (Array.isArray(data) && data.length > 0) {
@@ -328,33 +357,36 @@ export const api = {
   // =========================================================================
   // 5. HERO SLIDES (short-lived localStorage cache)
   // =========================================================================
-  async getHeroSlides(): Promise<any[]> {
+  async getHeroSlides(opts?: { fresh?: boolean }): Promise<any[]> {
     const now = Date.now();
+    const bypassCache = Boolean(opts?.fresh) || hasHeroCacheBypass();
 
-    // 1. Check in-memory cache (fastest)
-    if (heroSlidesMemoryCache && now - heroSlidesMemoryCache.timestamp < HERO_CACHE_TTL_MS && heroSlidesMemoryCache.data.length > 0) {
-      return heroSlidesMemoryCache.data;
-    }
+    if (!bypassCache) {
+      // 1. Check in-memory cache (fastest)
+      if (heroSlidesMemoryCache && now - heroSlidesMemoryCache.timestamp < HERO_CACHE_TTL_MS && heroSlidesMemoryCache.data.length > 0) {
+        return heroSlidesMemoryCache.data;
+      }
 
-    // 2. Check localStorage cache (within 15 minutes -> zero database call)
-    if (typeof window !== 'undefined') {
-      try {
-        const raw = localStorage.getItem('bb_hero_slides_cache');
-        if (raw) {
-          const parsed = JSON.parse(raw);
-          const data = Array.isArray(parsed) ? parsed : parsed?.data;
-          const timestamp = Array.isArray(parsed) ? 0 : parsed?.timestamp || 0;
-          if (Array.isArray(data) && data.length > 0 && now - timestamp < HERO_CACHE_TTL_MS) {
-            heroSlidesMemoryCache = { data, timestamp };
-            return data;
+      // 2. Check localStorage cache
+      if (typeof window !== 'undefined') {
+        try {
+          const raw = localStorage.getItem('bb_hero_slides_cache');
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            const data = Array.isArray(parsed) ? parsed : parsed?.data;
+            const timestamp = Array.isArray(parsed) ? 0 : parsed?.timestamp || 0;
+            if (Array.isArray(data) && data.length > 0 && now - timestamp < HERO_CACHE_TTL_MS) {
+              heroSlidesMemoryCache = { data, timestamp };
+              return data;
+            }
           }
-        }
-      } catch {}
+        } catch {}
+      }
     }
 
-    // 3. If cache missing or expired -> fetch fresh from the API route
+    // 3. Cache missing, expired, or bypassed -> fetch from the API route
     try {
-      const res = await fetch('/api/hero');
+      const res = await fetch(bypassCache ? `/api/hero?_cb=${now}` : '/api/hero', bypassCache ? { cache: 'no-store' } : undefined);
       if (res.ok) {
         const data = await res.json();
         if (Array.isArray(data) && data.length > 0) {
@@ -364,6 +396,7 @@ export const api = {
               localStorage.setItem('bb_hero_slides_cache', JSON.stringify({ data, timestamp: Date.now() }));
             } catch {}
           }
+          if (!opts?.fresh) clearHeroCacheBypass();
           return data;
         }
       }
@@ -386,6 +419,7 @@ export const api = {
       'Failed to save hero slide'
     );
     this.invalidateHeroCache();
+    markHeroCacheBypass();
     return saved;
   },
 
@@ -393,6 +427,7 @@ export const api = {
     try {
       await apiRequest(`/api/hero?id=${encodeURIComponent(id)}`, { method: 'DELETE' }, 'Failed to delete slide');
       this.invalidateHeroCache();
+      markHeroCacheBypass();
       return true;
     } catch {
       return false;

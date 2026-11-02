@@ -21,15 +21,12 @@ export const HeroManager: React.FC = () => {
 
   const loadSlides = async () => {
     try {
-      const data = await api.getHeroSlides();
+      // Admin always reads the database directly; serving a post-save CDN copy
+      // would overwrite the banner that was just saved.
+      const data = await api.getHeroSlides({ fresh: true });
       if (data && data.length > 0) {
         setSlides(data);
         setInitialSlides(JSON.parse(JSON.stringify(data)));
-        if (typeof window !== 'undefined') {
-          try {
-            localStorage.setItem('bb_hero_slides_cache', JSON.stringify({ data, timestamp: Date.now() }));
-          } catch {}
-        }
         queryClient.invalidateQueries({ queryKey: queryKeys.heroSlides });
         return;
       } else if (typeof window !== 'undefined') {

@@ -138,29 +138,7 @@ export function useHeroSlidesQuery() {
   return useQuery({
     queryKey: queryKeys.heroSlides,
     queryFn: async () => {
-      const now = Date.now();
-      // 1. If cached within 15 minutes, return directly without database call
-      if (typeof window !== 'undefined') {
-        try {
-          const raw = localStorage.getItem('bb_hero_slides_cache');
-          if (raw) {
-            const parsed = JSON.parse(raw);
-            const data = Array.isArray(parsed) ? parsed : parsed?.data;
-            const timestamp = Array.isArray(parsed) ? 0 : parsed?.timestamp || 0;
-            if (Array.isArray(data) && data.length > 0 && now - timestamp < HERO_CACHE_TTL_MS) {
-              return data;
-            }
-          }
-        } catch {}
-      }
-
-      // 2. Otherwise fetch fresh from database/API
       const data = await api.getHeroSlides();
-      if (Array.isArray(data) && data.length > 0 && typeof window !== 'undefined') {
-        try {
-          localStorage.setItem('bb_hero_slides_cache', JSON.stringify({ data, timestamp: Date.now() }));
-        } catch {}
-      }
       return data || [];
     },
     staleTime: HERO_CACHE_TTL_MS,

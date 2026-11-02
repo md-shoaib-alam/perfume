@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { publicCacheHeaders } from '@/lib/httpCache';
+import { noStoreHeaders, shortPublicCacheHeaders } from '@/lib/httpCache';
 import { adminGuard } from '@/lib/roles';
 import { databases, APPWRITE_DATABASE_ID } from '@/lib/appwriteServer';
 import { ID, Query } from '@/lib/appwriteServer';
@@ -12,11 +12,14 @@ const formatHeroDoc = (doc: any) => ({
   linkUrl: doc.linkUrl || '/'
 });
 
-export async function GET() {
+export async function GET(req: Request) {
+  const bypassCache = new URL(req.url).searchParams.has('_cb');
   try {
     const res = await databases.listDocuments(APPWRITE_DATABASE_ID, 'hero_slides', [Query.limit(50)]);
     const slides = (res.documents || []).map(formatHeroDoc);
-    return NextResponse.json(slides, { headers: publicCacheHeaders });
+    return NextResponse.json(slides, {
+      headers: bypassCache ? noStoreHeaders : shortPublicCacheHeaders
+    });
   } catch (err: any) {
     console.error('API /api/hero error:', err);
     return NextResponse.json({ error: err.message || 'Failed to load slides' }, { status: 500 });
