@@ -1,8 +1,14 @@
 'use client';
 
-import React from 'react';
-import { ProductsManager } from '../ProductsManager';
+import React, { useEffect } from 'react';
+import { useProductsRoute } from './productsRoute';
 
 export default function AdminProductsPage() {
-  return <ProductsManager />;
+  const { closeEditor } = useProductsRoute();
+
+  useEffect(() => {
+    closeEditor();
+  }, [closeEditor]);
+
+  return null;
 }

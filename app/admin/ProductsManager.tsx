@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { Product } from '../types';
@@ -11,8 +11,9 @@ import { getProductSlug } from '../utils/slug';
 import { useQueryClient } from '@tanstack/react-query';
 import { queryKeys, useCollectionsQuery } from '../hooks/useQueries';
 import { STANDARD_LANDING_PAGES, COLLECTION_LANDING_SLUGS } from './collections/types';
+import { ProductsRouteProvider } from './products/productsRoute';
 
-export const ProductsManager: React.FC = () => {
+export const ProductsManager: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
   const queryClient = useQueryClient();
   const router = useRouter();
   const { data: reactiveCollections = [] } = useCollectionsQuery();
@@ -173,42 +174,11 @@ export const ProductsManager: React.FC = () => {
     loadData();
   }, []);
 
-  // Deep-link support: reopen the editor from the URL on refresh
-  // (/admin/products/new or /admin/products/edit/<id>, query params as fallback)
-  const urlInitRef = useRef(false);
-  const [pendingEditId, setPendingEditId] = useState<string | null>(null);
+  // Route-driven editor: /admin/products/new and /admin/products/edit/<slug> pages
+  // call these actions; the layout keeps this component mounted so there is no remount flicker.
+  const [pendingEditParam, setPendingEditParam] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (urlInitRef.current) return;
-    urlInitRef.current = true;
-    const editMatch = window.location.pathname.match(/^\/admin\/products\/edit\/([^/]+)/);
-    if (window.location.pathname === '/admin/products/new') {
-      handleOpenAdd();
-    } else if (editMatch) {
-      setPendingEditId(decodeURIComponent(editMatch[1]));
-    } else {
-      const params = new URLSearchParams(window.location.search);
-      if (params.get('add') === 'new') {
-        handleOpenAdd();
-      } else if (params.get('edit')) {
-        setPendingEditId(params.get('edit'));
-      }
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!loading && pendingEditId) {
-      const prod = products.find(
-        (p) => getProductSlug(p) === pendingEditId || p.id === pendingEditId
-      );
-      if (prod) {
-        setPendingEditId(null);
-        handleOpenEdit(prod);
-      }
-    }
-  }, [loading, pendingEditId, products]);
-
-  const handleOpenAdd = () => {
+  const openAdd = useCallback(() => {
     setEditingProduct(null);
     setFormData({
       name: '',
@@ -236,7 +206,50 @@ export const ProductsManager: React.FC = () => {
       storyBlocks: []
     });
     setIsModalOpen(true);
-    router.replace('/admin/products/new');
+  }, []);
+
+  const openEditByParam = useCallback((param: string) => {
+    setPendingEditParam(param);
+  }, []);
+
+  const closeEditor = useCallback(() => {
+    setIsModalOpen(false);
+    setEditingProduct(null);
+  }, []);
+
+  // Same-name products would share a slug, so duplicates get a stable numeric suffix
+  // (ordered by id to stay deterministic regardless of list order)
+  const getEditorSlug = useCallback((product: Product, list: Product[]) => {
+    const base = getProductSlug(product);
+    const duplicates = list
+      .filter((p) => getProductSlug(p) === base)
+      .sort((a, b) => a.id.localeCompare(b.id));
+    if (duplicates.length <= 1) return base;
+    const idx = duplicates.findIndex((p) => p.id === product.id);
+    return idx <= 0 ? base : `${base}-${idx + 1}`;
+  }, []);
+
+  useEffect(() => {
+    if (!loading && pendingEditParam) {
+      const prod = products.find(
+        (p) => getEditorSlug(p, products) === pendingEditParam || p.id === pendingEditParam
+      );
+      setPendingEditParam(null);
+      if (prod) {
+        handleOpenEdit(prod);
+      } else {
+        router.replace('/admin/products');
+        showAlert({
+          title: 'Fragrance Not Found',
+          message: 'This fragrance could not be found. It may have been deleted from the catalog.',
+          variant: 'warning'
+        });
+      }
+    }
+  }, [loading, pendingEditParam, products]);
+
+  const handleOpenAdd = () => {
+    router.push('/admin/products/new');
   };
 
   const handleOpenEdit = (product: Product) => {
@@ -255,7 +268,6 @@ export const ProductsManager: React.FC = () => {
       storyBlocks: product.storyBlocks || []
     });
     setIsModalOpen(true);
-    router.replace(`/admin/products/edit/${encodeURIComponent(getProductSlug(product))}`);
   };
 
   const handleDelete = async (id: string) => {
@@ -317,7 +329,8 @@ export const ProductsManager: React.FC = () => {
   });
 
   return (
-    <div className="space-y-6 font-sans">
+    <ProductsRouteProvider value={{ openAdd, openEditByParam, closeEditor }}>
+      <div className="space-y-6 font-sans">
       {/* Header & Controls */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
         <div>
@@ -620,8 +633,7 @@ export const ProductsManager: React.FC = () => {
           initialData={formData}
           collectionOptions={collectionOptions}
           onClose={() => {
-            setIsModalOpen(false);
-            setEditingProduct(null);
+            closeEditor();
             router.replace('/admin/products');
           }}
           onSaveSuccess={loadData}
@@ -641,7 +653,7 @@ export const ProductsManager: React.FC = () => {
             onClick={() => {
               const p = actionMenu.product;
               setActionMenu(null);
-              handleOpenEdit(p);
+              router.push(`/admin/products/edit/${encodeURIComponent(getEditorSlug(p, products))}`);
             }}
             className="w-full px-3.5 py-2 text-left text-xs font-semibold text-slate-800 hover:bg-slate-50 flex items-center gap-2.5 transition-colors cursor-pointer"
           >
@@ -682,6 +694,10 @@ export const ProductsManager: React.FC = () => {
           </button>
         </div>
       )}
-    </div>
+
+      {/* Route-driven page slot (list/new/edit pages render null and signal via context) */}
+      {children}
+      </div>
+    </ProductsRouteProvider>
   );
 };
