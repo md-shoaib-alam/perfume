@@ -233,6 +233,17 @@ export default function CollectionPage() {
   const [failedBannerSrc, setFailedBannerSrc] = useState<string | null>(null);
   const bannerLoadFailed = failedBannerSrc === bannerSrc;
 
+  // Cross-collection tiles degrade to a text-only card when their image is gone
+  const [failedTileImageSrcs, setFailedTileImageSrcs] = useState<Set<string>>(new Set());
+  const markTileImageFailed = (src: string) => {
+    setFailedTileImageSrcs((prev) => {
+      if (prev.has(src)) return prev;
+      const next = new Set(prev);
+      next.add(src);
+      return next;
+    });
+  };
+
   const filteredProducts = useMemo(() => {
     let list = [...productsList];
 
@@ -321,7 +332,7 @@ export default function CollectionPage() {
       <meta property="og:description" content={meta.subtitle || meta.editorial || 'Explore BakhoorBliss luxury fragrances and artisanal perfumes.'} />
       <meta property="og:url" content={`https://bakhoorbliss.in/collections/${slug}`} />
       <meta property="og:type" content="website" />
-      {meta.bannerImage && <meta property="og:image" content={meta.bannerImage} />}
+      {bannerSrc && <meta property="og:image" content={bannerSrc} />}
       <div className="min-h-screen bg-white text-slate-900 font-sans selection:bg-[#d6a13d] selection:text-black">
         {/* 1. Top Announcement Bar */}
       <AnnouncementBar />
@@ -479,7 +490,7 @@ export default function CollectionPage() {
                   href={col.href}
                   className="group block bg-white border border-slate-200/80 rounded-md overflow-hidden transition-colors hover:border-[#d6a750]"
                 >
-                  {col.image && (
+                  {col.image && !failedTileImageSrcs.has(col.image) && (
                     <div className="relative aspect-[4/3] overflow-hidden bg-slate-100">
                       <Image
                         src={col.image}
@@ -487,6 +498,7 @@ export default function CollectionPage() {
                         fill
                         sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                         loading="lazy"
+                        onError={() => markTileImageFailed(col.image)}
                         className="object-cover"
                       />
                     </div>

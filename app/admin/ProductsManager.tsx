@@ -1,6 +1,7 @@
 'use client';
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import type { Product } from '../types';
 import { ProductEditor } from './ProductEditor';
 import { api } from '../services/api';
@@ -9,10 +10,11 @@ import { useConfirm } from '../components/CustomConfirmModal';
 import { getProductSlug } from '../utils/slug';
 import { useQueryClient } from '@tanstack/react-query';
 import { queryKeys, useCollectionsQuery } from '../hooks/useQueries';
-import { STANDARD_LANDING_PAGES } from './collections/types';
+import { STANDARD_LANDING_PAGES, COLLECTION_LANDING_SLUGS } from './collections/types';
 
 export const ProductsManager: React.FC = () => {
   const queryClient = useQueryClient();
+  const router = useRouter();
   const { data: reactiveCollections = [] } = useCollectionsQuery();
   const { showConfirm, showAlert } = useConfirm();
   const [products, setProducts] = useState<Product[]>([]);
@@ -106,16 +108,24 @@ export const ProductsManager: React.FC = () => {
   const activeCollections = (collections && collections.length > 0) ? collections : reactiveCollections;
 
   const collectionOptions = useMemo(() => {
-    // Every built-in collection page except Shop All, using the admin-edited name when one exists
-    const builtInOptions: { slug: string; name: string }[] = [];
-    for (const page of STANDARD_LANDING_PAGES) {
-      if (!page.slug || page.slug === 'all' || page.slug === 'shop-all') continue;
-      const dbMatch = activeCollections.find((c: any) => c.slug === page.slug);
-      const dbName = (dbMatch?.name || '').replace(/\s+/g, ' ').trim();
-      builtInOptions.push({ slug: page.slug, name: dbName || page.name });
-    }
+    // Mirror the admin Collections tab: collection-type landing pages (Extrait De Parfum,
+    // Imperial Attars) plus custom story collections. Gender/category pages (For Him,
+    // For Her, Unisex, Gift Sets, Discovery Sets) stay out — they are driven by the
+    // product's gender/category, not by the collection field. Shop All is not assignable.
+    const collectionPageSlugs = COLLECTION_LANDING_SLUGS.filter(
+      (slug) => slug !== 'all' && slug !== 'shop-all'
+    );
 
-    const builtInSlugs = new Set(builtInOptions.map((page) => page.slug));
+    const landingOptions = collectionPageSlugs.map((slug) => {
+      const preset = STANDARD_LANDING_PAGES.find((page) => page.slug === slug);
+      const dbMatch = (activeCollections || []).find((c: any) => c.slug === slug);
+      const dbName = (dbMatch?.name || '').replace(/\s+/g, ' ').trim();
+      return { slug, name: dbName || preset?.name || slug };
+    });
+
+    const presetSlugs = new Set(
+      STANDARD_LANDING_PAGES.map((page) => page.slug).filter(Boolean)
+    );
 
     const customOptions = (activeCollections || [])
       .map((c: any) => {
@@ -137,10 +147,9 @@ export const ProductsManager: React.FC = () => {
         };
       })
       .filter((c: any) => Boolean(c.slug && c.name))
-      .filter((c: any) => c.slug !== 'all' && c.slug !== 'shop-all')
-      .filter((c: any) => !builtInSlugs.has(c.slug));
+      .filter((c: any) => !presetSlugs.has(c.slug));
 
-    return [...builtInOptions, ...customOptions];
+    return [...landingOptions, ...customOptions];
   }, [activeCollections]);
 
   const handleCollectionCreated = (created: { id: string; slug: string; name: string }) => {
@@ -163,6 +172,41 @@ export const ProductsManager: React.FC = () => {
   useEffect(() => {
     loadData();
   }, []);
+
+  // Deep-link support: reopen the editor from the URL on refresh
+  // (/admin/products/new or /admin/products/edit/<id>, query params as fallback)
+  const urlInitRef = useRef(false);
+  const [pendingEditId, setPendingEditId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (urlInitRef.current) return;
+    urlInitRef.current = true;
+    const editMatch = window.location.pathname.match(/^\/admin\/products\/edit\/([^/]+)/);
+    if (window.location.pathname === '/admin/products/new') {
+      handleOpenAdd();
+    } else if (editMatch) {
+      setPendingEditId(decodeURIComponent(editMatch[1]));
+    } else {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('add') === 'new') {
+        handleOpenAdd();
+      } else if (params.get('edit')) {
+        setPendingEditId(params.get('edit'));
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!loading && pendingEditId) {
+      const prod = products.find(
+        (p) => getProductSlug(p) === pendingEditId || p.id === pendingEditId
+      );
+      if (prod) {
+        setPendingEditId(null);
+        handleOpenEdit(prod);
+      }
+    }
+  }, [loading, pendingEditId, products]);
 
   const handleOpenAdd = () => {
     setEditingProduct(null);
@@ -192,6 +236,7 @@ export const ProductsManager: React.FC = () => {
       storyBlocks: []
     });
     setIsModalOpen(true);
+    router.replace('/admin/products/new');
   };
 
   const handleOpenEdit = (product: Product) => {
@@ -210,6 +255,7 @@ export const ProductsManager: React.FC = () => {
       storyBlocks: product.storyBlocks || []
     });
     setIsModalOpen(true);
+    router.replace(`/admin/products/edit/${encodeURIComponent(getProductSlug(product))}`);
   };
 
   const handleDelete = async (id: string) => {
@@ -288,7 +334,7 @@ export const ProductsManager: React.FC = () => {
             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
             </svg>
-            <span>+ Add New Fragrance</span>
+            <span>Add New Fragrance</span>
           </button>
         </div>
       </div>
@@ -576,6 +622,7 @@ export const ProductsManager: React.FC = () => {
           onClose={() => {
             setIsModalOpen(false);
             setEditingProduct(null);
+            router.replace('/admin/products');
           }}
           onSaveSuccess={loadData}
           onCollectionCreated={handleCollectionCreated}

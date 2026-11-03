@@ -194,7 +194,9 @@ export function AdminShell({ children }: AdminShellProps) {
           {/* Navigation Links */}
           <nav className="p-3.5 space-y-1.5 overflow-y-auto max-h-[calc(100vh-180px)] scrollbar-none">
             {NAV_ITEMS.map((tab) => {
-              const isActive = pathname === tab.path;
+              const isActive =
+                pathname === tab.path ||
+                (tab.path !== '/admin' && pathname.startsWith(`${tab.path}/`));
               return (
                 <Link
                   key={tab.path}
@@ -324,7 +326,9 @@ export function AdminShell({ children }: AdminShellProps) {
 
                 <nav className="space-y-1.5">
                   {NAV_ITEMS.map((tab) => {
-                    const isActive = pathname === tab.path;
+                    const isActive =
+                      pathname === tab.path ||
+                      (tab.path !== '/admin' && pathname.startsWith(`${tab.path}/`));
                     return (
                       <Link
                         key={tab.path}
